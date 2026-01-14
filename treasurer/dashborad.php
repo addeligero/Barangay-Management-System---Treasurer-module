@@ -28,7 +28,7 @@ $recentPayments = $conn->query("
 
 $recentDisbursements = $conn->query("
     SELECT * FROM disbursements 
-    ORDER BY date DESC 
+    ORDER BY disburse_date DESC 
     LIMIT 5
 ");
 
@@ -108,7 +108,8 @@ while ($row = $monthlyData->fetch_assoc()) {
                     <div class="stat-card blue">
                         <h4><i class="fas fa-id-card"></i> Cedula Issued</h4>
                         <div class="stat-value">
-                            <?= number_format($totalCedula) ?></div>
+                            <?= number_format($totalCedula) ?>
+                        </div>
                     </div>
                     <div class="stat-card green">
                         <h4><i class="fas fa-chart-bar"></i> BIR Collections</h4>
@@ -181,7 +182,7 @@ while ($row = $monthlyData->fetch_assoc()) {
                                     <?php if ($recentDisbursements->num_rows > 0): ?>
                                     <?php while ($disbursement = $recentDisbursements->fetch_assoc()): ?>
                                     <tr>
-                                        <td><?= date('M d, Y', strtotime($disbursement['date'])) ?>
+                                        <td><?= date('M d, Y', strtotime($disbursement['disburse_date'])) ?>
                                         </td>
                                         <td><?= htmlspecialchars($disbursement['payee']) ?>
                                         </td>
