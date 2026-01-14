@@ -52,7 +52,6 @@ while ($row = $monthlyData->fetch_assoc()) {
 ?>
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -61,7 +60,6 @@ while ($row = $monthlyData->fetch_assoc()) {
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
-
 <body>
     <div class="dashboard-container">
         <!-- Sidebar -->
@@ -85,9 +83,7 @@ while ($row = $monthlyData->fetch_assoc()) {
         <main class="main-content">
             <div class="content-header">
                 <h1><i class="fas fa-tachometer-alt"></i> Treasurer Dashboard</h1>
-                <p>Welcome,
-                    <?= htmlspecialchars($_SESSION['name']) ?>!
-                </p>
+                <p>Welcome, <?= htmlspecialchars($_SESSION['name']) ?>!</p>
             </div>
 
             <div class="content-body">
@@ -95,25 +91,19 @@ while ($row = $monthlyData->fetch_assoc()) {
                 <div class="stats-grid">
                     <div class="stat-card">
                         <h4><i class="fas fa-coins"></i> Total Collections</h4>
-                        <div class="stat-value">
-                            ₱<?= number_format($totalCollection, 2) ?>
-                        </div>
+                        <div class="stat-value">₱<?= number_format($totalCollection, 2) ?></div>
                     </div>
                     <div class="stat-card red">
                         <h4><i class="fas fa-money-check-alt"></i> Total Disbursements</h4>
-                        <div class="stat-value">
-                            ₱<?= number_format($totalDisbursement, 2) ?>
-                        </div>
+                        <div class="stat-value">₱<?= number_format($totalDisbursement, 2) ?></div>
                     </div>
                     <div class="stat-card blue">
                         <h4><i class="fas fa-id-card"></i> Cedula Issued</h4>
-                        <div class="stat-value">
-                            <?= number_format($totalCedula) ?></div>
+                        <div class="stat-value"><?= number_format($totalCedula) ?></div>
                     </div>
                     <div class="stat-card green">
                         <h4><i class="fas fa-chart-bar"></i> BIR Collections</h4>
-                        <div class="stat-value">
-                            ₱<?= number_format($totalBIR, 2) ?></div>
+                        <div class="stat-value">₱<?= number_format($totalBIR, 2) ?></div>
                     </div>
                 </div>
 
@@ -143,20 +133,15 @@ while ($row = $monthlyData->fetch_assoc()) {
                                 </thead>
                                 <tbody>
                                     <?php if ($recentPayments->num_rows > 0): ?>
-                                    <?php while ($payment = $recentPayments->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><?= date('M d, Y', strtotime($payment['payment_date'])) ?>
-                                        </td>
-                                        <td><?= htmlspecialchars($payment['purpose']) ?>
-                                        </td>
-                                        <td>₱<?= number_format($payment['amount'], 2) ?>
-                                        </td>
-                                    </tr>
-                                    <?php endwhile; ?>
+                                        <?php while ($payment = $recentPayments->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?= date('M d, Y', strtotime($payment['payment_date'])) ?></td>
+                                                <td><?= htmlspecialchars($payment['purpose']) ?></td>
+                                                <td>₱<?= number_format($payment['amount'], 2) ?></td>
+                                            </tr>
+                                        <?php endwhile; ?>
                                     <?php else: ?>
-                                    <tr>
-                                        <td colspan="3" style="text-align: center;">No recent payments</td>
-                                    </tr>
+                                        <tr><td colspan="3" style="text-align: center;">No recent payments</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -179,20 +164,15 @@ while ($row = $monthlyData->fetch_assoc()) {
                                 </thead>
                                 <tbody>
                                     <?php if ($recentDisbursements->num_rows > 0): ?>
-                                    <?php while ($disbursement = $recentDisbursements->fetch_assoc()): ?>
-                                    <tr>
-                                        <td><?= date('M d, Y', strtotime($disbursement['date'])) ?>
-                                        </td>
-                                        <td><?= htmlspecialchars($disbursement['payee']) ?>
-                                        </td>
-                                        <td>₱<?= number_format($disbursement['release_amount'], 2) ?>
-                                        </td>
-                                    </tr>
-                                    <?php endwhile; ?>
+                                        <?php while ($disbursement = $recentDisbursements->fetch_assoc()): ?>
+                                            <tr>
+                                                <td><?= date('M d, Y', strtotime($disbursement['date'])) ?></td>
+                                                <td><?= htmlspecialchars($disbursement['payee']) ?></td>
+                                                <td>₱<?= number_format($disbursement['release_amount'], 2) ?></td>
+                                            </tr>
+                                        <?php endwhile; ?>
                                     <?php else: ?>
-                                    <tr>
-                                        <td colspan="3" style="text-align: center;">No recent disbursements</td>
-                                    </tr>
+                                        <tr><td colspan="3" style="text-align: center;">No recent disbursements</td></tr>
                                     <?php endif; ?>
                                 </tbody>
                             </table>
@@ -209,10 +189,10 @@ while ($row = $monthlyData->fetch_assoc()) {
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: <?= json_encode($months) ?> ,
+                labels: <?= json_encode($months) ?>,
                 datasets: [{
                     label: 'Monthly Collections',
-                    data: <?= json_encode($amounts) ?> ,
+                    data: <?= json_encode($amounts) ?>,
                     backgroundColor: '#FFD700',
                     borderColor: '#FFC700',
                     borderWidth: 2
@@ -248,5 +228,4 @@ while ($row = $monthlyData->fetch_assoc()) {
         });
     </script>
 </body>
-
 </html>

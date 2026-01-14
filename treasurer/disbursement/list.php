@@ -2,32 +2,127 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-$result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC");
+$result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC, id DESC");
 ?>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disbursements - Barangay Sto. Rosario</title>
+    <link rel="stylesheet" href="../../assets/css/style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <div class="dashboard-container">
+        <aside class="sidebar">
+            <div class="sidebar-header">
+                <h2>BARANGAY STO. ROSARIO</h2>
+                <p>Treasurer Module</p>
+            </div>
+            <ul class="sidebar-menu">
+                <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
+                <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
+                <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
+                <li><a href="list.php" class="active"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
+                <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+            </ul>
+        </aside>
 
-<h3>Disbursement Records</h3>
+        <main class="main-content">
+            <div class="content-header">
+                <h1><i class="fas fa-hand-holding-usd"></i> Records of Disbursement</h1>
+            </div>
 
-<table border="1" cellpadding="5">
-    <tr>
-        <th>Date</th>
-        <th>Check #</th>
-        <th>Payee</th>
-        <th>DV #</th>
-        <th>Amount</th>
-        <th>Fund</th>
-        <th>Purpose</th>
-        <th>Released</th>
-    </tr>
+            <div class="content-body">
+                <?php if (isset($_GET['success'])): ?>
+                    <div class="success-message">
+                        <i class="fas fa-check-circle"></i> Disbursement recorded successfully!
+                    </div>
+                <?php endif; ?>
 
-    <?php while($row = $result->fetch_assoc()): ?>
-    <tr>
-        <td><?= $row['disburse_date'] ?></td>
-        <td><?= $row['check_no'] ?></td>
-        <td><?= htmlspecialchars($row['payee']) ?>
-        </td>
-        <td><?= $row['dv_no'] ?></td>
-        <td><?= number_format($row['amount'], 2) ?>
-        </td>
+                <div class="card">
+                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center;">
+                        <h3><i class="fas fa-list"></i> All Disbursement Records</h3>
+                        <a href="add.php" class="btn btn-success">
+                            <i class="fas fa-plus"></i> New Disbursement
+                        </a>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Date</th>
+                                    <th>CH CH #</th>
+                                    <th>Payee</th>
+                                    <th>DV No.</th>
+                                    <th>Amount</th>
+                                    <th>Fund</th>
+                                    <th>Payroll</th>
+                                    <th>BIR</th>
+                                    <th>Particular</th>
+                                    <th>Release Amnt</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <?php if ($result->num_rows > 0): ?>
+                                    <?php while ($row = $result->fetch_assoc()): ?>
+                                        <tr>
+                                            <td><?= date('M d, Y', strtotime($row['disburse_date'])) ?></td>
+                                            <td><strong><?= htmlspecialchars($row['check_no']) ?></strong></td>
+                                            <td><?= htmlspecialchars($row['payee']) ?></td>
+                                            <td><?= htmlspecialchars($row['dv_no']) ?></td>
+                                            <td>₱<?= number_format($row['amount'], 2) ?></td>
+                                            <td><span class="badge badge-info"><?= htmlspecialchars($row['fund'] ?? 'N/A') ?></span></td>
+                                            <td><?= htmlspecialchars($row['payroll'] ?? 'N/A') ?></td>
+                                            <td><?= htmlspecialchars($row['bir'] ?? 'N/A') ?></td>
+                                            <td><?= htmlspecialchars($row['purpose']) ?></td>
+                                            <td><strong>₱<?= number_format($row['release_amount'], 2) ?></strong></td>
+                                            <td>
+                                                <div class="action-buttons">
+                                                    <button class="btn btn-sm btn-secondary" onclick="viewDisbursement(<?= $row['id'] ?>)">
+                                                        <i class="fas fa-eye"></i>
+                                                    </button>
+                                                    <button class="btn btn-sm btn-danger" onclick="deleteDisbursement(<?= $row['id'] ?>)">
+                                                        <i class="fas fa-trash"></i>
+                                                    </button>
+                                                </div>
+                                            </td>
+                                        </tr>
+                                    <?php endwhile; ?>
+                                <?php else: ?>
+                                    <tr>
+                                        <td colspan="11" style="text-align: center; padding: 40px;">
+                                            <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
+                                            <p style="margin-top: 15px; color: #999;">No disbursement records found</p>
+                                        </td>
+                                    </tr>
+                                <?php endif; ?>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        function viewDisbursement(id) {
+            alert('View disbursement ID: ' + id);
+        }
+
+        function deleteDisbursement(id) {
+            if (confirm('Are you sure you want to delete this disbursement record?')) {
+                window.location.href = 'save.php?action=delete&id=' + id;
+            }
+        }
+    </script>
+</body>
+</html>
         <td><?= $row['fund'] ?></td>
         <td><?= htmlspecialchars($row['purpose']) ?>
         </td>
