@@ -72,6 +72,7 @@ while ($row = $monthlyData->fetch_assoc()) {
             </div>
             <ul class="sidebar-menu">
                 <li><a href="dashboard.php" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
@@ -108,7 +109,8 @@ while ($row = $monthlyData->fetch_assoc()) {
                     <div class="stat-card blue">
                         <h4><i class="fas fa-id-card"></i> Cedula Issued</h4>
                         <div class="stat-value">
-                            <?= number_format($totalCedula) ?></div>
+                            <?= number_format($totalCedula) ?>
+                        </div>
                     </div>
                     <div class="stat-card green">
                         <h4><i class="fas fa-chart-bar"></i> BIR Collections</h4>
