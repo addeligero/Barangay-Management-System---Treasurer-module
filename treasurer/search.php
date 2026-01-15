@@ -423,12 +423,18 @@ if (!empty($searchQuery)) {
                                 <?= htmlspecialchars($result['reference']) ?>
                             </p>
                         </div>
-                        <div class="result-amount">
-                            ₱<?= number_format($result['amount'], 2) ?>
+                        <div style="text-align: right;">
+                            <div class="result-amount">
+                                ₱<?= number_format($result['amount'], 2) ?>
+                            </div>
+                            <button class="view-details-btn" onclick="toggleDetails(this)"
+                                style="margin-top: 10px; background: #1e3a5f; color: white; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; font-size: 13px;">
+                                <i class="fas fa-eye"></i> View Full Details
+                            </button>
                         </div>
                     </div>
 
-                    <div class="result-details">
+                    <div class="result-details" style="display: none;">
                         <div class="detail-item">
                             <span class="detail-label"><i class="fas fa-calendar"></i> Date</span>
                             <span class="detail-value">
@@ -532,6 +538,26 @@ if (!empty($searchQuery)) {
             </div>
         </main>
     </div>
+
+    <script>
+        function toggleDetails(button) {
+            const card = button.closest('.result-card');
+            const details = card.querySelector('.result-details');
+            const icon = button.querySelector('i');
+
+            if (details.style.display === 'none') {
+                details.style.display = 'grid';
+                button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
+                button.style.background = '#FFD700';
+                button.style.color = '#1e3a5f';
+            } else {
+                details.style.display = 'none';
+                button.innerHTML = '<i class="fas fa-eye"></i> View Full Details';
+                button.style.background = '#1e3a5f';
+                button.style.color = 'white';
+            }
+        }
+    </script>
 </body>
 
 </html>

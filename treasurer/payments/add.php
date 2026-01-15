@@ -65,8 +65,13 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
             </div>
 
             <div class="form-group">
-              <label for="payer_name"><i class="fas fa-user"></i> Payer Name *</label>
-              <input type="text" id="payer_name" name="payer_name" placeholder="Enter payer's full name" required>
+              <label for="payer_name"><i class="fas fa-user"></i> Payer Name * <small style="color: #666;">(Type to
+                  search existing records)</small></label>
+              <input type="text" id="payer_name" name="payer_name" placeholder="Enter payer's full name" required
+                autocomplete="off">
+              <div id="suggestions"
+                style="position: absolute; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; width: calc(100% - 40px); z-index: 1000; display: none; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1);">
+              </div>
             </div>
 
             <div class="form-row">
@@ -142,6 +147,63 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
 
     document.getElementById('amount').addEventListener('input', calculateTotal);
     document.getElementById('bir_tax').addEventListener('input', calculateTotal);
+
+    // Autocomplete for payer name
+    const payerInput = document.getElementById('payer_name');
+    const suggestionsDiv = document.getElementById('suggestions');
+    let debounceTimer;
+
+    payerInput.addEventListener('input', function() {
+      clearTimeout(debounceTimer);
+      const searchTerm = this.value.trim();
+
+      if (searchTerm.length < 2) {
+        suggestionsDiv.style.display = 'none';
+        return;
+      }
+
+      debounceTimer = setTimeout(() => {
+        fetch(`get_people.php?search=${encodeURIComponent(searchTerm)}`)
+          .then(response => response.json())
+          .then(data => {
+            if (data.length > 0) {
+              suggestionsDiv.innerHTML = data.map(person =>
+                `<div class="suggestion-item" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" data-name="${person.name}">
+                  <i class="fas fa-user"></i> ${person.name}
+                  <small style="color: #666; margin-left: 10px;">(${person.source})</small>
+                </div>`
+              ).join('');
+              suggestionsDiv.style.display = 'block';
+
+              // Add click handlers
+              document.querySelectorAll('.suggestion-item').forEach(item => {
+                item.addEventListener('click', function() {
+                  const name = this.dataset.name;
+                  payerInput.value = name;
+                  suggestionsDiv.style.display = 'none';
+                });
+
+                item.addEventListener('mouseenter', function() {
+                  this.style.background = '#f0f4f8';
+                });
+
+                item.addEventListener('mouseleave', function() {
+                  this.style.background = 'white';
+                });
+              });
+            } else {
+              suggestionsDiv.style.display = 'none';
+            }
+          });
+      }, 300);
+    });
+
+    // Hide suggestions when clicking outside
+    document.addEventListener('click', function(e) {
+      if (e.target !== payerInput && e.target !== suggestionsDiv) {
+        suggestionsDiv.style.display = 'none';
+      }
+    });
   </script>
 </body>
 

@@ -67,10 +67,14 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                             </div>
                         </div>
 
-                        <div class="form-group">
-                            <label for="full_name"><i class="fas fa-user"></i> Full Name *</label>
+                        <div class="form-group" style="position: relative;">
+                            <label for="full_name"><i class="fas fa-user"></i> Full Name * <small
+                                    style="color: #666;">(Type to search existing records)</small></label>
                             <input type="text" id="full_name" name="full_name"
-                                placeholder="Enter full name (First M. Last)" required>
+                                placeholder="Enter full name (First M. Last)" required autocomplete="off">
+                            <div id="suggestions"
+                                style="position: absolute; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; width: calc(100% - 40px); z-index: 1000; display: none; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 5px;">
+                            </div>
                         </div>
 
                         <div class="form-group">
@@ -182,6 +186,111 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
 
             document.getElementById('age').value = age;
         }
+
+        // Autocomplete for full name with auto-fill
+        const nameInput = document.getElementById('full_name');
+        const suggestionsDiv = document.getElementById('suggestions');
+        let debounceTimer;
+
+        nameInput.addEventListener('input', function() {
+            clearTimeout(debounceTimer);
+            const searchTerm = this.value.trim();
+
+            if (searchTerm.length < 2) {
+                suggestionsDiv.style.display = 'none';
+                return;
+            }
+
+            debounceTimer = setTimeout(() => {
+                fetch(`../payments/get_people.php?search=${encodeURIComponent(searchTerm)}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.length > 0) {
+                            suggestionsDiv.innerHTML = data.map(person =>
+                                `<div class="suggestion-item" style="padding: 10px; cursor: pointer; border-bottom: 1px solid #eee;" data-name="${person.name}">
+                                    <i class="fas fa-user"></i> ${person.name}
+                                    <small style="color: #666; margin-left: 10px;">(${person.source === 'cedula' ? 'Has cedula record' : 'Payment record'})</small>
+                                </div>`
+                            ).join('');
+                            suggestionsDiv.style.display = 'block';
+
+                            // Add click handlers
+                            document.querySelectorAll('.suggestion-item').forEach(item => {
+                                item.addEventListener('click', function() {
+                                    const name = this.dataset.name;
+                                    nameInput.value = name;
+                                    suggestionsDiv.style.display = 'none';
+
+                                    // Fetch person details to auto-fill
+                                    fetch(
+                                            `get_person.php?name=${encodeURIComponent(name)}`)
+                                        .then(response => response.json())
+                                        .then(personData => {
+                                            if (!personData.error) {
+                                                // Auto-fill fields if they exist in the record
+                                                if (personData.address) document
+                                                    .getElementById('address')
+                                                    .value = personData.address;
+                                                if (personData.birth_date) {
+                                                    document.getElementById(
+                                                            'birth_date')
+                                                        .value = personData
+                                                        .birth_date;
+                                                    calculateAge();
+                                                }
+                                                if (personData.sex) document
+                                                    .getElementById('sex')
+                                                    .value = personData.sex;
+                                                if (personData.birth_place)
+                                                    document.getElementById(
+                                                        'birth_place').value =
+                                                    personData.birth_place;
+                                                if (personData.civil_status)
+                                                    document.getElementById(
+                                                        'civil_status').value =
+                                                    personData.civil_status;
+                                                if (personData.occupation)
+                                                    document.getElementById(
+                                                        'occupation').value =
+                                                    personData.occupation;
+                                                if (personData.tin) document
+                                                    .getElementById('tin')
+                                                    .value = personData.tin;
+                                                if (personData.height) document
+                                                    .getElementById('height')
+                                                    .value = personData.height;
+                                                if (personData.weight) document
+                                                    .getElementById('weight')
+                                                    .value = personData.weight;
+
+                                                // Show notification
+                                                alert(
+                                                    '✓ Information auto-filled from previous record!');
+                                            }
+                                        });
+                                });
+
+                                item.addEventListener('mouseenter', function() {
+                                    this.style.background = '#f0f4f8';
+                                });
+
+                                item.addEventListener('mouseleave', function() {
+                                    this.style.background = 'white';
+                                });
+                            });
+                        } else {
+                            suggestionsDiv.style.display = 'none';
+                        }
+                    });
+            }, 300);
+        });
+
+        // Hide suggestions when clicking outside
+        document.addEventListener('click', function(e) {
+            if (e.target !== nameInput && e.target !== suggestionsDiv) {
+                suggestionsDiv.style.display = 'none';
+            }
+        });
     </script>
 </body>
 

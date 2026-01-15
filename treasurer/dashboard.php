@@ -15,6 +15,10 @@ $totalCedula = $conn->query("
     SELECT COUNT(*) AS total FROM cedula
 ")->fetch_assoc()['total'] ?? 0;
 
+$totalBrgyClearance = $conn->query("
+    SELECT COUNT(*) AS total FROM payments WHERE service_type = 'Barangay Clearance'
+")->fetch_assoc()['total'] ?? 0;
+
 $totalBIR = $conn->query("
     SELECT COALESCE(SUM(total_amount), 0) AS total FROM bir_records
 ")->fetch_assoc()['total'] ?? 0;
@@ -110,6 +114,12 @@ while ($row = $monthlyData->fetch_assoc()) {
                         <h4><i class="fas fa-id-card"></i> Cedula Issued</h4>
                         <div class="stat-value">
                             <?= number_format($totalCedula) ?>
+                        </div>
+                    </div>
+                    <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
+                        <h4><i class="fas fa-file-certificate"></i> Brgy Clearance Issued</h4>
+                        <div class="stat-value">
+                            <?= number_format($totalBrgyClearance) ?>
                         </div>
                     </div>
                     <div class="stat-card green">
