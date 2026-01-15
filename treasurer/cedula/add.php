@@ -60,6 +60,12 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                             </div>
 
                             <div class="form-group">
+                                <label for="or_number"><i class="fas fa-receipt"></i> OR Number *</label>
+                                <input type="text" id="or_number" name="or_number" placeholder="Enter OR number"
+                                    required>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="issued_date"><i class="fas fa-calendar"></i> Date Issued *</label>
                                 <input type="date" id="issued_date" name="issued_date"
                                     value="<?= date('Y-m-d') ?>"
@@ -146,6 +152,15 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                 <label for="weight"><i class="fas fa-weight"></i> Weight (kg)</label>
                                 <input type="number" id="weight" name="weight" step="0.01" placeholder="e.g., 65">
                             </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="nature_of_collection"><i class="fas fa-list"></i> Nature of Collection
+                                    *</label>
+                                <input type="text" id="nature_of_collection" name="nature_of_collection"
+                                    value="Community Tax" required>
+                            </div>
 
                             <div class="form-group">
                                 <label for="amount"><i class="fas fa-peso-sign"></i> Amount *</label>
@@ -223,7 +238,8 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
 
                                     // Fetch person details to auto-fill
                                     fetch(
-                                            `get_person.php?name=${encodeURIComponent(name)}`)
+                                            `get_person.php?name=${encodeURIComponent(name)}`
+                                            )
                                         .then(response => response.json())
                                         .then(personData => {
                                             if (!personData.error) {
@@ -265,7 +281,8 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
 
                                                 // Show notification
                                                 alert(
-                                                    '✓ Information auto-filled from previous record!');
+                                                    '✓ Information auto-filled from previous record!'
+                                                    );
                                             }
                                         });
                                 });

@@ -5,6 +5,7 @@ include "../../config/session.php";
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $payer_name = $_POST['payer_name'];
     $service_type = $_POST['service_type'];
+    $operating_services = $_POST['operating_services'] ?? '';
     $purpose = $_POST['purpose'];
     $amount = $_POST['amount'];
     $bir_tax = $_POST['bir_tax'];
@@ -13,11 +14,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $remarks = $_POST['remarks'] ?? '';
     
     $stmt = $conn->prepare("
-        INSERT INTO payments (payer_name, service_type, purpose, amount, bir_tax, receipt_no, payment_date, remarks, received_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        INSERT INTO payments (payer_name, service_type, operating_services, purpose, amount, bir_tax, receipt_no, payment_date, remarks, received_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
     
-    $stmt->bind_param("sssddsssi", $payer_name, $service_type, $purpose, $amount, $bir_tax, $receipt_no, $payment_date, $remarks, $_SESSION['user_id']);
+    $stmt->bind_param("ssssddsssi", $payer_name, $service_type, $operating_services, $purpose, $amount, $bir_tax, $receipt_no, $payment_date, $remarks, $_SESSION['user_id']);
     
     if ($stmt->execute()) {
         header("Location: list.php?success=1");

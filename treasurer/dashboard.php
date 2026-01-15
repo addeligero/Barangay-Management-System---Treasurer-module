@@ -116,8 +116,8 @@ while ($row = $monthlyData->fetch_assoc()) {
                             <?= number_format($totalCedula) ?>
                         </div>
                     </div>
-                    <div class="stat-card" style="background: linear-gradient(135deg, #28a745 0%, #20c997 100%);">
-                        <h4><i class="fas fa-file-certificate"></i> Brgy Clearance Issued</h4>
+                    <div class="stat-card">
+                        <h4><i class="fas fa-le-certificate"></i> Brgy Clearance Issued</h4>
                         <div class="stat-value">
                             <?= number_format($totalBrgyClearance) ?>
                         </div>

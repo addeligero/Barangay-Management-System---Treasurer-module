@@ -90,6 +90,12 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
               </div>
 
               <div class="form-group">
+                <label for="operating_services"><i class="fas fa-cogs"></i> Operating and Services</label>
+                <input type="text" id="operating_services" name="operating_services"
+                  placeholder="e.g., Water, Electricity, Supplies">
+              </div>
+
+              <div class="form-group">
                 <label for="purpose"><i class="fas fa-info-circle"></i> Purpose *</label>
                 <input type="text" id="purpose" name="purpose" placeholder="e.g., Employment, Business, Travel"
                   required>
