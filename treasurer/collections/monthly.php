@@ -240,9 +240,10 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                 <div class="card no-print">
                     <div class="card-header">
                         <h3><i class="fas fa-edit"></i> Manage Manual Entries</h3>
-                        <p style="color: #666; font-size: 14px; margin-top: 5px;">Add custom entries for manually inputted values (e.g., Real Property Tax, Internal Revenue Allotment, etc.)</p>
+                        <p style="color: #666; font-size: 14px; margin-top: 5px;">Add custom entries for manually
+                            inputted values (e.g., Real Property Tax, Internal Revenue Allotment, etc.)</p>
                     </div>
-                    
+
                     <!-- Existing Manual Entries -->
                     <?php if (!empty($manualEntries)): ?>
                     <div style="margin: 20px; overflow-x: auto;">
@@ -252,17 +253,23 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     <th style="padding: 12px; text-align: left; font-weight: 600;">Entry Name</th>
                                     <th style="padding: 12px; text-align: right; font-weight: 600;">Amount</th>
                                     <th style="padding: 12px; text-align: center; font-weight: 600;">Type</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; width: 100px;">Action</th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; width: 100px;">
+                                        Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php foreach ($manualEntries as $entry): ?>
                                 <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px;"><?= htmlspecialchars($entry['entry_name']) ?></td>
-                                    <td style="padding: 12px; text-align: right; font-weight: 500;">₱<?= number_format($entry['amount'], 2) ?></td>
+                                    <td style="padding: 12px;">
+                                        <?= htmlspecialchars($entry['entry_name']) ?>
+                                    </td>
+                                    <td style="padding: 12px; text-align: right; font-weight: 500;">
+                                        ₱<?= number_format($entry['amount'], 2) ?>
+                                    </td>
                                     <td style="padding: 12px; text-align: center;">
                                         <?php if ($entry['entry_type']): ?>
-                                        <span style="background: #e7f3ff; color: #004085; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
+                                        <span
+                                            style="background: #e7f3ff; color: #004085; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
                                             <?= htmlspecialchars($entry['entry_type']) ?>
                                         </span>
                                         <?php else: ?>
@@ -270,12 +277,17 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                         <?php endif; ?>
                                     </td>
                                     <td style="padding: 12px; text-align: center;">
-                                        <form method="POST" style="display: inline;" onsubmit="return confirm('Delete this entry?');">
-                                            <input type="hidden" name="entry_id" value="<?= $entry['id'] ?>">
-                                            <input type="hidden" name="month" value="<?= $month ?>">
-                                            <input type="hidden" name="year" value="<?= $year ?>">
+                                        <form method="POST" style="display: inline;"
+                                            onsubmit="return confirm('Delete this entry?');">
+                                            <input type="hidden" name="entry_id"
+                                                value="<?= $entry['id'] ?>">
+                                            <input type="hidden" name="month"
+                                                value="<?= $month ?>">
+                                            <input type="hidden" name="year"
+                                                value="<?= $year ?>">
                                             <input type="hidden" name="delete_entry" value="1">
-                                            <button type="submit" style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
+                                            <button type="submit"
+                                                style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
                                                 <i class="fas fa-trash"></i> Delete
                                             </button>
                                         </form>
@@ -286,23 +298,27 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         </table>
                     </div>
                     <?php endif; ?>
-                    
+
                     <!-- Add New Entry Form -->
-                    <form method="POST" style="margin: 20px; display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; align-items: end; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <input type="hidden" name="month" value="<?= $month ?>">
-                        <input type="hidden" name="year" value="<?= $year ?>">
+                    <form method="POST"
+                        style="margin: 20px; display: grid; grid-template-columns: 2fr 1fr 1fr auto; gap: 15px; align-items: end; background: #f8f9fa; padding: 20px; border-radius: 8px;">
+                        <input type="hidden" name="month"
+                            value="<?= $month ?>">
+                        <input type="hidden" name="year"
+                            value="<?= $year ?>">
                         <input type="hidden" name="save_manual" value="1">
-                        
+
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="entry_name"><i class="fas fa-tag"></i> Entry Name</label>
-                            <input type="text" id="entry_name" name="entry_name" placeholder="e.g., Real Property Tax" required>
+                            <input type="text" id="entry_name" name="entry_name" placeholder="e.g., Real Property Tax"
+                                required>
                         </div>
-                        
+
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="amount"><i class="fas fa-peso-sign"></i> Amount (₱)</label>
                             <input type="number" id="amount" name="amount" step="0.01" placeholder="0.00" required>
                         </div>
-                        
+
                         <div class="form-group" style="margin-bottom: 0;">
                             <label for="entry_type"><i class="fas fa-list"></i> Category (Optional)</label>
                             <select id="entry_type" name="entry_type">
@@ -313,7 +329,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 <option value="Other">Other</option>
                             </select>
                         </div>
-                        
+
                         <button type="submit" class="btn btn-primary" style="margin-bottom: 0;">
                             <i class="fas fa-plus"></i> Add Entry
                         </button>
@@ -384,17 +400,21 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                             <tbody>
                                 <tr>
                                     <td>Share on Real Property Tax</td>
-                                    <td>₱<?= number_format($realPropertyTax, 2) ?></td>
+                                    <td>₱<?= number_format($realPropertyTax, 2) ?>
+                                    </td>
                                 </tr>
                                 <?php foreach ($taxRevenueEntries as $entry): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?></td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?></td>
+                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
+                                    </td>
+                                    <td>₱<?= number_format($entry['amount'], 2) ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="total-row">
                                     <td>TOTAL TAX REVENUE</td>
-                                    <td>₱<?= number_format($taxRevenue, 2) ?></td>
+                                    <td>₱<?= number_format($taxRevenue, 2) ?>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -410,17 +430,21 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                             <tbody>
                                 <tr>
                                     <td>Share on Internal Revenue Allotment</td>
-                                    <td>₱<?= number_format($internalRevenue, 2) ?></td>
+                                    <td>₱<?= number_format($internalRevenue, 2) ?>
+                                    </td>
                                 </tr>
                                 <?php foreach ($taxGoodsServicesEntries as $entry): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?></td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?></td>
+                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
+                                    </td>
+                                    <td>₱<?= number_format($entry['amount'], 2) ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="total-row">
                                     <td>TOTAL TAX ON GOODS AND SERVICES</td>
-                                    <td>₱<?= number_format($taxGoodsServicesTotal, 2) ?></td>
+                                    <td>₱<?= number_format($taxGoodsServicesTotal, 2) ?>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -436,21 +460,26 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                             <tbody>
                                 <tr>
                                     <td>Operating and Services from Payments</td>
-                                    <td>₱<?= number_format($operatingServicesPayments, 2) ?></td>
+                                    <td>₱<?= number_format($operatingServicesPayments, 2) ?>
+                                    </td>
                                 </tr>
                                 <tr>
                                     <td>Operating and Services from Cedula</td>
-                                    <td>₱<?= number_format($operatingServicesCedula, 2) ?></td>
+                                    <td>₱<?= number_format($operatingServicesCedula, 2) ?>
+                                    </td>
                                 </tr>
                                 <?php foreach ($operatingServicesEntries as $entry): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?></td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?></td>
+                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
+                                    </td>
+                                    <td>₱<?= number_format($entry['amount'], 2) ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="total-row">
                                     <td>TOTAL OPERATING AND SERVICES</td>
-                                    <td>₱<?= number_format($operatingServices, 2) ?></td>
+                                    <td>₱<?= number_format($operatingServices, 2) ?>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -466,17 +495,21 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                             <tbody>
                                 <tr>
                                     <td>Barangay Clearances & Certificates</td>
-                                    <td>₱<?= number_format($otherCollectionsPayments, 2) ?></td>
+                                    <td>₱<?= number_format($otherCollectionsPayments, 2) ?>
+                                    </td>
                                 </tr>
                                 <?php foreach ($otherCollectionsEntries as $entry): ?>
                                 <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?></td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?></td>
+                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
+                                    </td>
+                                    <td>₱<?= number_format($entry['amount'], 2) ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="total-row">
                                     <td>TOTAL OTHER COLLECTIONS</td>
-                                    <td>₱<?= number_format($otherCollections, 2) ?></td>
+                                    <td>₱<?= number_format($otherCollections, 2) ?>
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
