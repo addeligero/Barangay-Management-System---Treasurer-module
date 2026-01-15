@@ -121,7 +121,3 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
     </script>
 </body>
 </html>
-        <td><?= $row['issued_date'] ?></td>
-    </tr>
-    <?php endwhile; ?>
-</table>
