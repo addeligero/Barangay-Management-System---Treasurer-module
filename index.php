@@ -17,7 +17,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     if ($user = $result->fetch_assoc()) {
 
-        // MD5 password check (WARNING: MD5 is not secure, use password_hash/password_verify for production)
+        // MD5 password check
         if (md5($password) === $user['password']) {
 
             $_SESSION['user_id'] = $user['id'];
