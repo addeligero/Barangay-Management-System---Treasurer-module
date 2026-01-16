@@ -16,6 +16,7 @@
             </div>
             <ul class="sidebar-menu">
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="../search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="list.php" class="active"><i class="fas fa-percent"></i> BIR Records</a></li>

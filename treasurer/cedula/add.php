@@ -27,6 +27,7 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
             </div>
             <ul class="sidebar-menu">
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="../search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="list.php" class="active"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
@@ -239,7 +240,7 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                     // Fetch person details to auto-fill
                                     fetch(
                                             `get_person.php?name=${encodeURIComponent(name)}`
-                                            )
+                                        )
                                         .then(response => response.json())
                                         .then(personData => {
                                             if (!personData.error) {
@@ -282,7 +283,7 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                                 // Show notification
                                                 alert(
                                                     '✓ Information auto-filled from previous record!'
-                                                    );
+                                                );
                                             }
                                         });
                                 });
