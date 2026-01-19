@@ -330,7 +330,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 <option value="">- Select -</option>
                                 <option value="Tax Revenue">Tax Revenue</option>
                                 <option value="Tax on Goods & Services">Tax on Goods & Services</option>
-                                <option value="Operating & Services">Operating & Services</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>

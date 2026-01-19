@@ -36,22 +36,26 @@ $recentDisbursements = $conn->query("
     LIMIT 5
 ");
 
-// Get collection categories data for chart
-// Tax Revenue (Real Property Tax)
-$taxRevenue = $conn->query("
+// Get collection categories data for chart (including manual entries)
+// Tax Revenue - Manual entries + payments categorized as tax revenue
+$taxRevenueManual = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE purpose LIKE '%real property%'
+    FROM monthly_manual_entries 
+    WHERE entry_type = 'Tax Revenue'
 ")->fetch_assoc()['total'] ?? 0;
 
-// Tax on Goods and Services (Internal Revenue Allotment)
-$taxGoodsServices = $conn->query("
+$taxRevenue = $taxRevenueManual;
+
+// Tax on Goods and Services - Manual entries
+$taxGoodsServicesManual = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE purpose LIKE '%internal revenue%'
+    FROM monthly_manual_entries 
+    WHERE entry_type = 'Tax on Goods & Services'
 ")->fetch_assoc()['total'] ?? 0;
 
-// Operating and Services (from payments + all cedula)
+$taxGoodsServices = $taxGoodsServicesManual;
+
+// Operating and Services - Payments with operating_services field + all cedula
 $operatingServicesPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
@@ -63,13 +67,28 @@ $operatingServicesCedula = $conn->query("
     FROM cedula
 ")->fetch_assoc()['total'] ?? 0;
 
-$operatingServices = $operatingServicesPayments + $operatingServicesCedula;
-
-// Other Collections (general payments like clearances)
-$otherCollections = $conn->query("
+$operatingServicesManual = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments
+    FROM monthly_manual_entries 
+    WHERE entry_type = 'Operating & Services'
 ")->fetch_assoc()['total'] ?? 0;
+
+$operatingServices = $operatingServicesPayments + $operatingServicesCedula + $operatingServicesManual;
+
+// Other Collections - Payments without operating_services (like clearances, permits) + manual entries
+$otherCollectionsPayments = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM payments 
+    WHERE operating_services IS NULL OR operating_services = ''
+")->fetch_assoc()['total'] ?? 0;
+
+$otherCollectionsManual = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM monthly_manual_entries 
+    WHERE entry_type = 'Other'
+")->fetch_assoc()['total'] ?? 0;
+
+$otherCollections = $otherCollectionsPayments + $otherCollectionsManual;
 ?>
 <!DOCTYPE html>
 <html lang="en">
