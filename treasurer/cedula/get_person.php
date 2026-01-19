@@ -11,7 +11,7 @@ if (empty($name)) {
     exit;
 }
 
-// Try to find in cedula first (most complete info)
+// pangitaon sa cedula ang first (most complete info)
 $stmt = $conn->prepare("
     SELECT full_name, address, birth_date, age, sex, birth_place, civil_status, occupation, tin, height, weight
     FROM cedula 
