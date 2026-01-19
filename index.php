@@ -50,6 +50,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Barangay Sto. Rosario - Treasurer System Login</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.jpg">
     <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
@@ -106,9 +107,12 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         }
 
         .logo-img {
-            width: 70px;
-            height: 70px;
-            object-fit: contain;
+            width: 120px;
+            height: 120px;
+            object-fit: cover;
+            border-radius: 45%;
+            display: block;
+            overflow: hidden;
             filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
         }
 
@@ -251,8 +255,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <!-- Logo and Branding Section -->
         <div class="logo-container">
             <div class="logo-wrapper">
-                <img src="assets/images/logo1.svg" alt="Municipal Logo" class="logo-img">
-                <img src="assets/images/logo2.svg" alt="Barangay Logo" class="logo-img">
+                <img src="assets/images/logo.jpg" alt="Barangay Logo" class="logo-img">
             </div>
             <div class="branding">
                 <h2>Barangay</h2>
