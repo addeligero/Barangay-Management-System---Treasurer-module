@@ -56,32 +56,37 @@
                             <input type="text" id="payee" name="payee" placeholder="e.g., Uncle Ben Meatshop" required>
                         </div>
 
+                        <div class="form-group">
+                            <label for="gross_amount"><i class="fas fa-money-bill-wave"></i> Total Amount Paid (Gross) *</label>
+                            <input type="number" id="gross_amount" name="gross_amount" step="0.01" min="0" placeholder="e.g., 2062.00" required oninput="computeNet()" style="background: #e8f0ff; font-weight: bold; font-size: 16px;">
+                            <small style="color: #666; display: block; margin-top: 5px;">This is the total amount paid (already includes withholding taxes)</small>
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="gross_amount"><i class="fas fa-money-bill"></i> Gross Amount *</label>
-                                <input type="number" id="gross_amount" name="gross_amount" step="0.01" min="0" placeholder="0.00" required oninput="computeTax()">
+                                <label for="one_percent"><i class="fas fa-percent"></i> 1% Withholding Tax *</label>
+                                <input type="number" id="one_percent" name="one_percent" step="0.01" min="0" placeholder="e.g., 18.41" required oninput="computeNet()">
+                                <small style="color: #666; display: block; margin-top: 5px;">Enter the 1% tax withheld</small>
                             </div>
 
                             <div class="form-group">
-                                <label for="base_amount"><i class="fas fa-calculator"></i> Base Amount *</label>
-                                <input type="number" id="base_amount" name="base_amount" step="0.01" min="0" placeholder="0.00" required oninput="computeTax()">
+                                <label for="five_percent"><i class="fas fa-percent"></i> 5% Withholding Tax *</label>
+                                <input type="number" id="five_percent" name="five_percent" step="0.01" min="0" placeholder="e.g., 92.05" required oninput="computeNet()">
+                                <small style="color: #666; display: block; margin-top: 5px;">Enter the 5% tax withheld</small>
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="one_percent"><i class="fas fa-percent"></i> 1% Withholding Tax</label>
-                                <input type="number" id="one_percent" name="one_percent" step="0.01" readonly style="background: #e8f0ff; font-weight: bold;">
+                                <label for="total_tax"><i class="fas fa-receipt"></i> Total Withholding Tax</label>
+                                <input type="number" id="total_tax" step="0.01" readonly style="background: #1F3A93; color: #ffffff; font-weight: bold; font-size: 16px;">
+                                <small style="color: #666; display: block; margin-top: 5px;">1% + 5% total withheld</small>
                             </div>
 
                             <div class="form-group">
-                                <label for="five_percent"><i class="fas fa-percent"></i> 5% Withholding Tax</label>
-                                <input type="number" id="five_percent" name="five_percent" step="0.01" readonly style="background: #e8f0ff; font-weight: bold;">
-                            </div>
-
-                            <div class="form-group">
-                                <label for="total_tax"><i class="fas fa-dollar-sign"></i> Total Tax</label>
-                                <input type="number" id="total_tax" step="0.01" readonly style="background: #1F3A93; color: #ffffff; font-weight: bold; font-size: 18px;">
+                                <label for="net_amount"><i class="fas fa-hand-holding-usd"></i> Net Amount to Payee</label>
+                                <input type="number" id="net_amount" name="net_amount" step="0.01" readonly style="background: #28a745; color: #ffffff; font-weight: bold; font-size: 18px;">
+                                <small style="color: #666; display: block; margin-top: 5px;">Amount released after withholding</small>
                             </div>
                         </div>
 
@@ -105,16 +110,16 @@
     </div>
 
     <script>
-        function computeTax() {
-            const baseAmount = parseFloat(document.getElementById('base_amount').value) || 0;
+        function computeNet() {
+            const grossAmount = parseFloat(document.getElementById('gross_amount').value) || 0;
+            const onePercent = parseFloat(document.getElementById('one_percent').value) || 0;
+            const fivePercent = parseFloat(document.getElementById('five_percent').value) || 0;
             
-            const onePercent = baseAmount * 0.01;
-            const fivePercent = baseAmount * 0.05;
             const totalTax = onePercent + fivePercent;
+            const netAmount = grossAmount - totalTax;
             
-            document.getElementById('one_percent').value = onePercent.toFixed(2);
-            document.getElementById('five_percent').value = fivePercent.toFixed(2);
             document.getElementById('total_tax').value = totalTax.toFixed(2);
+            document.getElementById('net_amount').value = netAmount.toFixed(2);
         }
     </script>
 </body>

@@ -36,23 +36,40 @@ $recentDisbursements = $conn->query("
     LIMIT 5
 ");
 
-// Get monthly data for chart
-$monthlyData = $conn->query("
-    SELECT 
-        DATE_FORMAT(payment_date, '%b') as month,
-        SUM(amount) as total
-    FROM payments
-    WHERE YEAR(payment_date) = YEAR(CURDATE())
-    GROUP BY MONTH(payment_date)
-    ORDER BY MONTH(payment_date)
-");
+// Get collection categories data for chart
+// Tax Revenue (Real Property Tax)
+$taxRevenue = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM payments 
+    WHERE purpose LIKE '%real property%'
+")->fetch_assoc()['total'] ?? 0;
 
-$months = [];
-$amounts = [];
-while ($row = $monthlyData->fetch_assoc()) {
-    $months[] = $row['month'];
-    $amounts[] = $row['total'];
-}
+// Tax on Goods and Services (Internal Revenue Allotment)
+$taxGoodsServices = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM payments 
+    WHERE purpose LIKE '%internal revenue%'
+")->fetch_assoc()['total'] ?? 0;
+
+// Operating and Services (from payments + all cedula)
+$operatingServicesPayments = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM payments 
+    WHERE operating_services IS NOT NULL AND operating_services != ''
+")->fetch_assoc()['total'] ?? 0;
+
+$operatingServicesCedula = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM cedula
+")->fetch_assoc()['total'] ?? 0;
+
+$operatingServices = $operatingServicesPayments + $operatingServicesCedula;
+
+// Other Collections (general payments like clearances)
+$otherCollections = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total 
+    FROM payments
+")->fetch_assoc()['total'] ?? 0;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -132,9 +149,9 @@ while ($row = $monthlyData->fetch_assoc()) {
                 <!-- Chart Section -->
                 <div class="card">
                     <div class="card-header">
-                        <h3><i class="fas fa-chart-line"></i> Monthly Collections Overview</h3>
+                        <h3><i class="fas fa-chart-bar"></i> Collections by Category</h3>
                     </div>
-                    <canvas id="monthlyChart" height="80"></canvas>
+                    <canvas id="categoryChart" height="80"></canvas>
                 </div>
 
                 <!-- Recent Transactions -->
@@ -216,17 +233,35 @@ while ($row = $monthlyData->fetch_assoc()) {
     </div>
 
     <script>
-        // Monthly Chart
-        const ctx = document.getElementById('monthlyChart').getContext('2d');
+        // Category Chart
+        const ctx = document.getElementById('categoryChart').getContext('2d');
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: <?= json_encode($months) ?> ,
+                labels: ['Tax Revenue', 'Tax on Goods & Services', 'Operating & Services', 'Other Collections'],
                 datasets: [{
-                    label: 'Monthly Collections',
-                    data: <?= json_encode($amounts) ?> ,
-                    backgroundColor: '#1F3A93',
-                    borderColor: '#1a3280',
+                    label: 'Collections by Category',
+                    data: [
+                        <?= $taxRevenue ?>
+                        ,
+                        <?= $taxGoodsServices ?>
+                        ,
+                        <?= $operatingServices ?>
+                        ,
+                        <?= $otherCollections ?>
+                    ],
+                    backgroundColor: [
+                        '#1F3A93',
+                        '#2E5CB8',
+                        '#4A7FCB',
+                        '#6BA3E0'
+                    ],
+                    borderColor: [
+                        '#1a3280',
+                        '#264a9a',
+                        '#3d6cb3',
+                        '#5890c9'
+                    ],
                     borderWidth: 2
                 }]
             },
@@ -245,8 +280,7 @@ while ($row = $monthlyData->fetch_assoc()) {
                 },
                 plugins: {
                     legend: {
-                        display: true,
-                        position: 'top'
+                        display: false
                     },
                     tooltip: {
                         callbacks: {
