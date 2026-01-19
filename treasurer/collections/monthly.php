@@ -250,11 +250,15 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <div style="margin: 20px; overflow-x: auto;">
                         <table style="width: 100%; border-collapse: collapse;">
                             <thead>
-                                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600;">Entry Name</th>
-                                    <th style="padding: 12px; text-align: right; font-weight: 600;">Amount</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600;">Type</th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; width: 100px;">
+                                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #000;">
+                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #000;">Entry
+                                        Name</th>
+                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #000;">Amount
+                                    </th>
+                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #000;">Type
+                                    </th>
+                                    <th
+                                        style="padding: 12px; text-align: center; font-weight: 600; width: 100px; color: #000;">
                                         Action</th>
                                 </tr>
                             </thead>
