@@ -19,6 +19,7 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
+                <img src="../../assets/images/logo.jpg" alt="Barangay Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; border: 3px solid #ffffff;">
                 <h2>BARANGAY STO. ROSARIO</h2>
                 <p>Treasurer Module</p>
             </div>

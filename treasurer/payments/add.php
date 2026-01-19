@@ -22,6 +22,7 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
     <!-- Sidebar -->
     <aside class="sidebar">
       <div class="sidebar-header">
+        <img src="../../assets/images/logo.jpg" alt="Barangay Logo" style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; border: 3px solid #ffffff;">
         <h2>BARANGAY STO. ROSARIO</h2>
         <p>Treasurer Module</p>
       </div>

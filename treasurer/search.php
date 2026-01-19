@@ -322,11 +322,14 @@ if (!empty($searchQuery)) {
         <!-- Sidebar -->
         <aside class="sidebar">
             <div class="sidebar-header">
+                <img src="../assets/images/logo.jpg" alt="Barangay Logo"
+                    style="width: 80px; height: 80px; border-radius: 50%; margin-bottom: 10px; border: 3px solid #ffffff;">
                 <h2>BARANGAY STO. ROSARIO</h2>
                 <p>Treasurer Module</p>
             </div>
             <ul class="sidebar-menu">
                 <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
+                <li><a href="search.php" class="active"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
