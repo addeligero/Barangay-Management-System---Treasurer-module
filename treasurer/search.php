@@ -548,7 +548,7 @@ if (!empty($searchQuery)) {
                 details.style.display = 'grid';
                 button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
                 button.style.background = '#1F3A93';
-                button.style.color = '#1e3a5f';
+                button.style.color = 'white';
             } else {
                 details.style.display = 'none';
                 button.innerHTML = '<i class="fas fa-eye"></i> View Full Details';

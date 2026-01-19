@@ -9,7 +9,6 @@ USE treasurer_management;
 
 -- ============================================================================
 -- 1. USERS TABLE
--- Stores system users (treasurer, staff, admin)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -32,7 +31,7 @@ CREATE TABLE IF NOT EXISTS payments (
     payer_name VARCHAR(150) NOT NULL,
     service_type VARCHAR(100) NOT NULL,
     purpose VARCHAR(255) NOT NULL,
-    operating_services VARCHAR(100),  -- Added for Operating & Services categorization
+    operating_services VARCHAR(100),  
     amount DECIMAL(10, 2) NOT NULL,
     bir_tax DECIMAL(10, 2) DEFAULT 0,
     remarks TEXT,
@@ -43,12 +42,11 @@ CREATE TABLE IF NOT EXISTS payments (
 
 -- ============================================================================
 -- 3. CEDULA TABLE
--- Stores Community Tax Certificate (Cedula) records
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS cedula (
     id INT AUTO_INCREMENT PRIMARY KEY,
     cedula_no VARCHAR(50) NOT NULL,
-    or_number VARCHAR(50),  -- Official Receipt Number
+    or_number VARCHAR(50),  
     issued_date DATE NOT NULL,
     full_name VARCHAR(150) NOT NULL,
     address TEXT NOT NULL,
@@ -62,7 +60,7 @@ CREATE TABLE IF NOT EXISTS cedula (
     height DECIMAL(5, 2),
     weight DECIMAL(5, 2),
     amount DECIMAL(10, 2) NOT NULL,
-    nature_of_collection VARCHAR(100) DEFAULT 'Community Tax',  -- Nature of collection
+    nature_of_collection VARCHAR(100) DEFAULT 'Community Tax',  
     remarks TEXT,
     issued_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
@@ -71,7 +69,6 @@ CREATE TABLE IF NOT EXISTS cedula (
 
 -- ============================================================================
 -- 4. BIR RECORDS TABLE
--- Stores Bureau of Internal Revenue tax records
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS bir_records (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -91,7 +88,6 @@ CREATE TABLE IF NOT EXISTS bir_records (
 
 -- ============================================================================
 -- 5. DISBURSEMENTS TABLE
--- Stores disbursement and expense records
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS disbursements (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -114,7 +110,6 @@ CREATE TABLE IF NOT EXISTS disbursements (
 -- ============================================================================
 -- 6. MONTHLY MANUAL ENTRIES TABLE
 -- Stores manually inputted values for monthly collections report
--- (e.g., Real Property Tax, Internal Revenue Allotment from external sources)
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS monthly_manual_entries (
     id INT AUTO_INCREMENT PRIMARY KEY,
@@ -122,7 +117,7 @@ CREATE TABLE IF NOT EXISTS monthly_manual_entries (
     year INT NOT NULL,
     entry_name VARCHAR(200) NOT NULL,
     amount DECIMAL(15, 2) NOT NULL,
-    entry_type VARCHAR(100),  -- Tax Revenue, Tax on Goods & Services, Operating & Services, Other
+    entry_type VARCHAR(100), 
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     UNIQUE KEY unique_entry (month, year, entry_name)
 );

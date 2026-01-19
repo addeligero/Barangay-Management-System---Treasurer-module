@@ -90,7 +90,7 @@ while ($row = $monthlyData->fetch_assoc()) {
         <main class="main-content">
             <div class="content-header">
                 <h1><i class="fas fa-tachometer-alt"></i> Treasurer Dashboard</h1>
-                <p>Welcome,
+                <p class="text-white">Welcome,
                     <?= htmlspecialchars($_SESSION['name']) ?>!
                 </p>
             </div>
