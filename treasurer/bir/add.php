@@ -71,17 +71,17 @@
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="one_percent"><i class="fas fa-percent"></i> 1% Withholding Tax</label>
-                                <input type="number" id="one_percent" name="one_percent" step="0.01" readonly style="background: #fffbea; font-weight: bold;">
+                                <input type="number" id="one_percent" name="one_percent" step="0.01" readonly style="background: #e8f0ff; font-weight: bold;">
                             </div>
 
                             <div class="form-group">
                                 <label for="five_percent"><i class="fas fa-percent"></i> 5% Withholding Tax</label>
-                                <input type="number" id="five_percent" name="five_percent" step="0.01" readonly style="background: #fffbea; font-weight: bold;">
+                                <input type="number" id="five_percent" name="five_percent" step="0.01" readonly style="background: #e8f0ff; font-weight: bold;">
                             </div>
 
                             <div class="form-group">
                                 <label for="total_tax"><i class="fas fa-dollar-sign"></i> Total Tax</label>
-                                <input type="number" id="total_tax" step="0.01" readonly style="background: #ffd700; font-weight: bold; font-size: 18px;">
+                                <input type="number" id="total_tax" step="0.01" readonly style="background: #1F3A93; color: #ffffff; font-weight: bold; font-size: 18px;">
                             </div>
                         </div>
 

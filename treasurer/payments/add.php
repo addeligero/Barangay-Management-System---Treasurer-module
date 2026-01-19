@@ -118,7 +118,7 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
               <div class="form-group">
                 <label for="total"><i class="fas fa-calculator"></i> Total Amount</label>
                 <input type="number" id="total" name="total" step="0.01" readonly
-                  style="font-weight: bold; font-size: 18px; background: #fffbea;">
+                  style="font-weight: bold; font-size: 18px; background: #e8f0ff;">
               </div>
             </div>
 

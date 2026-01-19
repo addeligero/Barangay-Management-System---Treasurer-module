@@ -225,8 +225,8 @@ while ($row = $monthlyData->fetch_assoc()) {
                 datasets: [{
                     label: 'Monthly Collections',
                     data: <?= json_encode($amounts) ?> ,
-                    backgroundColor: '#FFD700',
-                    borderColor: '#FFC700',
+                    backgroundColor: '#1F3A93',
+                    borderColor: '#1a3280',
                     borderWidth: 2
                 }]
             },

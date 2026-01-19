@@ -1,8 +1,8 @@
 /* Barangay Sto. Rosario Treasurer System - Main Stylesheet */
 
 :root {
-  --primary-yellow: #ffd700;
-  --dark-yellow: #ffc700;
+  --primary-yellow: #1f3a93;
+  --dark-yellow: #1a3280;
   --primary-blue: #1e3a5f;
   --light-blue: #2c5282;
   --text-dark: #2d3748;
@@ -39,7 +39,7 @@ body {
 .header-banner h1 {
   font-size: 20px;
   font-weight: 700;
-  color: var(--text-dark);
+  color: var(--white);
   letter-spacing: 1px;
   text-transform: uppercase;
 }
@@ -139,7 +139,7 @@ body {
   outline: none;
   border-color: var(--primary-yellow);
   background: var(--white);
-  box-shadow: 0 0 0 3px rgba(255, 215, 0, 0.1);
+  box-shadow: 0 0 0 3px rgba(31, 58, 147, 0.1);
 }
 
 /* Buttons */
@@ -157,14 +157,14 @@ body {
 
 .btn-primary {
   background: var(--dark-yellow);
-  color: var(--text-dark);
+  color: var(--white);
   width: 100%;
 }
 
 .btn-primary:hover {
   background: var(--primary-yellow);
   transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(255, 215, 0, 0.3);
+  box-shadow: 0 5px 15px rgba(31, 58, 147, 0.3);
 }
 
 .btn-success {
@@ -237,14 +237,14 @@ body {
 }
 
 .sidebar-header h2 {
-  color: var(--primary-blue);
+  color: var(--white);
   font-size: 18px;
   font-weight: 700;
   margin-bottom: 5px;
 }
 
 .sidebar-header p {
-  color: var(--text-dark);
+  color: var(--white);
   font-size: 12px;
   font-weight: 600;
 }
@@ -269,7 +269,7 @@ body {
 
 .sidebar-menu a:hover,
 .sidebar-menu a.active {
-  background: rgba(255, 215, 0, 0.1);
+  background: rgba(31, 58, 147, 0.1);
   border-left-color: var(--primary-yellow);
   padding-left: 30px;
 }
@@ -292,7 +292,7 @@ body {
 }
 
 .content-header h1 {
-  color: var(--primary-blue);
+  color: var(--white);
   font-size: 28px;
   font-weight: 700;
 }
@@ -384,7 +384,7 @@ thead th {
   padding: 15px;
   text-align: left;
   font-weight: 600;
-  color: var(--text-dark);
+  color: var(--white);
   text-transform: uppercase;
   font-size: 13px;
   letter-spacing: 0.5px;
@@ -538,6 +538,7 @@ tbody td {
 .pagination a:hover {
   background: var(--primary-yellow);
   border-color: var(--primary-yellow);
+  color: var(--white);
 }
 
 .pagination .active {

@@ -173,8 +173,8 @@ if (!empty($searchQuery)) {
         }
 
         .search-box button:hover {
-            background: #FFD700;
-            color: #1e3a5f;
+            background: #1F3A93;
+            color: #ffffff;
         }
 
         .result-card {
@@ -183,7 +183,7 @@ if (!empty($searchQuery)) {
             border-radius: 10px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
             margin-bottom: 20px;
-            border-left: 5px solid #FFD700;
+            border-left: 5px solid #1F3A93;
         }
 
         .result-header {
@@ -547,7 +547,7 @@ if (!empty($searchQuery)) {
             if (details.style.display === 'none') {
                 details.style.display = 'grid';
                 button.innerHTML = '<i class="fas fa-eye-slash"></i> Hide Details';
-                button.style.background = '#FFD700';
+                button.style.background = '#1F3A93';
                 button.style.color = '#1e3a5f';
             } else {
                 details.style.display = 'none';

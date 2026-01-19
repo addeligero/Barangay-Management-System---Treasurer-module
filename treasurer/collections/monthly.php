@@ -188,11 +188,11 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
         }
 
         .total-row td {
-            background: #fffbea;
+            background: #1F3A93;
             font-size: 18px;
             padding: 15px 10px !important;
-            border-top: 2px solid #ffd700;
-            color: #1e3a5f;
+            border-top: 2px solid #1F3A93;
+            color: #ffffff;
         }
     </style>
 </head>
@@ -394,7 +394,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <!-- Tax Revenue Section -->
                     <div class="report-section">
                         <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #ffd700;">
+                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
                             <i class="fas fa-coins"></i> TAX REVENUE
                         </h4>
                         <table class="report-table">
@@ -424,7 +424,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <!-- Tax on Goods and Services -->
                     <div class="report-section">
                         <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #ffd700;">
+                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
                             <i class="fas fa-shopping-cart"></i> TAX ON GOODS AND SERVICES
                         </h4>
                         <table class="report-table">
@@ -454,7 +454,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <!-- Operating and Services -->
                     <div class="report-section">
                         <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #ffd700;">
+                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
                             <i class="fas fa-cogs"></i> OPERATING AND SERVICES
                         </h4>
                         <table class="report-table">
@@ -489,7 +489,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <!-- Other Collections -->
                     <div class="report-section">
                         <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #ffd700;">
+                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
                             <i class="fas fa-receipt"></i> OTHER COLLECTIONS
                         </h4>
                         <table class="report-table">
@@ -520,11 +520,11 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <div class="report-section" style="margin-top: 40px;">
                         <table class="report-table">
                             <tbody>
-                                <tr style="background: #ffd700; font-size: 20px;">
-                                    <td style="padding: 20px 10px !important; color: #1e3a5f;">
+                                <tr style="background: #1F3A93; font-size: 20px;">
+                                    <td style="padding: 20px 10px !important; color: #ffffff;">
                                         <i class="fas fa-calculator"></i> TOTAL MONTHLY COLLECTION
                                     </td>
-                                    <td style="padding: 20px 10px !important; color: #1e3a5f;">
+                                    <td style="padding: 20px 10px !important; color: #ffffff;">
                                         ₱<?= number_format($totalCollections, 2) ?>
                                     </td>
                                 </tr>
