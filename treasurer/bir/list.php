@@ -65,7 +65,7 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                                     <th>TIN</th>
                                     <th>Payee</th>
                                     <th>Gross Amount</th>
-                                    <th>Base Amount</th>
+                                    <th>Net Amount</th>
                                     <th>1%</th>
                                     <th>5%</th>
                                     <th>Total Tax</th>
@@ -77,9 +77,9 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                                 <?php while ($row = $result->fetch_assoc()): ?>
                                 <?php
                                             $grossAmount = $row['gross_amount'];
-                                    $baseAmount = $row['base_amount'];
                                     $onePercent = $row['one_percent'];
                                     $fivePercent = $row['five_percent'];
+                                    $netAmount = $row['net_amount'];
                                     $totalTax = $onePercent + $fivePercent;
                                     ?>
                                 <tr>
@@ -91,7 +91,7 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                                     </td>
                                     <td>₱<?= number_format($grossAmount, 2) ?>
                                     </td>
-                                    <td>₱<?= number_format($baseAmount, 2) ?>
+                                    <td>₱<?= number_format($netAmount, 2) ?>
                                     </td>
                                     <td>₱<?= number_format($onePercent, 2) ?>
                                     </td>
