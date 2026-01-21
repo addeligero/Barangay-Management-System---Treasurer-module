@@ -129,8 +129,8 @@ CREATE TABLE IF NOT EXISTS monthly_manual_entries (
 
 -- Insert default treasurer user
 INSERT INTO users (username, password, name, role) VALUES
-('treasurer', '5f4dcc3b5aa765d61d8327deb882cf99', 'Barangay Treasurer', 'treasurer')
-ON DUPLICATE KEY UPDATE username = username;
+('treasurer', MD5('treasurer123'), 'Barangay Treasurer', 'treasurer')
+ON DUPLICATE KEY UPDATE password = MD5('treasurer123');
 
 -- ============================================================================
 -- SAMPLE PAYMENTS DATA
