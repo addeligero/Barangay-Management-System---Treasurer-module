@@ -47,6 +47,12 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
                     <i class="fas fa-check-circle"></i> Disbursement recorded successfully!
                 </div>
                 <?php endif; ?>
+                
+                <?php if (isset($_GET['deleted'])): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> Disbursement record deleted successfully!
+                </div>
+                <?php endif; ?>
 
                 <div class="card">
                     <div class="card-header"

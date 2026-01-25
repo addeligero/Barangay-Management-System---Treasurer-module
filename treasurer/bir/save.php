@@ -2,6 +2,20 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
+// Handle DELETE request
+if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
+    $id = intval($_GET['id']);
+    $stmt = $conn->prepare("DELETE FROM bir_records WHERE id = ?");
+    $stmt->bind_param("i", $id);
+    
+    if ($stmt->execute()) {
+        header("Location: list.php?deleted=1");
+    } else {
+        header("Location: list.php?error=1");
+    }
+    exit();
+}
+
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tin = $_POST['tin'];
     $payee = $_POST['payee'];

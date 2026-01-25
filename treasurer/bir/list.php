@@ -48,6 +48,12 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                 </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['deleted'])): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> BIR record deleted successfully!
+                </div>
+                <?php endif; ?>
+
                 <div class="card">
                     <div class="card-header"
                         style="display: flex; justify-content: space-between; align-items: center;">
