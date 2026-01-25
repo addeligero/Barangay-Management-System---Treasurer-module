@@ -129,16 +129,131 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
         </main>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-exclamation-triangle" style="color: #dc3545; font-size: 48px;"></i>
+                <h2>Confirm Delete</h2>
+            </div>
+            <div class="modal-body">
+                <p><strong>Warning:</strong> You are about to permanently delete this disbursement record.</p>
+                <p id="deleteDetails"></p>
+                <p style="color: #dc3545; font-weight: bold;">This action cannot be undone!</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Delete Permanently
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            z-index: 9999;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+            animation: slideDown 0.3s ease;
+        }
+
+        .modal-header {
+            padding: 30px;
+            text-align: center;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .modal-header h2 {
+            margin: 15px 0 0 0;
+            color: #333;
+            font-size: 24px;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-body p {
+            margin: 10px 0;
+            line-height: 1.6;
+        }
+
+        .modal-footer {
+            padding: 20px 30px;
+            display: flex;
+            justify-content: flex-end;
+            gap: 10px;
+            border-top: 2px solid #f0f0f0;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        @keyframes slideDown {
+            from { transform: translateY(-50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+    </style>
+
     <script>
+        let deleteId = null;
+
         function viewDisbursement(id) {
             alert('View disbursement ID: ' + id);
         }
 
         function deleteDisbursement(id) {
-            if (confirm('Are you sure you want to delete this disbursement record?')) {
-                window.location.href = 'save.php?action=delete&id=' + id;
-            }
+            deleteId = id;
+            const row = event.target.closest('tr');
+            const checkNo = row.cells[1].textContent.trim();
+            const payee = row.cells[2].textContent.trim();
+            const amount = row.cells[4].textContent.trim();
+            
+            document.getElementById('deleteDetails').innerHTML = 
+                `<strong>Check No:</strong> ${checkNo}<br>` +
+                `<strong>Payee:</strong> ${payee}<br>` +
+                `<strong>Amount:</strong> ${amount}`;
+            
+            document.getElementById('deleteModal').style.display = 'flex';
         }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteId = null;
+        }
+
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            if (deleteId) {
+                window.location.href = 'save.php?action=delete&id=' + deleteId;
+            }
+        });
+
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDeleteModal();
+            }
+        });
     </script>
 </body>
 
