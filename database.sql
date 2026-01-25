@@ -132,6 +132,11 @@ INSERT INTO users (username, password, name, role) VALUES
 ('treasurer', MD5('treasurer123'), 'Barangay Treasurer', 'treasurer')
 ON DUPLICATE KEY UPDATE password = MD5('treasurer123');
 
+-- Insert default admin user (same access as treasurer)
+INSERT INTO users (username, password, name, role) VALUES
+('admin', MD5('admin123'), 'System Administrator', 'admin')
+ON DUPLICATE KEY UPDATE password = MD5('admin123');
+
 -- ============================================================================
 -- SAMPLE PAYMENTS DATA
 -- ============================================================================

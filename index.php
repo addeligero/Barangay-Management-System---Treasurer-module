@@ -25,7 +25,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             $_SESSION['role'] = $user['role'];
 
             // role-based redirect
-            if ($user['role'] === 'treasurer') {
+            if ($user['role'] === 'treasurer' || $user['role'] === 'admin') {
                 header("Location: treasurer/dashboard.php");
                 exit;
             } else {

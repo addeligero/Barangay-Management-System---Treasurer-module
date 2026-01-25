@@ -33,6 +33,7 @@ $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
                 <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>

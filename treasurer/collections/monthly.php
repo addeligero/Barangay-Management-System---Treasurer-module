@@ -214,6 +214,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                 <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="monthly.php" class="active"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
