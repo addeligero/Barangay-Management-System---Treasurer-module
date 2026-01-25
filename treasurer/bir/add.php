@@ -23,6 +23,7 @@
                 <li><a href="list.php" class="active"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
                 <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -59,22 +60,22 @@
                         </div>
 
                         <div class="form-group">
-                            <label for="gross_amount"><i class="fas fa-money-bill-wave"></i> Total Amount Paid (Gross) *</label>
-                            <input type="number" id="gross_amount" name="gross_amount" step="0.01" min="0" placeholder="e.g., 2062.00" required oninput="computeNet()" style="background: #e8f0ff; font-weight: bold; font-size: 16px;">
-                            <small style="color: #666; display: block; margin-top: 5px;">This is the total amount paid (already includes withholding taxes)</small>
+                            <label for="gross_amount"><i class="fas fa-money-bill-wave"></i> Gross Amount (Before Tax) *</label>
+                            <input type="number" id="gross_amount" name="gross_amount" step="0.01" min="0" placeholder="e.g., 2000.00" required oninput="computeNet()" style="background: #e8f0ff; font-weight: bold; font-size: 16px;">
+                            <small style="color: #666; display: block; margin-top: 5px;">Enter the amount before withholding tax deduction</small>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="one_percent"><i class="fas fa-percent"></i> 1% Withholding Tax *</label>
-                                <input type="number" id="one_percent" name="one_percent" step="0.01" min="0" placeholder="e.g., 18.41" required oninput="computeNet()">
-                                <small style="color: #666; display: block; margin-top: 5px;">Enter the 1% tax withheld</small>
+                                <label for="one_percent"><i class="fas fa-percent"></i> 1% Withholding Tax</label>
+                                <input type="number" id="one_percent" name="one_percent" step="0.01" min="0" readonly style="background: #f0f4f8;">
+                                <small style="color: #666; display: block; margin-top: 5px;">Auto-calculated (1% of gross)</small>
                             </div>
 
                             <div class="form-group">
-                                <label for="five_percent"><i class="fas fa-percent"></i> 5% Withholding Tax *</label>
-                                <input type="number" id="five_percent" name="five_percent" step="0.01" min="0" placeholder="e.g., 92.05" required oninput="computeNet()">
-                                <small style="color: #666; display: block; margin-top: 5px;">Enter the 5% tax withheld</small>
+                                <label for="five_percent"><i class="fas fa-percent"></i> 5% Withholding Tax</label>
+                                <input type="number" id="five_percent" name="five_percent" step="0.01" min="0" readonly style="background: #f0f4f8;">
+                                <small style="color: #666; display: block; margin-top: 5px;">Auto-calculated (5% of gross)</small>
                             </div>
                         </div>
 
@@ -114,12 +115,16 @@
     <script>
         function computeNet() {
             const grossAmount = parseFloat(document.getElementById('gross_amount').value) || 0;
-            const onePercent = parseFloat(document.getElementById('one_percent').value) || 0;
-            const fivePercent = parseFloat(document.getElementById('five_percent').value) || 0;
+            
+            // Auto-calculate 1% and 5% of gross amount
+            const onePercent = grossAmount * 0.01;
+            const fivePercent = grossAmount * 0.05;
             
             const totalTax = onePercent + fivePercent;
             const netAmount = grossAmount - totalTax;
             
+            document.getElementById('one_percent').value = onePercent.toFixed(2);
+            document.getElementById('five_percent').value = fivePercent.toFixed(2);
             document.getElementById('total_tax').value = totalTax.toFixed(2);
             document.getElementById('net_amount').value = netAmount.toFixed(2);
         }

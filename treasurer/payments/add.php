@@ -35,6 +35,7 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
         <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
         <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
         <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+        <li><a href="../collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
         <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
         <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
       </ul>
@@ -57,7 +58,8 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
               <div class="form-group">
                 <label for="receipt_no"><i class="fas fa-receipt"></i> Receipt Number *</label>
                 <input type="text" id="receipt_no" name="receipt_no"
-                  value="<?= $nextReceipt ?>" readonly required>
+                  value="<?= $nextReceipt ?>" required>
+                <small style="color: #666; font-size: 12px;">You can edit this number if needed</small>
               </div>
 
               <div class="form-group">

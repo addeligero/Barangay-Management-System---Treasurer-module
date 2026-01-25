@@ -214,6 +214,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                 <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="monthly.php" class="active"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
                 <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -345,8 +346,15 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 
                 <!-- Print Header -->
                 <div class="print-header">
-                    <h2 style="color: #1e3a5f; margin-bottom: 5px;">BARANGAY STO. ROSARIO</h2>
-                    <p style="color: #666;">Magallanes, Agusan del Norte</p>
+                    <div
+                        style="display: flex; align-items: center; justify-content: center; gap: 20px; margin-bottom: 20px;">
+                        <img src="../../assets/images/logo.jpg" alt="Barangay Logo"
+                            style="width: 100px; height: 100px; border-radius: 50%;">
+                        <div>
+                            <h2 style="color: #1e3a5f; margin-bottom: 5px;">BARANGAY STO. ROSARIO</h2>
+                            <p style="color: #666;">Magallanes, Agusan del Norte</p>
+                        </div>
+                    </div>
                     <h3 style="margin-top: 20px; color: #1e3a5f;">Statement of Itemized Monthly Collection</h3>
                     <p style="color: #666; font-size: 16px;">
                         <?= $monthName ?>
