@@ -101,10 +101,7 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn btn-sm btn-secondary"
-                                                onclick="viewBIR(<?= $row['id'] ?>)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
+
                                             <button class="btn btn-sm btn-danger"
                                                 onclick="deleteBIR(<?= $row['id'] ?>)">
                                                 <i class="fas fa-trash"></i>
