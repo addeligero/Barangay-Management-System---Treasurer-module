@@ -97,10 +97,7 @@ $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn btn-sm btn-secondary"
-                                                onclick="viewPayment(<?= $row['id'] ?>)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
+
                                             <button class="btn btn-sm btn-danger"
                                                 onclick="deletePayment(<?= $row['id'] ?>)">
                                                 <i class="fas fa-trash"></i>

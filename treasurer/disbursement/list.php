@@ -47,7 +47,7 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
                     <i class="fas fa-check-circle"></i> Disbursement recorded successfully!
                 </div>
                 <?php endif; ?>
-                
+
                 <?php if (isset($_GET['deleted'])): ?>
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i> Disbursement record deleted successfully!
@@ -107,10 +107,7 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
                                     </td>
                                     <td>
                                         <div class="action-buttons">
-                                            <button class="btn btn-sm btn-secondary"
-                                                onclick="viewDisbursement(<?= $row['id'] ?>)">
-                                                <i class="fas fa-eye"></i>
-                                            </button>
+
                                             <button class="btn btn-sm btn-danger"
                                                 onclick="deleteDisbursement(<?= $row['id'] ?>)">
                                                 <i class="fas fa-trash"></i>

@@ -227,7 +227,7 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
         let deleteId = null;
 
         function viewCedula(id) {
-            alert('Print cedula ID: ' + id);
+            window.open('print.php?id=' + id, '_blank');
         }
 
         function deleteCedula(id) {
