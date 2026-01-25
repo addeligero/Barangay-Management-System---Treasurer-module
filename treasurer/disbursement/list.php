@@ -206,13 +206,25 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
     </style>
 
@@ -229,12 +241,12 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
             const checkNo = row.cells[1].textContent.trim();
             const payee = row.cells[2].textContent.trim();
             const amount = row.cells[4].textContent.trim();
-            
-            document.getElementById('deleteDetails').innerHTML = 
+
+            document.getElementById('deleteDetails').innerHTML =
                 `<strong>Check No:</strong> ${checkNo}<br>` +
                 `<strong>Payee:</strong> ${payee}<br>` +
                 `<strong>Amount:</strong> ${amount}`;
-            
+
             document.getElementById('deleteModal').style.display = 'flex';
         }
 

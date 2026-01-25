@@ -203,13 +203,25 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
     </style>
 
@@ -226,12 +238,12 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
             const tin = row.cells[1].textContent.trim();
             const payee = row.cells[2].textContent.trim();
             const totalTax = row.cells[7].textContent.trim();
-            
-            document.getElementById('deleteDetails').innerHTML = 
+
+            document.getElementById('deleteDetails').innerHTML =
                 `<strong>TIN:</strong> ${tin}<br>` +
                 `<strong>Payee:</strong> ${payee}<br>` +
                 `<strong>Total Tax:</strong> ${totalTax}`;
-            
+
             document.getElementById('deleteModal').style.display = 'flex';
         }
 

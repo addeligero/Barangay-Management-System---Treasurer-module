@@ -201,13 +201,25 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
         }
 
         @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
+            from {
+                opacity: 0;
+            }
+
+            to {
+                opacity: 1;
+            }
         }
 
         @keyframes slideDown {
-            from { transform: translateY(-50px); opacity: 0; }
-            to { transform: translateY(0); opacity: 1; }
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
         }
     </style>
 
@@ -225,12 +237,12 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
             const cedulaNo = row.cells[1].textContent.trim();
             const fullName = row.cells[2].textContent.trim();
             const amount = row.cells[7].textContent.trim();
-            
-            document.getElementById('deleteDetails').innerHTML = 
+
+            document.getElementById('deleteDetails').innerHTML =
                 `<strong>Cedula Number:</strong> ${cedulaNo}<br>` +
                 `<strong>Name:</strong> ${fullName}<br>` +
                 `<strong>Amount:</strong> ${amount}`;
-            
+
             document.getElementById('deleteModal').style.display = 'flex';
         }
 
