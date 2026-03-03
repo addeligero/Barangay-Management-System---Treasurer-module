@@ -97,8 +97,14 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
 
               <div class="form-group">
                 <label for="operating_services"><i class="fas fa-cogs"></i> Operating and Services</label>
-                <input type="text" id="operating_services" name="operating_services"
-                  placeholder="e.g., Water, Electricity, Supplies">
+                <select id="operating_services" name="operating_services">
+                  <option value="">-- Select --</option>
+                  <option value="Garbage">Garbage</option>
+                  <option value="Donation">Donation</option>
+                  <option value="Fines">Fines</option>
+                  <option value="Brgy. Clearance">Brgy. Clearance</option>
+                  <option value="Res. Cert.">Res. Cert.</option>
+                </select>
               </div>
 
               <div class="form-group">
@@ -116,7 +122,7 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
 
               <div class="form-group">
                 <label for="bir_tax"><i class="fas fa-percent"></i> BIR Tax/Fee *</label>
-                <input type="number" id="bir_tax" name="bir_tax" step="0.01" min="0" value="0" placeholder="0.00"
+                <input type="number" id="bir_tax" name="bir_tax" step="0.01" min="0" value="30" placeholder="0.00"
                   required>
               </div>
 

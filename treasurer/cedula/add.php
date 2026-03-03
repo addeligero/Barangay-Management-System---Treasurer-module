@@ -132,6 +132,15 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                     <option value="Separated">Separated</option>
                                 </select>
                             </div>
+
+                            <div class="form-group">
+                                <label for="citizenship"><i class="fas fa-flag"></i> Citizenship *</label>
+                                <select id="citizenship" name="citizenship" required>
+                                    <option value="Filipino">Filipino</option>
+                                    <option value="Dual Citizen">Dual Citizen</option>
+                                    <option value="Foreign National">Foreign National</option>
+                                </select>
+                            </div>
                         </div>
 
                         <div class="form-row">
@@ -168,8 +177,17 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                             </div>
 
                             <div class="form-group">
+                                <label for="annual_income"><i class="fas fa-coins"></i> Annual Income (PHP)</label>
+                                <input type="number" id="annual_income" name="annual_income" step="0.01" min="0"
+                                    placeholder="e.g., 50000" oninput="calculateAmount()">
+                                <small style="color:#666;">Formula: Income &divide; 1,000 = Amount to Pay</small>
+                            </div>
+
+                            <div class="form-group">
                                 <label for="amount"><i class="fas fa-peso-sign"></i> Amount *</label>
-                                <input type="number" id="amount" name="amount" step="0.01" value="50.00" required>
+                                <input type="number" id="amount" name="amount" step="0.01" value="5.00" required
+                                    readonly style="background:#e8f0ff; font-weight:bold; font-size:16px;">
+                                <small style="color:#666;">Auto-calculated from income (min &#8369;5.00)</small>
                             </div>
                         </div>
 
@@ -194,6 +212,12 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
     </div>
 
     <script>
+        function calculateAmount() {
+            const income = parseFloat(document.getElementById('annual_income').value) || 0;
+            const computed = income / 1000;
+            document.getElementById('amount').value = (computed > 0 ? computed : 5).toFixed(2);
+        }
+
         function calculateAge() {
             const birthDate = new Date(document.getElementById('birth_date').value);
             const today = new Date();

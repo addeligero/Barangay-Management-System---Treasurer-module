@@ -81,10 +81,62 @@
                                 <label for="payroll"><i class="fas fa-users"></i> Payroll</label>
                                 <input type="text" id="payroll" name="payroll" placeholder="Enter payroll details (optional)">
                             </div>
+                        </div>
 
-                            <div class="form-group">
-                                <label for="bir"><i class="fas fa-percent"></i> BIR</label>
-                                <input type="text" id="bir" name="bir" placeholder="BIR details (optional)">
+                        <!-- BIR Percentage Computation (same as BIR add form) -->
+                        <div class="card" style="border:1px solid #e0e0e0; padding:20px; border-radius:8px; margin-bottom:20px; background:#fafbff;">
+                            <div class="card-header" style="margin-bottom:15px;">
+                                <h4 style="margin:0; color:#1e3a5f;"><i class="fas fa-percent"></i> BIR Percentage Computation</h4>
+                                <small style="color:#666;">Auto-computes withholding tax; pre-filled from disbursement amount</small>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="bir_vat_type"><i class="fas fa-tags"></i> VAT Type</label>
+                                    <select id="bir_vat_type" name="bir_vat_type" onchange="computeBIR()" style="font-weight:bold; font-size:15px;">
+                                        <option value="Non-VAT">Non-VAT (gross × 5%)</option>
+                                        <option value="Reg. VAT">Reg. VAT (gross ÷ 1.12 × 6%)</option>
+                                    </select>
+                                    <small style="color:#666; display:block; margin-top:4px;">Non-VAT: gross × 5% &nbsp;|&nbsp; Reg. VAT: (gross ÷ 1.12) × 6% &rarr; separated into 5% VAT + 1% EWT</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label for="bir_gross"><i class="fas fa-money-bill-wave"></i> BIR Gross Amount</label>
+                                    <input type="number" id="bir_gross" step="0.01" min="0" placeholder="0.00" oninput="computeBIR()" style="background:#e8f0ff;">
+                                    <small style="color:#666;">Pre-filled from disbursement amount; edit if different</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label id="lbl_bir_1pct"><i class="fas fa-percent"></i> 1% Expanded Withholding Tax</label>
+                                    <input type="number" id="bir_one_pct" step="0.01" readonly style="background:#f0f4f8;">
+                                    <small id="hint_bir_1pct" style="color:#666; display:block; margin-top:4px;">Auto-calculated (1% of base)</small>
+                                </div>
+
+                                <div class="form-group">
+                                    <label id="lbl_bir_5pct"><i class="fas fa-percent"></i> 5% Withholding Tax</label>
+                                    <input type="number" id="bir_five_pct" step="0.01" readonly style="background:#f0f4f8;">
+                                    <small id="hint_bir_5pct" style="color:#666; display:block; margin-top:4px;">Auto-calculated (5% of gross)</small>
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label><i class="fas fa-receipt"></i> Total Withholding Tax</label>
+                                    <input type="number" id="bir_total_display" step="0.01" readonly
+                                        style="background:#1F3A93; color:#fff; font-weight:bold; font-size:16px;">
+                                    <small style="color:#666; display:block; margin-top:4px;">1% + 5% total withheld</small>
+                                    <!-- hidden field submitted with the form -->
+                                    <input type="hidden" id="bir" name="bir">
+                                </div>
+
+                                <div class="form-group">
+                                    <label><i class="fas fa-hand-holding-usd"></i> Net Amount to Payee</label>
+                                    <input type="number" id="bir_net_amount" step="0.01" readonly
+                                        style="background:#28a745; color:#fff; font-weight:bold; font-size:18px;">
+                                    <small style="color:#666; display:block; margin-top:4px;">Amount released after withholding</small>
+                                </div>
                             </div>
                         </div>
 
@@ -119,3 +171,45 @@
     </div>
 </body>
 </html>
+
+<script>
+    function computeBIR() {
+        const gross = parseFloat(document.getElementById('bir_gross').value) || 0;
+        const vatType = document.getElementById('bir_vat_type').value;
+        let oneP = 0, fiveP = 0;
+
+        if (vatType === 'Reg. VAT') {
+            // Reg. VAT: total withholding = (gross ÷ 1.12) × 6%
+            // That 6% is composed of 5% VAT withholding + 1% EWT — separate them:
+            const base = gross / 1.12;
+            oneP  = base * 0.01;   // 1% EWT  (separated from the 6%)
+            fiveP = base * 0.05;   // 5% VAT  (the remaining 5% of the 6%)
+            document.getElementById('lbl_bir_1pct').innerHTML  = '<i class="fas fa-percent"></i> 1% Expanded Withholding Tax <small style="color:#e74c3c">(separated from 6%)</small>';
+            document.getElementById('hint_bir_1pct').textContent = 'Auto-calculated: (gross ÷ 1.12) × 1%  [1% portion of the 6%]';
+            document.getElementById('lbl_bir_5pct').innerHTML  = '<i class="fas fa-percent"></i> 5% VAT Withholding <small style="color:#e74c3c">(separated from 6%)</small>';
+            document.getElementById('hint_bir_5pct').textContent = 'Auto-calculated: (gross ÷ 1.12) × 5%  [5% portion of the 6%]';
+        } else {
+            // Non-VAT: gross × 5%, 1% = 0
+            fiveP = gross * 0.05;
+            oneP  = 0;
+            document.getElementById('lbl_bir_1pct').innerHTML  = '<i class="fas fa-percent"></i> 1% Withholding Tax';
+            document.getElementById('hint_bir_1pct').textContent = 'N/A for Non-VAT (set to 0)';
+            document.getElementById('lbl_bir_5pct').innerHTML  = '<i class="fas fa-percent"></i> 5% Withholding Tax';
+            document.getElementById('hint_bir_5pct').textContent = 'Auto-calculated: gross × 5%';
+        }
+
+        const total = oneP + fiveP;   // = base×0.06 for Reg.VAT, gross×0.05 for Non-VAT
+        const net   = gross - total;
+        document.getElementById('bir_one_pct').value       = oneP.toFixed(2);
+        document.getElementById('bir_five_pct').value      = fiveP.toFixed(2);
+        document.getElementById('bir_total_display').value = total.toFixed(2);
+        document.getElementById('bir').value               = total.toFixed(2);
+        document.getElementById('bir_net_amount').value    = net.toFixed(2);
+    }
+
+    // Pre-fill BIR gross from disbursement amount on input
+    document.getElementById('amount').addEventListener('input', function () {
+        document.getElementById('bir_gross').value = this.value;
+        computeBIR();
+    });
+</script>

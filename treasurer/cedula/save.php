@@ -16,12 +16,30 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmt = $conn->prepare("
         INSERT INTO cedula
-        (cedula_no, or_number, full_name, address, birth_date, age, sex, birth_place, civil_status, occupation, tin, height, weight, amount, nature_of_collection, issued_date, remarks, issued_by)
-        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+        (cedula_no, or_number, full_name, address, birth_date, age, sex, birth_place, civil_status, citizenship, occupation, tin, height, weight, annual_income, amount, nature_of_collection, issued_date, remarks, issued_by)
+        VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
     ");
 
+    $annual_income = isset($_POST['annual_income']) ? floatval($_POST['annual_income']) : 0;
+    $height = isset($_POST['height']) && $_POST['height'] !== '' ? floatval($_POST['height']) : 0;
+    $weight = isset($_POST['weight']) && $_POST['weight'] !== '' ? floatval($_POST['weight']) : 0;
+    $amount = floatval($_POST['amount']);
+
+    // Safely resolve issued_by — use NULL if session user doesn't exist in users table
+    $issued_by = null;
+    if (!empty($_SESSION['user_id'])) {
+        $userCheck = $conn->prepare("SELECT id FROM users WHERE id = ?");
+        $userCheck->bind_param("i", $_SESSION['user_id']);
+        $userCheck->execute();
+        $userCheck->store_result();
+        if ($userCheck->num_rows > 0) {
+            $issued_by = intval($_SESSION['user_id']);
+        }
+        $userCheck->close();
+    }
+
     $stmt->bind_param(
-        "sssssissssdddssssi",
+        "sssssissssssddddsssi",
         $_POST['cedula_no'],
         $_POST['or_number'],
         $_POST['full_name'],
@@ -31,15 +49,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $_POST['sex'],
         $_POST['birth_place'],
         $_POST['civil_status'],
+        $_POST['citizenship'],
         $_POST['occupation'],
         $_POST['tin'],
-        $_POST['height'],
-        $_POST['weight'],
-        $_POST['amount'],
+        $height,
+        $weight,
+        $annual_income,
+        $amount,
         $_POST['nature_of_collection'],
         $_POST['issued_date'],
         $_POST['remarks'],
-        $_SESSION['user_id']
+        $issued_by
     );
 
     $stmt->execute();

@@ -12,13 +12,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $receipt_no = $_POST['receipt_no'];
     $payment_date = $_POST['payment_date'];
     $remarks = $_POST['remarks'] ?? '';
-    
+
+    // Safely resolve received_by — use NULL if session user doesn't exist in users table
+    $received_by = null;
+    if (!empty($_SESSION['user_id'])) {
+        $userCheck = $conn->prepare("SELECT id FROM users WHERE id = ?");
+        $userCheck->bind_param("i", $_SESSION['user_id']);
+        $userCheck->execute();
+        $userCheck->store_result();
+        if ($userCheck->num_rows > 0) {
+            $received_by = intval($_SESSION['user_id']);
+        }
+        $userCheck->close();
+    }
+
     $stmt = $conn->prepare("
         INSERT INTO payments (payer_name, service_type, operating_services, purpose, amount, bir_tax, receipt_no, payment_date, remarks, received_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
     
-    $stmt->bind_param("ssssddsssi", $payer_name, $service_type, $operating_services, $purpose, $amount, $bir_tax, $receipt_no, $payment_date, $remarks, $_SESSION['user_id']);
+    $stmt->bind_param("ssssddsssi", $payer_name, $service_type, $operating_services, $purpose, $amount, $bir_tax, $receipt_no, $payment_date, $remarks, $received_by);
     
     if ($stmt->execute()) {
         header("Location: list.php?success=1");

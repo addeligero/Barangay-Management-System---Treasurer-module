@@ -19,6 +19,7 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
     $tin = $_POST['tin'];
     $payee = $_POST['payee'];
+    $vat_type = $_POST['vat_type'] ?? 'Non-VAT';
     $gross_amount = $_POST['gross_amount'];
     $one_percent = $_POST['one_percent'];
     $five_percent = $_POST['five_percent'];
@@ -29,14 +30,15 @@ if ($_SERVER['REQUEST_METHOD'] == 'POST') {
 
     $stmt = $conn->prepare("
         INSERT INTO bir_records 
-        (tin, payee, gross_amount, one_percent, five_percent, total_amount, net_amount, record_date, remarks)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        (tin, payee, vat_type, gross_amount, one_percent, five_percent, total_amount, net_amount, record_date, remarks)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     ");
 
     $stmt->bind_param(
-        "ssdddddss",
+        "sssdddddss",
         $tin,
         $payee,
+        $vat_type,
         $gross_amount,
         $one_percent,
         $five_percent,

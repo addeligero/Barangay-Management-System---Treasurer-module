@@ -27,10 +27,10 @@ if (!empty($searchQuery)) {
             '' as occupation,
             service_type
         FROM payments 
-        WHERE payer_name LIKE ? 
+        WHERE payer_name LIKE ? OR purpose LIKE ? OR service_type LIKE ? OR operating_services LIKE ? OR receipt_no LIKE ?
         ORDER BY payment_date DESC
     ");
-    $paymentStmt->bind_param("s", $searchParam);
+    $paymentStmt->bind_param("sssss", $searchParam, $searchParam, $searchParam, $searchParam, $searchParam);
     $paymentStmt->execute();
     $paymentResult = $paymentStmt->get_result();
     
@@ -57,10 +57,10 @@ if (!empty($searchQuery)) {
             occupation,
             '' as service_type
         FROM cedula 
-        WHERE full_name LIKE ? 
+        WHERE full_name LIKE ? OR cedula_no LIKE ? OR occupation LIKE ? OR tin LIKE ?
         ORDER BY issued_date DESC
     ");
-    $cedulaStmt->bind_param("s", $searchParam);
+    $cedulaStmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
     $cedulaStmt->execute();
     $cedulaResult = $cedulaStmt->get_result();
     
@@ -87,10 +87,10 @@ if (!empty($searchQuery)) {
             '' as occupation,
             '' as service_type
         FROM disbursements 
-        WHERE payee LIKE ? 
+        WHERE payee LIKE ? OR purpose LIKE ? OR check_no LIKE ? OR dv_no LIKE ?
         ORDER BY disburse_date DESC
     ");
-    $disbursementStmt->bind_param("s", $searchParam);
+    $disbursementStmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
     $disbursementStmt->execute();
     $disbursementResult = $disbursementStmt->get_result();
     
@@ -117,10 +117,10 @@ if (!empty($searchQuery)) {
             '' as occupation,
             '' as service_type
         FROM bir_records 
-        WHERE payee LIKE ? 
+        WHERE payee LIKE ? OR tin LIKE ? OR remarks LIKE ?
         ORDER BY record_date DESC
     ");
-    $birStmt->bind_param("s", $searchParam);
+    $birStmt->bind_param("sss", $searchParam, $searchParam, $searchParam);
     $birStmt->execute();
     $birResult = $birStmt->get_result();
     
@@ -353,7 +353,8 @@ if (!empty($searchQuery)) {
                 <div class="search-container">
                     <form method="GET" action="search.php">
                         <div class="search-box">
-                            <input type="text" name="search" placeholder="Enter name to search..."
+                            <input type="text" name="search"
+                                placeholder="Search by name, purpose, service, OR number, receipt..."
                                 value="<?= htmlspecialchars($searchQuery) ?>"
                                 required>
                             <button type="submit">
@@ -363,7 +364,9 @@ if (!empty($searchQuery)) {
                     </form>
                     <p style="color: #666; font-size: 14px; margin: 0;">
                         <i class="fas fa-info-circle"></i>
-                        Search by name to view all payments, cedula, BIR records, and disbursements
+                        Search by: <strong>Payer/Payee name</strong>, <strong>Purpose</strong>, <strong>Service
+                            type</strong>, <strong>OR/Receipt no.</strong>, <strong>TIN</strong>, <strong>DV
+                            No.</strong>, <strong>Occupation</strong>, or <strong>Remarks</strong>
                     </p>
                 </div>
 
@@ -403,8 +406,9 @@ if (!empty($searchQuery)) {
                 </div>
 
                 <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px;">
-                    <h2 style="margin: 0;">Transaction History for
-                        "<?= htmlspecialchars($searchQuery) ?>"</h2>
+                    <h2 style="margin: 0;">Results for
+                        &ldquo;<?= htmlspecialchars($searchQuery) ?>&rdquo;
+                    </h2>
                     <button class="print-btn" onclick="window.print()">
                         <i class="fas fa-print"></i> Print Report
                     </button>
