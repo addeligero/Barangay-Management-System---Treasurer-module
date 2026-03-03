@@ -89,7 +89,7 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
                   <option value="Certificate of Indigency">Certificate of Indigency</option>
                   <option value="Certificate of Residency">Certificate of Residency</option>
                   <option value="Business Permit">Business Permit</option>
-                  <option value="Community Tax Certificate">Community Tax Certificate</option>
+                  <option value="Community Tax Certificate">Rental</option>
                   <option value="Cedula">Cedula</option>
                   <option value="Other">Other</option>
                 </select>
