@@ -40,6 +40,21 @@ CREATE TABLE IF NOT EXISTS payments (
     FOREIGN KEY (received_by) REFERENCES users(id) ON DELETE SET NULL
 );
 
+-- ==========================================================================
+-- 2.1 PAYMENT STATUS TABLE
+-- Stores pending payments before they are marked as paid
+-- ==========================================================================
+CREATE TABLE IF NOT EXISTS payment_status (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    certificate_type VARCHAR(100) NOT NULL,
+    purpose VARCHAR(255) NOT NULL,
+    resident_fname VARCHAR(150) NOT NULL,
+    payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    amount DECIMAL(10, 2) NOT NULL,
+    bir_tax DECIMAL(10, 2) DEFAULT 0,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
 -- ============================================================================
 -- 3. CEDULA TABLE
 -- ============================================================================

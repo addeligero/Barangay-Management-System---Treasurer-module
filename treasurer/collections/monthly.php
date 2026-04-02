@@ -123,16 +123,25 @@ $operatingServicesCedula = $conn->query("
 $operatingServicesManual = array_sum(array_column($operatingServicesEntries, 'amount'));
 $operatingServices = $operatingServicesPayments + $operatingServicesCedula + $operatingServicesManual;
 
-// Other Collections (from payments + manual entries)
+// Other Collections (from payments + paid pending status + manual entries)
 $otherCollectionsPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
     WHERE MONTH(payment_date) = $month 
     AND YEAR(payment_date) = $year
+    AND (remarks IS NULL OR remarks NOT LIKE 'Pending Status%')
+")->fetch_assoc()['total'] ?? 0;
+
+$pendingPaidCollections = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total
+    FROM payment_status
+    WHERE payment_status = 'paid'
+    AND MONTH(created_at) = $month
+    AND YEAR(created_at) = $year
 ")->fetch_assoc()['total'] ?? 0;
 
 $otherCollectionsManual = array_sum(array_column($otherCollectionsEntries, 'amount'));
-$otherCollections = $otherCollectionsPayments + $otherCollectionsManual;
+$otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
 
 // BIR Total for this month
 $birTotal = $conn->query("
@@ -232,6 +241,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
                 <li><a href="../search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
+                <li><a href="../pending_payments/list.php"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="../bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
@@ -570,6 +580,11 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 <tr>
                                     <td>Barangay Clearances &amp; Certificates</td>
                                     <td>₱<?= number_format($otherCollectionsPayments, 2) ?>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td>Pending Status (Paid)</td>
+                                    <td>₱<?= number_format($pendingPaidCollections, 2) ?>
                                     </td>
                                 </tr>
                                 <?php foreach ($otherCollectionsEntries as $entry): ?>

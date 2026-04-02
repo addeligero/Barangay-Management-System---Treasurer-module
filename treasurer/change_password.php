@@ -66,6 +66,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
                 <li><a href="search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
+                <li><a href="pending_payments/list.php"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
