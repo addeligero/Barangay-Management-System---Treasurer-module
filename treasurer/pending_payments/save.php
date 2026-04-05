@@ -2,6 +2,22 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
+function resolve_received_by($conn) {
+    if (!empty($_SESSION['user_id'])) {
+        $userCheck = $conn->prepare("SELECT id FROM users WHERE id = ?");
+        $userCheck->bind_param("i", $_SESSION['user_id']);
+        $userCheck->execute();
+        $userCheck->store_result();
+        if ($userCheck->num_rows > 0) {
+            $userCheck->close();
+            return intval($_SESSION['user_id']);
+        }
+        $userCheck->close();
+    }
+
+    return null;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_paid') {
     $pendingId = intval($_POST['id'] ?? 0);
 
@@ -28,17 +44,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
     $paymentDate = date('Y-m-d');
 
-    $received_by = null;
-    if (!empty($_SESSION['user_id'])) {
-        $userCheck = $conn->prepare("SELECT id FROM users WHERE id = ?");
-        $userCheck->bind_param("i", $_SESSION['user_id']);
-        $userCheck->execute();
-        $userCheck->store_result();
-        if ($userCheck->num_rows > 0) {
-            $received_by = intval($_SESSION['user_id']);
-        }
-        $userCheck->close();
-    }
+    $received_by = resolve_received_by($conn);
 
     $remarks = "Pending Status #" . $pendingId;
     $operating_services = '';
@@ -79,6 +85,122 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     } else {
         $conn->rollback();
         header("Location: list.php?error=Failed to mark as paid.");
+    }
+
+    exit;
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
+    $pendingId = intval($_POST['id'] ?? 0);
+    $residentName = trim($_POST['resident_fname'] ?? '');
+    $certificateType = trim($_POST['certificate_type'] ?? '');
+    $purpose = trim($_POST['purpose'] ?? '');
+    $amount = floatval($_POST['amount'] ?? 0);
+    $birTax = floatval($_POST['bir_tax'] ?? 0);
+    $status = strtolower(trim($_POST['payment_status'] ?? 'pending'));
+
+    if ($pendingId <= 0) {
+        header("Location: list.php?error=Invalid pending payment ID.");
+        exit;
+    }
+
+    if ($residentName === '' || $certificateType === '' || $purpose === '') {
+        header("Location: edit.php?id=$pendingId&error=Please fill in all required fields.");
+        exit;
+    }
+
+    if ($amount < 0 || $birTax < 0) {
+        header("Location: edit.php?id=$pendingId&error=Amounts must be zero or greater.");
+        exit;
+    }
+
+    if (!in_array($status, ['pending', 'paid'], true)) {
+        header("Location: edit.php?id=$pendingId&error=Invalid payment status.");
+        exit;
+    }
+
+    $checkStmt = $conn->prepare("SELECT payment_status FROM payment_status WHERE id = ?");
+    $checkStmt->bind_param("i", $pendingId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+    if ($checkResult->num_rows === 0) {
+        $checkStmt->close();
+        header("Location: list.php?error=Pending payment not found.");
+        exit;
+    }
+    $currentStatus = $checkResult->fetch_assoc()['payment_status'];
+    $checkStmt->close();
+
+    if ($status === 'pending') {
+        $updateStmt = $conn->prepare("
+            UPDATE payment_status
+            SET certificate_type = ?, purpose = ?, resident_fname = ?, payment_status = 'pending', amount = ?, bir_tax = ?
+            WHERE id = ?
+        ");
+        $updateStmt->bind_param("sssddi", $certificateType, $purpose, $residentName, $amount, $birTax, $pendingId);
+        $updateOk = $updateStmt->execute();
+        $updateStmt->close();
+
+        if ($updateOk) {
+            header("Location: list.php?updated=1");
+        } else {
+            header("Location: edit.php?id=$pendingId&error=Failed to update pending payment.");
+        }
+        exit;
+    }
+
+    if ($currentStatus === 'paid') {
+        header("Location: list.php?error=Payment is already marked as paid.");
+        exit;
+    }
+
+    $lastReceipt = $conn->query("SELECT receipt_no FROM payments ORDER BY id DESC LIMIT 1")->fetch_assoc();
+    $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
+    $paymentDate = date('Y-m-d');
+    $received_by = resolve_received_by($conn);
+    $remarks = "Pending Status #" . $pendingId;
+    $operating_services = '';
+
+    $conn->begin_transaction();
+
+    $updateStmt = $conn->prepare("
+        UPDATE payment_status
+        SET certificate_type = ?, purpose = ?, resident_fname = ?, payment_status = 'paid', amount = ?, bir_tax = ?, created_at = NOW()
+        WHERE id = ?
+    ");
+    $updateStmt->bind_param("sssddi", $certificateType, $purpose, $residentName, $amount, $birTax, $pendingId);
+    $updateOk = $updateStmt->execute();
+    $updateStmt->close();
+
+    $insertOk = false;
+    if ($updateOk) {
+        $insertStmt = $conn->prepare("
+            INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, operating_services, amount, bir_tax, remarks, received_by, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        ");
+        $insertStmt->bind_param(
+            "ssssssddsi",
+            $nextReceipt,
+            $paymentDate,
+            $residentName,
+            $certificateType,
+            $purpose,
+            $operating_services,
+            $amount,
+            $birTax,
+            $remarks,
+            $received_by
+        );
+        $insertOk = $insertStmt->execute();
+        $insertStmt->close();
+    }
+
+    if ($updateOk && $insertOk) {
+        $conn->commit();
+        header("Location: list.php?paid=1");
+    } else {
+        $conn->rollback();
+        header("Location: edit.php?id=$pendingId&error=Failed to mark as paid.");
     }
 
     exit;

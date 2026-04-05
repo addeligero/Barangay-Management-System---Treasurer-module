@@ -8,7 +8,12 @@ $result = $conn->query("
     ORDER BY created_at DESC, id DESC
 ");
 
-$success = isset($_GET['paid']) ? "Pending payment marked as paid." : "";
+$success = "";
+if (isset($_GET['paid'])) {
+    $success = "Pending payment marked as paid.";
+} elseif (isset($_GET['updated'])) {
+    $success = "Pending payment updated.";
+}
 $error = isset($_GET['error']) ? $_GET['error'] : "";
 ?>
 <!DOCTYPE html>
@@ -111,6 +116,9 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                     <td><span class="badge badge-warning">Pending</span></td>
                                     <td>
                                         <div class="action-buttons">
+                                            <a class="btn btn-sm btn-secondary" href="edit.php?id=<?= $row['id'] ?>">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                             <button class="btn btn-sm btn-success"
                                                 onclick="confirmPaid(<?= $row['id'] ?>, this)">
                                                 <i class="fas fa-check"></i>
