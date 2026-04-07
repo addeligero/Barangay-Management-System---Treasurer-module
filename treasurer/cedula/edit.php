@@ -331,7 +331,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
 
                                     fetch(
                                             `get_person.php?name=${encodeURIComponent(name)}`
-                                            )
+                                        )
                                         .then(response => response.json())
                                         .then(personData => {
                                             if (!personData.error) {
@@ -372,7 +372,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
 
                                                 alert(
                                                     '✓ Information auto-filled from previous record!'
-                                                    );
+                                                );
                                             }
                                         });
                                 });
@@ -397,6 +397,46 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                 suggestionsDiv.style.display = 'none';
             }
         });
+
+        (function() {
+            const forms = Array.from(document.querySelectorAll('form'));
+            if (!forms.length) {
+                return;
+            }
+
+            function serializeForm(form) {
+                const data = new FormData(form);
+                const params = new URLSearchParams();
+                for (const [key, value] of data.entries()) {
+                    params.append(key, value);
+                }
+                return params.toString();
+            }
+
+            const formSnapshots = new Map();
+            forms.forEach((form) => {
+                formSnapshots.set(form, serializeForm(form));
+                form.addEventListener('submit', () => {
+                    form.dataset.submitting = 'true';
+                });
+            });
+
+            window.addEventListener('beforeunload', function(event) {
+                const hasUnsaved = forms.some((form) => {
+                    if (form.dataset.submitting === 'true') {
+                        return false;
+                    }
+                    return serializeForm(form) !== formSnapshots.get(form);
+                });
+
+                if (!hasUnsaved) {
+                    return;
+                }
+
+                event.preventDefault();
+                event.returnValue = '';
+            });
+        })();
     </script>
 </body>
 
