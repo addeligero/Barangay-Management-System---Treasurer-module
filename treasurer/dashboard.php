@@ -157,12 +157,7 @@ $otherCollections = $otherCollectionsPayments + $otherCollectionsManual;
                             <?= number_format($totalCedula) ?>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <h4><i class="fas fa-le-certificate"></i> Brgy Clearance Issued</h4>
-                        <div class="stat-value">
-                            <?= number_format($totalBrgyClearance) ?>
-                        </div>
-                    </div>
+
                     <div class="stat-card green">
                         <h4><i class="fas fa-chart-bar"></i> BIR Collections</h4>
                         <div class="stat-value">
