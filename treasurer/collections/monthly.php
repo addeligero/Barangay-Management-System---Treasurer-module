@@ -143,13 +143,22 @@ $pendingPaidCollections = $conn->query("
 $otherCollectionsManual = array_sum(array_column($otherCollectionsEntries, 'amount'));
 $otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
 
-// BIR Total for this month
-$birTotal = $conn->query("
+// BIR Total for this month (BIR records + disbursements)
+$birFromRecords = $conn->query("
     SELECT COALESCE(SUM(total_amount), 0) as total 
     FROM bir_records 
     WHERE MONTH(record_date) = $month 
     AND YEAR(record_date) = $year
 ")->fetch_assoc()['total'] ?? 0;
+
+$birFromDisbursements = $conn->query("
+    SELECT COALESCE(SUM(CAST(NULLIF(bir, '') AS DECIMAL(12,2))), 0) as total
+    FROM disbursements
+    WHERE MONTH(disburse_date) = $month
+    AND YEAR(disburse_date) = $year
+")->fetch_assoc()['total'] ?? 0;
+
+$birTotal = $birFromRecords + $birFromDisbursements;
 
 // Operating & Services breakdown by type (Garbage, Donation, Fines, etc.)
 $operatingBreakdown = [];
@@ -613,7 +622,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         <table class="report-table">
                             <tbody>
                                 <tr>
-                                    <td>Total BIR Withholding Tax (1% + 5%/6% VAT)</td>
+                                    <td>Total BIR Withholding Tax (BIR records + disbursements)</td>
                                     <td>₱<?= number_format($birTotal, 2) ?>
                                     </td>
                                 </tr>
