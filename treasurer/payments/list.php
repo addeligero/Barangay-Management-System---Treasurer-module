@@ -2,7 +2,24 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-$result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
+$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : "";
+
+if ($searchQuery !== "") {
+    $searchParam = "%{$searchQuery}%";
+    $stmt = $conn->prepare("
+        SELECT * FROM payments
+        WHERE receipt_no LIKE ?
+            OR payer_name LIKE ?
+            OR service_type LIKE ?
+            OR purpose LIKE ?
+        ORDER BY id DESC
+    ");
+    $stmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -61,11 +78,21 @@ $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
 
                 <div class="card">
                     <div class="card-header"
-                        style="display: flex; justify-content: space-between; align-items: center;">
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                         <h3><i class="fas fa-list"></i> All Payments</h3>
-                        <a href="add.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> New Payment
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <form method="GET" action="list.php" style="display: flex; gap: 8px;">
+                                <input type="text" name="search" placeholder="Search payments..."
+                                    value="<?= htmlspecialchars($searchQuery) ?>"
+                                    style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 220px;">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </form>
+                            <a href="add.php" class="btn btn-success">
+                                <i class="fas fa-plus"></i> New Payment
+                            </a>
+                        </div>
                     </div>
 
                     <div class="table-responsive">
