@@ -64,11 +64,12 @@
                             <div class="form-group">
                                 <label for="vat_type"><i class="fas fa-tags"></i> VAT Type *</label>
                                 <select id="vat_type" name="vat_type" required onchange="computeNet()" style="font-weight: bold; font-size: 15px;">
-                                    <option value="Non-VAT">Non-VAT (gross × 5%)</option>
+                                    <option value="Non-VAT Supplies">Non-VAT Supplies (gross × 1% and 3%)</option>
+                                    <option value="Non-VAT Services">Non-VAT Services (gross × 2% and 3%)</option>
                                     <option value="Reg. VAT">Reg. VAT (gross ÷ 1.12 × 6%)</option>
                                 </select>
                                 <small style="color: #666; display: block; margin-top: 5px;">
-                                    Non-VAT: gross × 5% &nbsp;|&nbsp; Reg. VAT: (gross ÷ 1.12) × 6% &rarr; separated into 5% VAT + 1% EWT
+                                    Non-VAT Supplies: gross × 1% and 3% &nbsp;|&nbsp; Non-VAT Services: gross × 2% and 3% &nbsp;|&nbsp; Reg. VAT: (gross ÷ 1.12) × 6% &rarr; separated into 5% VAT + 1% EWT
                                 </small>
                             </div>
                         </div>
@@ -143,14 +144,22 @@
                 document.getElementById('hint_one_percent').textContent  = 'Auto-calculated: (gross ÷ 1.12) × 1%  [1% portion of the 6%]';
                 document.getElementById('label_five_percent').innerHTML = '<i class="fas fa-percent"></i> 5% VAT Withholding';
                 document.getElementById('hint_five_percent').textContent  = 'Auto-calculated: (gross ÷ 1.12) × 5%  [5% portion of the 6%]';
-            } else {
-                // Non-VAT: gross × 5%, 1% = 0
-                fivePercent = gross * 0.05;
-                onePercent  = 0;
+            } else if (vatType === 'Non-VAT Supplies') {
+                // Non-VAT Supplies: gross × 1% and 3%
+                onePercent  = gross * 0.01;
+                fivePercent = gross * 0.03;
                 document.getElementById('label_one_percent').innerHTML = '<i class="fas fa-percent"></i> 1% Withholding Tax';
-                document.getElementById('hint_one_percent').textContent  = 'N/A for Non-VAT (set to 0)';
-                document.getElementById('label_five_percent').innerHTML = '<i class="fas fa-percent"></i> 5% Withholding Tax';
-                document.getElementById('hint_five_percent').textContent  = 'Auto-calculated: gross × 5%';
+                document.getElementById('hint_one_percent').textContent  = 'Auto-calculated: gross × 1%';
+                document.getElementById('label_five_percent').innerHTML = '<i class="fas fa-percent"></i> 3% Withholding Tax';
+                document.getElementById('hint_five_percent').textContent  = 'Auto-calculated: gross × 3%';
+            } else {
+                // Non-VAT Services: gross × 2% and 3%
+                onePercent  = gross * 0.02;
+                fivePercent = gross * 0.03;
+                document.getElementById('label_one_percent').innerHTML = '<i class="fas fa-percent"></i> 2% Withholding Tax';
+                document.getElementById('hint_one_percent').textContent  = 'Auto-calculated: gross × 2%';
+                document.getElementById('label_five_percent').innerHTML = '<i class="fas fa-percent"></i> 3% Withholding Tax';
+                document.getElementById('hint_five_percent').textContent  = 'Auto-calculated: gross × 3%';
             }
 
             const totalTax = onePercent + fivePercent;   // = base×0.06 for Reg.VAT, gross×0.05 for Non-VAT
