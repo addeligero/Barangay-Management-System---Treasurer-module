@@ -13,12 +13,33 @@ USE treasurer_management;
 CREATE TABLE IF NOT EXISTS users (
     id INT AUTO_INCREMENT PRIMARY KEY,
     username VARCHAR(50) UNIQUE NOT NULL,
+    email VARCHAR(150) UNIQUE DEFAULT NULL,
+    email_verified_at DATETIME DEFAULT NULL,
+    email_verification_token VARCHAR(64) DEFAULT NULL,
+    email_verification_expires_at DATETIME DEFAULT NULL,
     password VARCHAR(255) NOT NULL,
     name VARCHAR(100) NOT NULL,
     role VARCHAR(50) DEFAULT 'staff',
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 );
+
+-- ============================================================================
+-- 1.1 PASSWORD RESETS TABLE
+-- Stores OTP codes for forgot-password flow
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS password_resets (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    user_id INT NOT NULL,
+    otp_hash VARCHAR(255) NOT NULL,
+    expires_at DATETIME NOT NULL,
+    used_at DATETIME DEFAULT NULL,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_password_resets_user_id ON password_resets (user_id);
+CREATE INDEX idx_password_resets_expires_at ON password_resets (expires_at);
 
 -- ============================================================================
 -- 2. PAYMENTS TABLE
@@ -157,13 +178,13 @@ CREATE TABLE IF NOT EXISTS monthly_manual_entries (
 -- ============================================================================
 
 -- Insert default treasurer user
-INSERT INTO users (username, password, name, role) VALUES
-('treasurer', MD5('treasurer123'), 'Barangay Treasurer', 'treasurer')
+INSERT INTO users (username, email, email_verified_at, password, name, role) VALUES
+('treasurer', 'treasurer@example.com', NOW(), MD5('treasurer123'), 'Barangay Treasurer', 'treasurer')
 ON DUPLICATE KEY UPDATE password = MD5('treasurer123');
 
 -- Insert default admin user (same access as treasurer)
-INSERT INTO users (username, password, name, role) VALUES
-('admin', MD5('admin123'), 'System Administrator', 'admin')
+INSERT INTO users (username, email, email_verified_at, password, name, role) VALUES
+('admin', 'admin@example.com', NOW(), MD5('admin123'), 'System Administrator', 'admin')
 ON DUPLICATE KEY UPDATE password = MD5('admin123');
 
 -- ============================================================================

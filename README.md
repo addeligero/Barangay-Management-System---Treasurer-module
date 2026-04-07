@@ -108,6 +108,9 @@ The system features the official Barangay Sto. Rosario color scheme:
    - Click "Go" to import
    - **Sample data is included** (5 payments, 5 cedulas, 3 BIR records, 5 disbursements, 6 manual entries)
 
+   **Existing database?**
+   - If you already imported an older schema, run `update_forgot_password.sql` once to add email + OTP tables.
+
 4. **Configure Database Connection**
    - Open `config/database.php`
    - Update credentials if needed (default: root, no password)
@@ -115,6 +118,17 @@ The system features the official Barangay Sto. Rosario color scheme:
 5. **Access the System**
    - Open browser and navigate to: `http://localhost/Treasurer_management_system`
    - Login with default credentials
+
+6. **Forgot Password OTP Email (Free Setup)**
+   - Install PHPMailer:
+
+     ```
+     composer require phpmailer/phpmailer
+     ```
+
+   - Open `config/mail.php` and set your SMTP credentials.
+   - Make sure each user has a valid email in the `users` table.
+   - Recommended free option: Gmail SMTP with an app password.
 
 ## Database Tables
 
@@ -197,6 +211,7 @@ Net to Payee: ₱1,951.54 (auto-calculated: 2,062.00 - 110.46)
 - XSS protection (htmlspecialchars)
 - Session timeout on logout
 - CSRF protection on forms
+- Email OTP password reset (requires SMTP configuration)
 
 ## File Structure
 

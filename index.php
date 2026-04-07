@@ -292,6 +292,15 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <i class="fas fa-sign-in-alt"></i> LOGIN
                 </button>
             </form>
+            <div style="margin-top: 15px; text-align: center;">
+                <a href="forgot_password.php">Forgot password?</a>
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+                <a href="register.php">Create an account</a>
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+                <a href="resend_verification.php">Resend verification email</a>
+            </div>
         </div>
     </div>
 
