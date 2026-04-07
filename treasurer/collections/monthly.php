@@ -79,18 +79,6 @@ foreach ($manualEntries as $entry) {
     }
 }
 
-// Calculate Tax Revenue (from payments + manual entries)
-$realPropertyTax = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE purpose LIKE '%real property%' 
-    AND MONTH(payment_date) = $month 
-    AND YEAR(payment_date) = $year
-")->fetch_assoc()['total'] ?? 0;
-
-$taxRevenueManual = array_sum(array_column($taxRevenueEntries, 'amount'));
-$taxRevenue = $realPropertyTax + $taxRevenueManual;
-
 // Calculate Tax on Goods and Services (from payments + manual entries)
 $internalRevenue = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
@@ -174,7 +162,22 @@ while ($row = $breakdownResult->fetch_assoc()) {
     $operatingBreakdown[] = $row;
 }
 
-$totalCollections = $taxRevenue + $taxGoodsServicesTotal + $operatingServices + $otherCollections;
+// Other Collections breakdown by service type
+$otherCollectionsBreakdown = [];
+$otherBreakdownResult = $conn->query("
+    SELECT service_type, COALESCE(SUM(amount), 0) as total
+    FROM payments
+    WHERE MONTH(payment_date) = $month
+    AND YEAR(payment_date) = $year
+    AND (remarks IS NULL OR remarks NOT LIKE 'Pending Status%')
+    GROUP BY service_type
+    ORDER BY service_type
+");
+while ($row = $otherBreakdownResult->fetch_assoc()) {
+    $otherCollectionsBreakdown[] = $row;
+}
+
+$totalCollections = $taxGoodsServicesTotal + $operatingServices + $otherCollections;
 
 $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 ?>
@@ -463,36 +466,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         </h3>
                     </div>
 
-                    <!-- Tax Revenue Section -->
-                    <div class="report-section">
-                        <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
-                            <i class="fas fa-coins"></i> TAX REVENUE
-                        </h4>
-                        <table class="report-table">
-                            <tbody>
-                                <tr>
-                                    <td>Share on Real Property Tax</td>
-                                    <td>₱<?= number_format($realPropertyTax, 2) ?>
-                                    </td>
-                                </tr>
-                                <?php foreach ($taxRevenueEntries as $entry): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
-                                    </td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <tr class="total-row">
-                                    <td>TOTAL TAX REVENUE</td>
-                                    <td>₱<?= number_format($taxRevenue, 2) ?>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
                     <!-- Tax on Goods and Services -->
                     <div class="report-section">
                         <h4
@@ -586,11 +559,31 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         </h4>
                         <table class="report-table">
                             <tbody>
+                                <?php if (!empty($otherCollectionsBreakdown)): ?>
+                                <?php foreach ($otherCollectionsBreakdown as $bd): ?>
                                 <tr>
-                                    <td>Barangay Clearances &amp; Certificates</td>
+                                    <td style="padding-left: 30px; color: #555;">
+                                        <i class="fas fa-chevron-right" style="font-size:11px; margin-right:6px;"></i>
+                                        <?= htmlspecialchars($bd['service_type'] ?: 'Unspecified') ?>
+                                    </td>
+                                    <td>₱<?= number_format($bd['total'], 2) ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <tr>
+                                    <td style="font-weight: 600;">
+                                        <em>Subtotal – Other Collections from Payments</em>
+                                    </td>
                                     <td>₱<?= number_format($otherCollectionsPayments, 2) ?>
                                     </td>
                                 </tr>
+                                <?php else: ?>
+                                <tr>
+                                    <td>Other Collections from Payments</td>
+                                    <td>₱<?= number_format($otherCollectionsPayments, 2) ?>
+                                    </td>
+                                </tr>
+                                <?php endif; ?>
                                 <tr>
                                     <td>Pending Status (Paid)</td>
                                     <td>₱<?= number_format($pendingPaidCollections, 2) ?>
