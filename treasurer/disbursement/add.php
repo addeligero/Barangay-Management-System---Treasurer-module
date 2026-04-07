@@ -67,6 +67,19 @@
 
                         <div class="form-row">
                             <div class="form-group">
+                                <label for="payee_address"><i class="fas fa-map-marker-alt"></i> Address</label>
+                                <textarea id="payee_address" name="payee_address" rows="2"
+                                    placeholder="Payee address"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="payee_tin"><i class="fas fa-id-card"></i> TIN No.</label>
+                                <input type="text" id="payee_tin" name="payee_tin" placeholder="e.g., 000-000-000-000">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
                                 <label for="amount"><i class="fas fa-money-bill"></i> Amount *</label>
                                 <input type="number" id="amount" name="amount" step="0.01" min="0" placeholder="0.00" required>
                             </div>
@@ -152,9 +165,104 @@
                             <small style="color: #666;">Actual amount released/paid</small>
                         </div>
 
-                        <div class="form-group">
-                            <label for="remarks"><i class="fas fa-comment"></i> Remarks</label>
-                            <textarea id="remarks" name="remarks" rows="2" placeholder="Additional notes..."></textarea>
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="or_no"><i class="fas fa-receipt"></i> OR No.</label>
+                                <input type="text" id="or_no" name="or_no" placeholder="e.g., OR-2026-001">
+                            </div>
+                            <div class="form-group">
+                                <label for="received_date"><i class="fas fa-calendar"></i> Date Received</label>
+                                <input type="date" id="received_date" name="received_date" value="<?= date('Y-m-d') ?>">
+                            </div>
+                        </div>
+
+                        <div class="card" style="border:1px solid #e0e0e0; padding:20px; border-radius:8px; margin-bottom:20px; background:#fafbff;">
+                            <div class="card-header" style="margin-bottom:15px; display:flex; align-items:center; justify-content:space-between;">
+                                <div>
+                                    <h4 style="margin:0; color:#1e3a5f;"><i class="fas fa-list"></i> Accounting Entries</h4>
+                                    <small style="color:#666;">Fill in each row and click + to add another entry</small>
+                                </div>
+                                <button type="button" class="btn btn-sm btn-secondary" onclick="addAccountingRow()">
+                                    <i class="fas fa-plus"></i>
+                                </button>
+                            </div>
+                            <div class="form-group" style="margin-bottom:0;">
+                                <table style="width:100%; border-collapse: collapse;">
+                                    <thead>
+                                        <tr>
+                                            <th style="border:1px solid #e0e0e0; padding:8px; text-align:left;">Account Name</th>
+                                            <th style="border:1px solid #e0e0e0; padding:8px; text-align:left; width:140px;">Account Code</th>
+                                            <th style="border:1px solid #e0e0e0; padding:8px; text-align:left; width:120px;">Debit</th>
+                                            <th style="border:1px solid #e0e0e0; padding:8px; text-align:left; width:120px;">Credit</th>
+                                            <th style="border:1px solid #e0e0e0; padding:8px; width:60px;"></th>
+                                        </tr>
+                                    </thead>
+                                    <tbody id="accounting-rows">
+                                        <tr>
+                                            <td style="border:1px solid #e0e0e0; padding:6px;">
+                                                <input type="text" name="account_name[]" placeholder="Account name" style="width:100%;">
+                                            </td>
+                                            <td style="border:1px solid #e0e0e0; padding:6px;">
+                                                <input type="text" name="account_code[]" placeholder="Code" style="width:100%;">
+                                            </td>
+                                            <td style="border:1px solid #e0e0e0; padding:6px;">
+                                                <input type="number" step="0.01" name="account_debit[]" placeholder="0.00" style="width:100%;">
+                                            </td>
+                                            <td style="border:1px solid #e0e0e0; padding:6px;">
+                                                <input type="number" step="0.01" name="account_credit[]" placeholder="0.00" style="width:100%;">
+                                            </td>
+                                            <td style="border:1px solid #e0e0e0; padding:6px; text-align:center;">
+                                                <button type="button" class="btn btn-sm btn-danger" onclick="removeAccountingRow(this)">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+
+                        <div class="card" style="border:1px solid #e0e0e0; padding:20px; border-radius:8px; margin-bottom:20px; background:#fafbff;">
+                            <div class="card-header" style="margin-bottom:15px;">
+                                <h4 style="margin:0; color:#1e3a5f;"><i class="fas fa-pen-fancy"></i> Signatories</h4>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="signatory_a">A. Certified (Appropriation)</label>
+                                    <input type="text" id="signatory_a" name="signatory_a" placeholder="Full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="signatory_b">B. Certified (Treasurer)</label>
+                                    <input type="text" id="signatory_b" name="signatory_b" placeholder="Full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="signatory_c">C. Approved (Punong Barangay)</label>
+                                    <input type="text" id="signatory_c" name="signatory_c" placeholder="Full name">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="signatory_prepared_by">Prepared by</label>
+                                    <input type="text" id="signatory_prepared_by" name="signatory_prepared_by" placeholder="Full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="signatory_checked_by">Checked by</label>
+                                    <input type="text" id="signatory_checked_by" name="signatory_checked_by" placeholder="Full name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="signatory_approved_by">Approved by</label>
+                                    <input type="text" id="signatory_approved_by" name="signatory_approved_by" placeholder="Full name">
+                                </div>
+                            </div>
+
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label for="signatory_received_by">Received by</label>
+                                    <input type="text" id="signatory_received_by" name="signatory_received_by" placeholder="Full name">
+                                </div>
+                            </div>
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 25px;">
@@ -212,5 +320,51 @@
     document.getElementById('amount').addEventListener('input', function () {
         document.getElementById('bir_gross').value = this.value;
         computeBIR();
+    });
+
+    function addAccountingRow() {
+        const tbody = document.getElementById('accounting-rows');
+        const row = document.createElement('tr');
+        row.innerHTML = `
+            <td style="border:1px solid #e0e0e0; padding:6px;">
+                <input type="text" name="account_name[]" placeholder="Account name" style="width:100%;">
+            </td>
+            <td style="border:1px solid #e0e0e0; padding:6px;">
+                <input type="text" name="account_code[]" placeholder="Code" style="width:100%;">
+            </td>
+            <td style="border:1px solid #e0e0e0; padding:6px;">
+                <input type="number" step="0.01" name="account_debit[]" placeholder="0.00" style="width:100%;">
+            </td>
+            <td style="border:1px solid #e0e0e0; padding:6px;">
+                <input type="number" step="0.01" name="account_credit[]" placeholder="0.00" style="width:100%;">
+            </td>
+            <td style="border:1px solid #e0e0e0; padding:6px; text-align:center;">
+                <button type="button" class="btn btn-sm btn-danger" onclick="removeAccountingRow(this)">
+                    <i class="fas fa-trash"></i>
+                </button>
+            </td>
+        `;
+        tbody.appendChild(row);
+    }
+
+    function removeAccountingRow(button) {
+        const tbody = document.getElementById('accounting-rows');
+        const rows = tbody.querySelectorAll('tr');
+        if (rows.length === 1) {
+            rows[0].querySelectorAll('input').forEach(input => input.value = '');
+            return;
+        }
+        button.closest('tr').remove();
+    }
+
+    const disburseDateInput = document.getElementById('disburse_date');
+    const receivedDateInput = document.getElementById('received_date');
+    let lastDisburseDate = disburseDateInput.value;
+
+    disburseDateInput.addEventListener('change', function () {
+        if (receivedDateInput.value === lastDisburseDate) {
+            receivedDateInput.value = this.value;
+        }
+        lastDisburseDate = this.value;
     });
 </script>

@@ -116,7 +116,8 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                     <td><span class="badge badge-warning">Pending</span></td>
                                     <td>
                                         <div class="action-buttons">
-                                            <a class="btn btn-sm btn-secondary" href="edit.php?id=<?= $row['id'] ?>">
+                                            <a class="btn btn-sm btn-secondary"
+                                                href="edit.php?id=<?= $row['id'] ?>">
                                                 <i class="fas fa-edit"></i>
                                             </a>
                                             <button class="btn btn-sm btn-success"

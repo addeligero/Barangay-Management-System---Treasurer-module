@@ -111,6 +111,12 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
                                     <td>
                                         <div class="action-buttons">
 
+                                            <a class="btn btn-sm btn-secondary"
+                                                href="print.php?id=<?= $row['id'] ?>"
+                                                target="_blank" title="Print">
+                                                <i class="fas fa-print"></i>
+                                            </a>
+
                                             <button class="btn btn-sm btn-danger"
                                                 onclick="deleteDisbursement(<?= $row['id'] ?>)">
                                                 <i class="fas fa-trash"></i>

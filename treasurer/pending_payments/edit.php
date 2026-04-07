@@ -65,7 +65,8 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
             <div class="content-body">
                 <?php if ($error): ?>
                 <div class="error-message">
-                    <i class="fas fa-exclamation-circle"></i> <?= htmlspecialchars($error) ?>
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= htmlspecialchars($error) ?>
                 </div>
                 <?php endif; ?>
 
@@ -76,26 +77,32 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
 
                     <form id="editPendingForm" method="POST" action="save.php">
                         <input type="hidden" name="action" value="update">
-                        <input type="hidden" name="id" value="<?= $pending['id'] ?>">
+                        <input type="hidden" name="id"
+                            value="<?= $pending['id'] ?>">
 
                         <div class="form-group">
                             <label for="resident_fname"><i class="fas fa-user"></i> Resident Name *</label>
                             <input type="text" id="resident_fname" name="resident_fname"
-                                value="<?= htmlspecialchars($pending['resident_fname']) ?>" required>
+                                value="<?= htmlspecialchars($pending['resident_fname']) ?>"
+                                required>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="certificate_type"><i class="fas fa-certificate"></i> Certificate Type *</label>
+                                <label for="certificate_type"><i class="fas fa-certificate"></i> Certificate Type
+                                    *</label>
                                 <input type="text" id="certificate_type" name="certificate_type"
-                                    value="<?= htmlspecialchars($pending['certificate_type']) ?>" required>
+                                    value="<?= htmlspecialchars($pending['certificate_type']) ?>"
+                                    required>
                             </div>
 
                             <div class="form-group">
                                 <label for="payment_status"><i class="fas fa-clipboard-check"></i> Status *</label>
                                 <select id="payment_status" name="payment_status" required>
-                                    <option value="pending" <?= $pending['payment_status'] === 'pending' ? 'selected' : '' ?>>Pending</option>
-                                    <option value="paid" <?= $pending['payment_status'] === 'paid' ? 'selected' : '' ?>>Paid</option>
+                                    <option value="pending" <?= $pending['payment_status'] === 'pending' ? 'selected' : '' ?>>Pending
+                                    </option>
+                                    <option value="paid" <?= $pending['payment_status'] === 'paid' ? 'selected' : '' ?>>Paid
+                                    </option>
                                 </select>
                             </div>
                         </div>
@@ -103,20 +110,23 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                         <div class="form-group">
                             <label for="purpose"><i class="fas fa-info-circle"></i> Purpose *</label>
                             <input type="text" id="purpose" name="purpose"
-                                value="<?= htmlspecialchars($pending['purpose']) ?>" required>
+                                value="<?= htmlspecialchars($pending['purpose']) ?>"
+                                required>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="amount"><i class="fas fa-peso-sign"></i> Amount *</label>
                                 <input type="number" id="amount" name="amount" step="0.01" min="0"
-                                    value="<?= number_format($pending['amount'], 2, '.', '') ?>" required>
+                                    value="<?= number_format($pending['amount'], 2, '.', '') ?>"
+                                    required>
                             </div>
 
                             <div class="form-group">
                                 <label for="bir_tax"><i class="fas fa-percent"></i> BIR Tax *</label>
                                 <input type="number" id="bir_tax" name="bir_tax" step="0.01" min="0"
-                                    value="<?= number_format($pending['bir_tax'], 2, '.', '') ?>" required>
+                                    value="<?= number_format($pending['bir_tax'], 2, '.', '') ?>"
+                                    required>
                             </div>
 
                             <div class="form-group">

@@ -111,7 +111,11 @@ CREATE TABLE IF NOT EXISTS disbursements (
     id INT AUTO_INCREMENT PRIMARY KEY,
     disburse_date DATE NOT NULL,
     check_no VARCHAR(50) NOT NULL,
+    or_no VARCHAR(50),
+    received_date DATE,
     payee VARCHAR(150) NOT NULL,
+    payee_address TEXT,
+    payee_tin VARCHAR(50),
     dv_no VARCHAR(50) NOT NULL,
     amount DECIMAL(12, 2) NOT NULL,
     fund VARCHAR(100),
@@ -119,7 +123,14 @@ CREATE TABLE IF NOT EXISTS disbursements (
     bir VARCHAR(100),
     purpose TEXT NOT NULL,
     release_amount DECIMAL(12, 2) NOT NULL,
-    remarks TEXT,
+    accounting_entries TEXT,
+    signatory_a VARCHAR(150),
+    signatory_b VARCHAR(150),
+    signatory_c VARCHAR(150),
+    signatory_prepared_by VARCHAR(150),
+    signatory_checked_by VARCHAR(150),
+    signatory_approved_by VARCHAR(150),
+    signatory_received_by VARCHAR(150),
     processed_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (processed_by) REFERENCES users(id) ON DELETE SET NULL
@@ -186,12 +197,36 @@ INSERT INTO bir_records (tin, payee, record_date, gross_amount, one_percent, fiv
 -- ============================================================================
 -- SAMPLE DISBURSEMENTS DATA
 -- ============================================================================
-INSERT INTO disbursements (disburse_date, check_no, payee, dv_no, amount, fund, payroll, bir, purpose, release_amount, remarks, processed_by) VALUES
-('2026-01-15', 'CHK-001-2026', 'Juan Dela Cruz', 'DV-2026-001', 5000.00, 'General Fund', 'Salary - January', '110.46', 'Salary payment for Barangay Tanod', 4889.54, 'With withholding tax', 1),
-('2026-01-16', 'CHK-002-2026', 'Uncle Ben Meatshop', 'DV-2026-002', 2062.00, 'Special Fund', '', '110.46', 'Payment for meat supplies', 1951.54, 'For feeding program', 1),
-('2026-01-17', 'CHK-003-2026', 'ABC Hardware Supply', 'DV-2026-003', 5000.00, 'General Fund', '', '267.85', 'Construction materials', 4732.15, 'Barangay hall repair', 1),
-('2026-01-18', 'CHK-004-2026', 'Maria Santos', 'DV-2026-004', 8000.00, 'General Fund', 'Salary - January', '180.00', 'Salary payment for Barangay Secretary', 7820.00, 'Monthly salary', 1),
-('2026-01-19', 'CHK-005-2026', 'PLDT Home', 'DV-2026-005', 1500.00, 'General Fund', '', '', 'Internet and telephone bills', 1500.00, 'Monthly utility', 1);
+INSERT INTO disbursements (
+    disburse_date,
+    check_no,
+    or_no,
+    received_date,
+    payee,
+    payee_address,
+    payee_tin,
+    dv_no,
+    amount,
+    fund,
+    payroll,
+    bir,
+    purpose,
+    release_amount,
+    accounting_entries,
+    signatory_a,
+    signatory_b,
+    signatory_c,
+    signatory_prepared_by,
+    signatory_checked_by,
+    signatory_approved_by,
+    signatory_received_by,
+    processed_by
+) VALUES
+('2026-01-15', 'CHK-001-2026', 'OR-2026-201', '2026-01-15', 'Juan Dela Cruz', 'Purok 1, Sto. Rosario, Magallanes', '123-456-789-000', 'DV-2026-001', 5000.00, 'General Fund', 'Salary - January', '110.46', 'Salary payment for Barangay Tanod', 4889.54, 'Advances for payroll|1-03-05-020|5000.00|0', 'Margie M. Gabato', 'Paz A. Bacolod', 'Cleopatra R. Roces', 'Paz A. Bacolod', 'Cristhel Rhea S. Dela Fuerta', 'Aura R. Cadenas, CPA', 'Juan Dela Cruz', 1),
+('2026-01-16', 'CHK-002-2026', 'OR-2026-202', '2026-01-16', 'Uncle Ben Meatshop', 'Purok 2, Sto. Rosario, Magallanes', '900-123-456-000', 'DV-2026-002', 2062.00, 'Special Fund', '', '110.46', 'Payment for meat supplies', 1951.54, '', 'Margie M. Gabato', 'Paz A. Bacolod', 'Cleopatra R. Roces', 'Paz A. Bacolod', 'Cristhel Rhea S. Dela Fuerta', 'Aura R. Cadenas, CPA', 'Uncle Ben Meatshop', 1),
+('2026-01-17', 'CHK-003-2026', 'OR-2026-203', '2026-01-17', 'ABC Hardware Supply', 'Purok 3, Sto. Rosario, Magallanes', '900-234-567-000', 'DV-2026-003', 5000.00, 'General Fund', '', '267.85', 'Construction materials', 4732.15, '', 'Margie M. Gabato', 'Paz A. Bacolod', 'Cleopatra R. Roces', 'Paz A. Bacolod', 'Cristhel Rhea S. Dela Fuerta', 'Aura R. Cadenas, CPA', 'ABC Hardware Supply', 1),
+('2026-01-18', 'CHK-004-2026', 'OR-2026-204', '2026-01-18', 'Maria Santos', 'Purok 4, Sto. Rosario, Magallanes', '234-567-890-000', 'DV-2026-004', 8000.00, 'General Fund', 'Salary - January', '180.00', 'Salary payment for Barangay Secretary', 7820.00, '', 'Margie M. Gabato', 'Paz A. Bacolod', 'Cleopatra R. Roces', 'Paz A. Bacolod', 'Cristhel Rhea S. Dela Fuerta', 'Aura R. Cadenas, CPA', 'Maria Santos', 1),
+('2026-01-19', 'CHK-005-2026', 'OR-2026-205', '2026-01-19', 'PLDT Home', 'Purok 5, Sto. Rosario, Magallanes', '567-890-123-000', 'DV-2026-005', 1500.00, 'General Fund', '', '', 'Internet and telephone bills', 1500.00, '', 'Margie M. Gabato', 'Paz A. Bacolod', 'Cleopatra R. Roces', 'Paz A. Bacolod', 'Cristhel Rhea S. Dela Fuerta', 'Aura R. Cadenas, CPA', 'PLDT Home', 1);
 
 -- ============================================================================
 -- SAMPLE MONTHLY MANUAL ENTRIES DATA

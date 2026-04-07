@@ -2,7 +2,8 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-function resolve_received_by($conn) {
+function resolve_received_by($conn)
+{
     if (!empty($_SESSION['user_id'])) {
         $userCheck = $conn->prepare("SELECT id FROM users WHERE id = ?");
         $userCheck->bind_param("i", $_SESSION['user_id']);
