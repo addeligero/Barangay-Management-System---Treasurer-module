@@ -133,6 +133,40 @@ body {
   background: var(--gray-light);
 }
 
+.password-field {
+  position: relative;
+}
+
+.password-field input {
+  padding-right: 44px;
+}
+
+.password-toggle {
+  position: absolute;
+  right: 10px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 32px;
+  height: 32px;
+  border: none;
+  background: transparent;
+  color: var(--text-light);
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.password-toggle:hover {
+  color: var(--primary-blue);
+}
+
+.password-toggle:focus-visible {
+  outline: 2px solid var(--primary-yellow);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
 .form-group input:focus,
 .form-group select:focus,
 .form-group textarea:focus {

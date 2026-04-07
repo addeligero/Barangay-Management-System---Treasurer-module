@@ -109,17 +109,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="current_password">
                                     <i class="fas fa-lock"></i> Current Password
                                 </label>
-                                <input type="password" id="current_password" name="current_password"
-                                    placeholder="Enter your current password" required autocomplete="off">
+                                <div class="password-field">
+                                    <input type="password" id="current_password" name="current_password"
+                                        placeholder="Enter your current password" required autocomplete="off">
+                                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div class="form-group">
                                 <label for="new_password">
                                     <i class="fas fa-key"></i> New Password
                                 </label>
-                                <input type="password" id="new_password" name="new_password"
-                                    placeholder="Enter your new password (min. 6 characters)" required
-                                    autocomplete="new-password">
+                                <div class="password-field">
+                                    <input type="password" id="new_password" name="new_password"
+                                        placeholder="Enter your new password (min. 6 characters)" required
+                                        autocomplete="new-password">
+                                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                                 <small style="color: #666; font-size: 12px;">
                                     Password must be at least 6 characters long
                                 </small>
@@ -129,8 +139,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="confirm_password">
                                     <i class="fas fa-check-circle"></i> Confirm New Password
                                 </label>
-                                <input type="password" id="confirm_password" name="confirm_password"
-                                    placeholder="Re-enter your new password" required autocomplete="new-password">
+                                <div class="password-field">
+                                    <input type="password" id="confirm_password" name="confirm_password"
+                                        placeholder="Re-enter your new password" required autocomplete="new-password">
+                                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                                        <i class="fas fa-eye" aria-hidden="true"></i>
+                                    </button>
+                                </div>
                             </div>
 
                             <div style="margin-top: 30px; display: flex; gap: 10px;">
@@ -173,6 +188,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
         </main>
     </div>
+    <script src="../assets/js/password-toggle.js"></script>
 </body>
 
 </html>

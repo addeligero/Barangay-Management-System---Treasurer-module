@@ -145,13 +145,23 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </div>
             <div class="form-group">
                 <label for="password"><i class="fas fa-lock"></i> Password</label>
-                <input type="password" id="password" name="password" placeholder="Create a password" required
-                    autocomplete="new-password">
+                <div class="password-field">
+                    <input type="password" id="password" name="password" placeholder="Create a password" required
+                        autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
             <div class="form-group">
                 <label for="confirm_password"><i class="fas fa-check-circle"></i> Confirm Password</label>
-                <input type="password" id="confirm_password" name="confirm_password" required
-                    placeholder="Re-enter your password" autocomplete="new-password">
+                <div class="password-field">
+                    <input type="password" id="confirm_password" name="confirm_password" required
+                        placeholder="Re-enter your password" autocomplete="new-password">
+                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                        <i class="fas fa-eye" aria-hidden="true"></i>
+                    </button>
+                </div>
             </div>
             <button type="submit" class="btn btn-primary">
                 <i class="fas fa-user-plus"></i> Register
@@ -162,6 +172,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </div>
         <?php endif; ?>
     </div>
+    <script src="assets/js/password-toggle.js"></script>
 </body>
 
 </html>

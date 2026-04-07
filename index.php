@@ -284,8 +284,13 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
                 <div class="form-group">
                     <label for="password"><i class="fas fa-lock"></i> Password</label>
-                    <input type="password" id="password" name="password" placeholder="Enter your password" required
-                        autocomplete="current-password">
+                    <div class="password-field">
+                        <input type="password" id="password" name="password" placeholder="Enter your password" required
+                            autocomplete="current-password">
+                        <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                            <i class="fas fa-eye" aria-hidden="true"></i>
+                        </button>
+                    </div>
                 </div>
 
                 <button type="submit" class="btn btn-primary">
@@ -310,6 +315,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <p>Treasurer Management System | All Rights Reserved</p>
     </div>
 
+    <script src="assets/js/password-toggle.js"></script>
 </body>
 
 </html>
