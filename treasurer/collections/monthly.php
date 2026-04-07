@@ -58,7 +58,6 @@ while ($row = $result->fetch_assoc()) {
 
 // Group manual entries by category
 $taxRevenueEntries = [];
-$taxGoodsServicesEntries = [];
 $operatingServicesEntries = [];
 $otherCollectionsEntries = [];
 
@@ -66,9 +65,6 @@ foreach ($manualEntries as $entry) {
     switch ($entry['entry_type']) {
         case 'Tax Revenue':
             $taxRevenueEntries[] = $entry;
-            break;
-        case 'Tax on Goods & Services':
-            $taxGoodsServicesEntries[] = $entry;
             break;
         case 'Operating & Services':
             $operatingServicesEntries[] = $entry;
@@ -78,18 +74,6 @@ foreach ($manualEntries as $entry) {
             break;
     }
 }
-
-// Calculate Tax on Goods and Services (from payments + manual entries)
-$internalRevenue = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE purpose LIKE '%internal revenue%' 
-    AND MONTH(payment_date) = $month 
-    AND YEAR(payment_date) = $year
-")->fetch_assoc()['total'] ?? 0;
-
-$taxGoodsServicesManual = array_sum(array_column($taxGoodsServicesEntries, 'amount'));
-$taxGoodsServicesTotal = $internalRevenue + $taxGoodsServicesManual;
 
 // Operating and Services (from payments + cedula + manual entries)
 $operatingServicesPayments = $conn->query("
@@ -191,7 +175,7 @@ while ($row = $otherBreakdownResult->fetch_assoc()) {
     $otherCollectionsBreakdown[] = $row;
 }
 
-$totalCollections = $taxGoodsServicesTotal + $operatingServices + $otherCollections;
+$totalCollections = $operatingServices + $otherCollections;
 
 $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 ?>
@@ -387,7 +371,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                             <select id="entry_type" name="entry_type">
                                 <option value="">- Select -</option>
                                 <option value="Tax Revenue">Tax Revenue</option>
-                                <option value="Tax on Goods & Services">Tax on Goods &amp; Services</option>
                                 <option value="Other">Other</option>
                             </select>
                         </div>
@@ -478,36 +461,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         <h3><i class="fas fa-file-invoice-dollar"></i>
                             <?= $monthName ?>
                         </h3>
-                    </div>
-
-                    <!-- Tax on Goods and Services -->
-                    <div class="report-section">
-                        <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
-                            <i class="fas fa-shopping-cart"></i> TAX ON GOODS AND SERVICES
-                        </h4>
-                        <table class="report-table">
-                            <tbody>
-                                <tr>
-                                    <td>Share on Internal Revenue Allotment</td>
-                                    <td>₱<?= number_format($internalRevenue, 2) ?>
-                                    </td>
-                                </tr>
-                                <?php foreach ($taxGoodsServicesEntries as $entry): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
-                                    </td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <tr class="total-row">
-                                    <td>TOTAL TAX ON GOODS AND SERVICES</td>
-                                    <td>₱<?= number_format($taxGoodsServicesTotal, 2) ?>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
 
                     <!-- Operating and Services -->
