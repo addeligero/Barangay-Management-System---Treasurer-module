@@ -53,6 +53,12 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
                 </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['updated'])): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> Cedula record updated successfully!
+                </div>
+                <?php endif; ?>
+
                 <div class="card">
                     <div class="card-header"
                         style="display: flex; justify-content: space-between; align-items: center;">
@@ -99,6 +105,11 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
                                     </td>
                                     <td>
                                         <div class="action-buttons">
+                                            <a class="btn btn-sm btn-primary"
+                                                href="edit.php?id=<?= $row['id'] ?>"
+                                                title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
                                             <button class="btn btn-sm btn-secondary"
                                                 onclick="viewCedula(<?= $row['id'] ?>)">
                                                 <i class="fas fa-print"></i>

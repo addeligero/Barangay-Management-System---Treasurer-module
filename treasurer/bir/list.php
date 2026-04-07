@@ -51,6 +51,12 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                 </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['updated'])): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> BIR record updated successfully!
+                </div>
+                <?php endif; ?>
+
                 <?php if (isset($_GET['deleted'])): ?>
                 <div class="success-message">
                     <i class="fas fa-check-circle"></i> BIR record deleted successfully!
@@ -110,6 +116,12 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
                                     </td>
                                     <td>
                                         <div class="action-buttons">
+
+                                            <a class="btn btn-sm btn-primary"
+                                                href="edit.php?id=<?= $row['id'] ?>"
+                                                title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
 
                                             <button class="btn btn-sm btn-danger"
                                                 onclick="deleteBIR(<?= $row['id'] ?>)">

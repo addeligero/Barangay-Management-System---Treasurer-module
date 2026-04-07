@@ -17,6 +17,48 @@ if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])
 }
 
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['action']) && $_POST['action'] === 'update' && !empty($_POST['id'])) {
+        $birId = intval($_POST['id']);
+        $tin = $_POST['tin'];
+        $payee = $_POST['payee'];
+        $vat_type = $_POST['vat_type'] ?? 'Non-VAT';
+        $gross_amount = $_POST['gross_amount'];
+        $one_percent = $_POST['one_percent'];
+        $five_percent = $_POST['five_percent'];
+        $net_amount = $_POST['net_amount'];
+        $record_date = $_POST['record_date'];
+        $remarks = $_POST['remarks'] ?? '';
+        $total_amount = $one_percent + $five_percent;
+
+        $stmt = $conn->prepare("
+            UPDATE bir_records
+            SET tin = ?, payee = ?, vat_type = ?, gross_amount = ?, one_percent = ?, five_percent = ?, total_amount = ?, net_amount = ?, record_date = ?, remarks = ?
+            WHERE id = ?
+        ");
+
+        $stmt->bind_param(
+            "sssdddddssi",
+            $tin,
+            $payee,
+            $vat_type,
+            $gross_amount,
+            $one_percent,
+            $five_percent,
+            $total_amount,
+            $net_amount,
+            $record_date,
+            $remarks,
+            $birId
+        );
+
+        if ($stmt->execute()) {
+            header("Location: list.php?updated=1");
+        } else {
+            header("Location: edit.php?id=" . $birId . "&error=1");
+        }
+        exit();
+    }
+
     $tin = $_POST['tin'];
     $payee = $_POST['payee'];
     $vat_type = $_POST['vat_type'] ?? 'Non-VAT';
