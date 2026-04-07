@@ -128,6 +128,20 @@ $pendingPaidCollections = $conn->query("
     AND YEAR(created_at) = $year
 ")->fetch_assoc()['total'] ?? 0;
 
+$pendingPaidBreakdown = [];
+$pendingBreakdownResult = $conn->query("
+    SELECT certificate_type, COALESCE(SUM(amount), 0) as total
+    FROM payment_status
+    WHERE payment_status = 'paid'
+    AND MONTH(created_at) = $month
+    AND YEAR(created_at) = $year
+    GROUP BY certificate_type
+    ORDER BY certificate_type
+");
+while ($row = $pendingBreakdownResult->fetch_assoc()) {
+    $pendingPaidBreakdown[] = $row;
+}
+
 $otherCollectionsManual = array_sum(array_column($otherCollectionsEntries, 'amount'));
 $otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
 
@@ -584,11 +598,32 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     </td>
                                 </tr>
                                 <?php endif; ?>
+                                <?php if (!empty($pendingPaidBreakdown)): ?>
+                                <?php foreach ($pendingPaidBreakdown as $bd): ?>
+                                <tr>
+                                    <td style="padding-left: 30px; color: #555;">
+                                        <i class="fas fa-chevron-right" style="font-size:11px; margin-right:6px;"></i>
+                                        Pending Status -
+                                        <?= htmlspecialchars($bd['certificate_type'] ?: 'Unspecified') ?>
+                                    </td>
+                                    <td>₱<?= number_format($bd['total'], 2) ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <tr>
+                                    <td style="font-weight: 600;">
+                                        <em>Subtotal – Pending Status (Paid)</em>
+                                    </td>
+                                    <td>₱<?= number_format($pendingPaidCollections, 2) ?>
+                                    </td>
+                                </tr>
+                                <?php else: ?>
                                 <tr>
                                     <td>Pending Status (Paid)</td>
                                     <td>₱<?= number_format($pendingPaidCollections, 2) ?>
                                     </td>
                                 </tr>
+                                <?php endif; ?>
                                 <?php foreach ($otherCollectionsEntries as $entry): ?>
                                 <tr>
                                     <td><?= htmlspecialchars($entry['entry_name']) ?>
