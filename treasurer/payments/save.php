@@ -3,6 +3,34 @@ include "../../config/database.php";
 include "../../config/session.php";
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    if (isset($_POST['action']) && $_POST['action'] === 'update' && !empty($_POST['id'])) {
+        $paymentId = intval($_POST['id']);
+        $payer_name = $_POST['payer_name'];
+        $service_type = $_POST['service_type'];
+        $operating_services = $_POST['operating_services'] ?? '';
+        $purpose = $_POST['purpose'];
+        $amount = $_POST['amount'];
+        $bir_tax = $_POST['bir_tax'];
+        $receipt_no = $_POST['receipt_no'];
+        $payment_date = $_POST['payment_date'];
+        $remarks = $_POST['remarks'] ?? '';
+
+        $stmt = $conn->prepare("
+            UPDATE payments
+            SET receipt_no = ?, payment_date = ?, payer_name = ?, service_type = ?, purpose = ?, operating_services = ?, amount = ?, bir_tax = ?, remarks = ?
+            WHERE id = ?
+        ");
+
+        $stmt->bind_param("ssssssddsi", $receipt_no, $payment_date, $payer_name, $service_type, $purpose, $operating_services, $amount, $bir_tax, $remarks, $paymentId);
+
+        if ($stmt->execute()) {
+            header("Location: list.php?updated=1");
+        } else {
+            header("Location: edit.php?id=" . $paymentId . "&error=Failed to update payment");
+        }
+        exit;
+    }
+
     $payer_name = $_POST['payer_name'];
     $service_type = $_POST['service_type'];
     $operating_services = $_POST['operating_services'] ?? '';

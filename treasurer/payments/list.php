@@ -53,6 +53,12 @@ $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
                 </div>
                 <?php endif; ?>
 
+                <?php if (isset($_GET['updated'])): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i> Payment updated successfully!
+                </div>
+                <?php endif; ?>
+
                 <div class="card">
                     <div class="card-header"
                         style="display: flex; justify-content: space-between; align-items: center;">
@@ -100,6 +106,12 @@ $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
                                     </td>
                                     <td>
                                         <div class="action-buttons">
+
+                                            <a class="btn btn-sm btn-primary"
+                                                href="edit.php?id=<?= $row['id'] ?>"
+                                                title="Edit">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
 
                                             <button class="btn btn-sm btn-danger"
                                                 onclick="deletePayment(<?= $row['id'] ?>)">
