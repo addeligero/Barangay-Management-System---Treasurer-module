@@ -278,6 +278,7 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
             }
         });
     </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

@@ -403,6 +403,7 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
             </div>
         </main>
     </div>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

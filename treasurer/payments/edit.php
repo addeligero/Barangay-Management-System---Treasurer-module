@@ -309,6 +309,7 @@ $totalValue = number_format(((float) $payment['amount']) + ((float) $payment['bi
             });
         })();
     </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

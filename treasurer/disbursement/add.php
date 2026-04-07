@@ -280,6 +280,7 @@
             </div>
         </main>
     </div>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 </html>
 

@@ -312,6 +312,7 @@ $otherCollections = $otherCollectionsPayments + $otherCollectionsManual;
             }
         });
     </script>
+    <script src="../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

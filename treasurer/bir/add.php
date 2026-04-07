@@ -211,5 +211,6 @@
             });
         })();
     </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 </html>

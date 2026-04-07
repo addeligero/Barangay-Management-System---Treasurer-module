@@ -284,6 +284,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
             }
         });
     </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

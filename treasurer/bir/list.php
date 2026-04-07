@@ -285,6 +285,7 @@ $result = $conn->query("SELECT * FROM bir_records ORDER BY created_at DESC");
             }
         });
     </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

@@ -264,6 +264,7 @@ $nextReceipt = $lastReceipt ? (intval($lastReceipt['receipt_no']) + 1) : 100001;
       });
     })();
   </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

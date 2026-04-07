@@ -73,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
                 <li><a href="collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
                 <li><a href="change_password.php" class="active"><i class="fas fa-key"></i> Change Password</a></li>
-                <li><a href="../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
+                <li><a href="../logout.php" data-logout-link="true"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
 
@@ -192,6 +192,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </main>
     </div>
     <script src="../assets/js/password-toggle.js"></script>
+    <script src="../assets/js/logout-modal.js"></script>
+    <script src="../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

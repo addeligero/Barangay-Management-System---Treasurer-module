@@ -657,6 +657,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
             </div>
         </main>
     </div>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>

@@ -299,6 +299,7 @@ $totalTax = number_format((float) $bir['total_amount'], 2, '.', '');
             });
         })();
     </script>
+    <script src="../../assets/js/logout-confirm.js"></script>
 </body>
 
 </html>
