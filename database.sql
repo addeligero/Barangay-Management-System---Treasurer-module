@@ -187,6 +187,22 @@ INSERT INTO users (username, email, email_verified_at, password, name, role) VAL
 ('admin', 'admin@example.com', NOW(), MD5('admin123'), 'System Administrator', 'admin')
 ON DUPLICATE KEY UPDATE password = MD5('admin123');
 
+-- Additional sample users
+INSERT INTO users (username, email, email_verified_at, password, name, role) VALUES
+('staff1', 'staff1@example.com', NOW(), MD5('staff123'), 'Ana L. Ramos', 'staff'),
+('staff2', 'staff2@example.com', NOW(), MD5('staff123'), 'Leo M. Padilla', 'staff'),
+('collector', 'collector@example.com', NOW(), MD5('collector123'), 'Nina S. Cruz', 'staff');
+
+-- ============================================================================
+-- SAMPLE PASSWORD RESET DATA
+-- ============================================================================
+INSERT INTO password_resets (user_id, otp_hash, expires_at, used_at) VALUES
+(1, MD5('432198'), DATE_ADD(NOW(), INTERVAL 15 MINUTE), NULL),
+(2, MD5('781245'), DATE_ADD(NOW(), INTERVAL 10 MINUTE), NULL),
+(3, MD5('559102'), DATE_ADD(NOW(), INTERVAL 20 MINUTE), NULL),
+(4, MD5('903311'), DATE_ADD(NOW(), INTERVAL 30 MINUTE), NULL),
+(5, MD5('667410'), DATE_ADD(NOW(), INTERVAL 25 MINUTE), NULL);
+
 -- ============================================================================
 -- SAMPLE PAYMENTS DATA
 -- ============================================================================
@@ -196,6 +212,16 @@ INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpos
 ('OR-2026-003', '2026-01-17', 'Pedro Reyes', 'Business Permit', 'Business Permit Renewal', 'Business Permit Fee', 500.00, 0, 'Carinderia business', 1),
 ('OR-2026-004', '2026-01-18', 'Ana Garcia', 'Barangay ID', 'Barangay ID Issuance', 'ID Processing Fee', 50.00, 0, 'New resident', 1),
 ('OR-2026-005', '2026-01-19', 'Roberto Cruz', 'Barangay Clearance', 'Barangay Clearance for Loan Application', 'Barangay Clearance', 150.00, 0, 'Bank loan requirement', 1);
+
+-- ============================================================================
+-- SAMPLE PAYMENT STATUS DATA
+-- ============================================================================
+INSERT INTO payment_status (certificate_type, purpose, resident_fname, payment_status, amount, bir_tax) VALUES
+('Barangay Clearance', 'Employment requirement', 'Jenny D. Flores', 'pending', 150.00, 0),
+('Business Permit', 'New sari-sari store', 'Marvin C. Uy', 'pending', 500.00, 0),
+('Barangay ID', 'New ID request', 'Carmela P. Reyes', 'paid', 50.00, 0),
+('Barangay Clearance', 'Loan application', 'Rogelio M. Perez', 'pending', 150.00, 0),
+('Barangay Clearance', 'Travel requirement', 'Liza T. Ramos', 'paid', 150.00, 0);
 
 -- ============================================================================
 -- SAMPLE CEDULA DATA
@@ -213,7 +239,9 @@ INSERT INTO cedula (cedula_no, or_number, issued_date, full_name, address, birth
 INSERT INTO bir_records (tin, payee, record_date, gross_amount, one_percent, five_percent, total_amount, net_amount, remarks, recorded_by) VALUES
 ('900-123-456-000', 'Uncle Ben Meatshop', '2026-01-15', 2062.00, 18.41, 92.05, 110.46, 1951.54, 'Meat supplies for barangay feeding program', 1),
 ('900-234-567-000', 'ABC Hardware Supply', '2026-01-16', 5000.00, 44.64, 223.21, 267.85, 4732.15, 'Construction materials for barangay hall repair', 1),
-('900-345-678-000', 'XYZ Office Supplies', '2026-01-17', 3500.00, 31.25, 156.25, 187.50, 3312.50, 'Office supplies and equipment', 1);
+('900-345-678-000', 'XYZ Office Supplies', '2026-01-17', 3500.00, 31.25, 156.25, 187.50, 3312.50, 'Office supplies and equipment', 1),
+('900-456-789-000', 'Sto. Rosario Water Station', '2026-01-18', 4200.00, 37.50, 187.50, 225.00, 3975.00, 'Water service supplies', 1),
+('900-567-890-000', 'Magallanes Print Hub', '2026-01-19', 1800.00, 16.07, 80.36, 96.43, 1703.57, 'Printing of barangay forms', 1);
 
 -- ============================================================================
 -- SAMPLE DISBURSEMENTS DATA
