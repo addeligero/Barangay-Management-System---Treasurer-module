@@ -112,7 +112,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="password-field">
                                     <input type="password" id="current_password" name="current_password"
                                         placeholder="Enter your current password" required autocomplete="off">
-                                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                                    <button type="button" class="password-toggle" aria-label="Show password"
+                                        aria-pressed="false">
                                         <i class="fas fa-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>
@@ -126,7 +127,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                     <input type="password" id="new_password" name="new_password"
                                         placeholder="Enter your new password (min. 6 characters)" required
                                         autocomplete="new-password">
-                                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                                    <button type="button" class="password-toggle" aria-label="Show password"
+                                        aria-pressed="false">
                                         <i class="fas fa-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>
@@ -142,7 +144,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <div class="password-field">
                                     <input type="password" id="confirm_password" name="confirm_password"
                                         placeholder="Re-enter your new password" required autocomplete="new-password">
-                                    <button type="button" class="password-toggle" aria-label="Show password" aria-pressed="false">
+                                    <button type="button" class="password-toggle" aria-label="Show password"
+                                        aria-pressed="false">
                                         <i class="fas fa-eye" aria-hidden="true"></i>
                                     </button>
                                 </div>

@@ -17,7 +17,10 @@ document.addEventListener("DOMContentLoaded", () => {
       input.type = wasHidden ? "text" : "password";
 
       const isVisible = input.type === "text";
-      button.setAttribute("aria-label", isVisible ? "Hide password" : "Show password");
+      button.setAttribute(
+        "aria-label",
+        isVisible ? "Hide password" : "Show password",
+      );
       button.setAttribute("aria-pressed", isVisible ? "true" : "false");
 
       const icon = button.querySelector("i");
