@@ -633,7 +633,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="total-row">
-                                    <td>TOTAL OTHER COLLECTIONS</td>
+                                    <td>TOTAL OTHER CERTIFICATE COLLECTIONS</td>
                                     <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
