@@ -186,9 +186,9 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
 
                             <div class="form-group">
                                 <label for="amount"><i class="fas fa-peso-sign"></i> Amount *</label>
-                                <input type="number" id="amount" name="amount" step="0.01" value="5.00" required
+                                <input type="number" id="amount" name="amount" step="0.01" value="0.00" required
                                     readonly style="background:#e8f0ff; font-weight:bold; font-size:16px;">
-                                <small style="color:#666;">Auto-calculated from income (min &#8369;5.00)</small>
+                                <small style="color:#666;">Auto-calculated: Income &divide; 1,000</small>
                             </div>
                         </div>
 
@@ -216,7 +216,7 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
         function calculateAmount() {
             const income = parseFloat(document.getElementById('annual_income').value) || 0;
             const computed = income / 1000;
-            document.getElementById('amount').value = (computed > 0 ? computed : 5).toFixed(2);
+            document.getElementById('amount').value = (computed > 0 ? computed : 0).toFixed(2);
         }
 
         function calculateAge() {

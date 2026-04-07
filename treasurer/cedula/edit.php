@@ -248,7 +248,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                                 <input type="number" id="amount" name="amount" step="0.01"
                                     value="<?= htmlspecialchars($amountValue) ?>"
                                     required readonly style="background:#e8f0ff; font-weight:bold; font-size:16px;">
-                                <small style="color:#666;">Auto-calculated from income (min &#8369;5.00)</small>
+                                <small style="color:#666;">Auto-calculated: Income &divide; 1,000</small>
                             </div>
                         </div>
 
@@ -277,7 +277,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
         function calculateAmount() {
             const income = parseFloat(document.getElementById('annual_income').value) || 0;
             const computed = income / 1000;
-            document.getElementById('amount').value = (computed > 0 ? computed : 5).toFixed(2);
+            document.getElementById('amount').value = (computed > 0 ? computed : 0).toFixed(2);
         }
 
         function calculateAge() {
@@ -330,7 +330,8 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                                     suggestionsDiv.style.display = 'none';
 
                                     fetch(
-                                            `get_person.php?name=${encodeURIComponent(name)}`)
+                                            `get_person.php?name=${encodeURIComponent(name)}`
+                                            )
                                         .then(response => response.json())
                                         .then(personData => {
                                             if (!personData.error) {
@@ -370,7 +371,8 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                                                     .value = personData.weight;
 
                                                 alert(
-                                                    '✓ Information auto-filled from previous record!');
+                                                    '✓ Information auto-filled from previous record!'
+                                                    );
                                             }
                                         });
                                 });
