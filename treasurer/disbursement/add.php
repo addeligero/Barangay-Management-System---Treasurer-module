@@ -92,8 +92,9 @@
 
                         <div class="form-row">
                             <div class="form-group">
-                                <label for="payroll"><i class="fas fa-users"></i> Payroll</label>
-                                <input type="text" id="payroll" name="payroll" placeholder="Enter payroll details (optional)">
+                                <label for="payroll"><i class="fas fa-users"></i> Payroll (Optional)</label>
+                                <input type="number" id="payroll" name="payroll" min="0" step="1" placeholder="0">
+                                <small style="color:#666;">Numeric amount added to BIR computation</small>
                             </div>
                         </div>
 
@@ -162,8 +163,8 @@
 
                         <div class="form-group">
                             <label for="release_amount"><i class="fas fa-hand-holding-usd"></i> Release Amount *</label>
-                            <input type="number" id="release_amount" name="release" step="0.01" min="0" placeholder="0.00" required>
-                            <small style="color: #666;">Actual amount released/paid</small>
+                            <input type="number" id="release_amount" name="release" step="0.01" min="0" placeholder="0.00" readonly required style="background:#f0f4f8;">
+                            <small style="color: #666;">Auto-calculated from BIR net amount</small>
                         </div>
 
                         <div class="form-row">
@@ -323,13 +324,20 @@
         document.getElementById('bir_total_display').value = total.toFixed(2);
         document.getElementById('bir').value               = total.toFixed(2);
         document.getElementById('bir_net_amount').value    = net.toFixed(2);
+        document.getElementById('release_amount').value    = net.toFixed(2);
     }
 
-    // Pre-fill BIR gross from disbursement amount on input
-    document.getElementById('amount').addEventListener('input', function () {
-        document.getElementById('bir_gross').value = this.value;
+    function updateBirGrossFromInputs() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const payroll = parseFloat(document.getElementById('payroll').value) || 0;
+        const totalGross = amount + payroll;
+        document.getElementById('bir_gross').value = totalGross.toFixed(2);
         computeBIR();
-    });
+    }
+
+    // Pre-fill BIR gross from disbursement amount + payroll on input
+    document.getElementById('amount').addEventListener('input', updateBirGrossFromInputs);
+    document.getElementById('payroll').addEventListener('input', updateBirGrossFromInputs);
 
     function addAccountingRow() {
         const tbody = document.getElementById('accounting-rows');
