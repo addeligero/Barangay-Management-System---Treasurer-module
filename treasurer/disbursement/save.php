@@ -44,6 +44,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     $accountingEntriesJson = $accountingEntries ? json_encode($accountingEntries) : '';
+    $birVatType = $_POST['bir_vat_type'] ?? '';
+    $birGross = isset($_POST['bir_gross']) ? floatval($_POST['bir_gross']) : 0;
+    $birWithholdingA = isset($_POST['bir_withholding_a']) ? floatval($_POST['bir_withholding_a']) : 0;
+    $birWithholdingB = isset($_POST['bir_withholding_b']) ? floatval($_POST['bir_withholding_b']) : 0;
 
     if ($isUpdate) {
         $stmt = $conn->prepare(" 
@@ -60,6 +64,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             fund = ?,
             payroll = ?,
             bir = ?,
+            bir_vat_type = ?,
+            bir_gross = ?,
+            bir_withholding_a = ?,
+            bir_withholding_b = ?,
             purpose = ?,
             release_amount = ?,
             accounting_entries = ?,
@@ -74,7 +82,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         ");
 
         $stmt->bind_param(
-            "ssssssssdssssdssssssssi",
+            "ssssssssdssssdddsdssssssssi",
             $_POST['date'],
             $_POST['check_no'],
             $_POST['or_no'],
@@ -87,6 +95,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['fund'],
             $_POST['payroll'],
             $_POST['bir'],
+            $birVatType,
+            $birGross,
+            $birWithholdingA,
+            $birWithholdingB,
             $_POST['purpose'],
             $_POST['release'],
             $accountingEntriesJson,
@@ -106,12 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     } else {
         $stmt = $conn->prepare(" 
         INSERT INTO disbursements
-        (disburse_date, check_no, or_no, received_date, payee, payee_address, payee_tin, dv_no, amount, fund, payroll, bir, purpose, release_amount, accounting_entries, signatory_a, signatory_b, signatory_c, signatory_prepared_by, signatory_checked_by, signatory_approved_by, signatory_received_by)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            (disburse_date, check_no, or_no, received_date, payee, payee_address, payee_tin, dv_no, amount, fund, payroll, bir, bir_vat_type, bir_gross, bir_withholding_a, bir_withholding_b, purpose, release_amount, accounting_entries, signatory_a, signatory_b, signatory_c, signatory_prepared_by, signatory_checked_by, signatory_approved_by, signatory_received_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ");
 
         $stmt->bind_param(
-            "ssssssssdsssssssssssss",
+            "ssssssssdssssdddsdssssssss",
             $_POST['date'],
             $_POST['check_no'],
             $_POST['or_no'],
@@ -124,6 +136,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $_POST['fund'],
             $_POST['payroll'],
             $_POST['bir'],
+            $birVatType,
+            $birGross,
+            $birWithholdingA,
+            $birWithholdingB,
             $_POST['purpose'],
             $_POST['release'],
             $accountingEntriesJson,

@@ -69,12 +69,41 @@ function parseAccountingEntries($text)
 }
 
 $accountingRows = parseAccountingEntries($disbursement['accounting_entries'] ?? '');
-$amount = number_format((float) $disbursement['amount'], 2);
+$amount = number_format((float) $disbursement['release_amount'], 2);
 $releaseAmount = number_format((float) $disbursement['release_amount'], 2);
 $disburseDate = date('M d, Y', strtotime($disbursement['disburse_date']));
 $receivedDate = !empty($disbursement['received_date'])
     ? date('M d, Y', strtotime($disbursement['received_date']))
     : $disburseDate;
+$birVatType = $disbursement['bir_vat_type'] ?? '';
+$birGross = isset($disbursement['bir_gross']) ? (float) $disbursement['bir_gross'] : 0.0;
+$birWithholdingA = isset($disbursement['bir_withholding_a']) ? (float) $disbursement['bir_withholding_a'] : 0.0;
+$birWithholdingB = isset($disbursement['bir_withholding_b']) ? (float) $disbursement['bir_withholding_b'] : 0.0;
+$birTotal = isset($disbursement['bir']) ? (float) $disbursement['bir'] : 0.0;
+$hasBirBreakdown = ($birVatType !== '')
+    || ($disbursement['bir_gross'] ?? '') !== ''
+    || ($disbursement['bir_withholding_a'] ?? '') !== ''
+    || ($disbursement['bir_withholding_b'] ?? '') !== ''
+    || ($disbursement['bir'] ?? '') !== '';
+
+switch ($birVatType) {
+    case 'Reg. VAT':
+        $birLabelOne = '1% EWT';
+        $birLabelFive = '5% VAT Withholding';
+        break;
+    case 'Non-VAT Supplies':
+        $birLabelOne = '1% Withholding';
+        $birLabelFive = '3% Withholding';
+        break;
+    case 'Non-VAT Services':
+        $birLabelOne = '2% Withholding';
+        $birLabelFive = '3% Withholding';
+        break;
+    default:
+        $birLabelOne = 'Withholding A';
+        $birLabelFive = 'Withholding B';
+        break;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -227,6 +256,20 @@ $receivedDate = !empty($disbursement['received_date'])
         .particulars-amount {
             text-align: right;
             font-weight: bold;
+        }
+
+        .bir-breakdown {
+            margin-top: 8px;
+            padding-top: 6px;
+            border-top: 1px dashed #777;
+            font-size: 11px;
+        }
+
+        .bir-breakdown .row {
+            display: flex;
+            justify-content: space-between;
+            gap: 10px;
+            margin-top: 2px;
         }
 
         .cert-section {
@@ -442,13 +485,38 @@ $receivedDate = !empty($disbursement['received_date'])
                     <th>PARTICULARS</th>
                     <th style="width: 180px;">AMOUNT</th>
                 </tr>
-            </thead>
+                <td>
+                    <?= nl2br(htmlspecialchars($disbursement['purpose'])) ?>
+                    <?php if ($hasBirBreakdown): ?>
+                    <div class="bir-breakdown">
+                        <div class="row"><strong>BIR Breakdown</strong></div>
+                        <div class="row"><span>VAT
+                                Type</span><span><?= htmlspecialchars($birVatType ?: 'N/A') ?></span>
+                        </div>
+                        <div class="row"><span>Gross</span><span>Php.
+                                <?= number_format($birGross, 2) ?></span>
+                        </div>
+                        <div class="row">
+                            <span><?= htmlspecialchars($birLabelOne) ?></span><span>Php.
+                                <?= number_format($birWithholdingA, 2) ?></span>
+                        </div>
+                        <div class="row">
+                            <span><?= htmlspecialchars($birLabelFive) ?></span><span>Php.
+                                <?= number_format($birWithholdingB, 2) ?></span>
+                        </div>
+                        <div class="row"><span>Total Withholding</span><span>Php.
+                                <?= number_format($birTotal, 2) ?></span>
+                        </div>
+                    </div>
+                    <?php endif; ?>
+                </td>
             <tbody>
                 <tr>
-                    <td><?= nl2br(htmlspecialchars($disbursement['purpose'])) ?>
+                    <td>
                     </td>
                     <td class="particulars-amount">Php.
-                        <?= $amount ?></td>
+                        <?= $amount ?>
+                    </td>
                 </tr>
             </tbody>
         </table>

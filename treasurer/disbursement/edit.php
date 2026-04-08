@@ -192,7 +192,7 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
                                 <div class="form-group">
                                     <label for="bir_gross"><i class="fas fa-money-bill-wave"></i> BIR Gross
                                         Amount</label>
-                                    <input type="number" id="bir_gross" step="0.01" min="0"
+                                    <input type="number" id="bir_gross" name="bir_gross" step="0.01" min="0"
                                         value="<?= htmlspecialchars($birGrossValue) ?>"
                                         oninput="computeBIR()" style="background:#e8f0ff;">
                                     <small style="color:#666;">Pre-filled from disbursement amount; edit if
@@ -204,8 +204,8 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
                                 <div class="form-group">
                                     <label id="lbl_bir_1pct"><i class="fas fa-percent"></i> 1% Expanded Withholding
                                         Tax</label>
-                                    <input type="number" id="bir_one_pct" step="0.01" readonly
-                                        style="background:#f0f4f8;">
+                                    <input type="number" id="bir_withholding_a" name="bir_withholding_a" step="0.01"
+                                        readonly style="background:#f0f4f8;">
                                     <small id="hint_bir_1pct"
                                         style="color:#666; display:block; margin-top:4px;">Auto-calculated (1% of
                                         base)</small>
@@ -213,8 +213,8 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
 
                                 <div class="form-group">
                                     <label id="lbl_bir_5pct"><i class="fas fa-percent"></i> 5% Withholding Tax</label>
-                                    <input type="number" id="bir_five_pct" step="0.01" readonly
-                                        style="background:#f0f4f8;">
+                                    <input type="number" id="bir_withholding_b" name="bir_withholding_b" step="0.01"
+                                        readonly style="background:#f0f4f8;">
                                     <small id="hint_bir_5pct"
                                         style="color:#666; display:block; margin-top:4px;">Auto-calculated (5% of
                                         gross)</small>
@@ -227,7 +227,7 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
                                     <input type="number" id="bir_total_display" step="0.01" readonly
                                         value="<?= htmlspecialchars($birValue) ?>"
                                         style="background:#1F3A93; color:#fff; font-weight:bold; font-size:16px;">
-                                    <small style="color:#666; display:block; margin-top:4px;">1% + 5% total
+                                    <small style="color:#666; display:block; margin-top:4px;">Auto-calculated total
                                         withheld</small>
                                     <input type="hidden" id="bir" name="bir"
                                         value="<?= htmlspecialchars($birValue) ?>">
@@ -472,8 +472,8 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
 
         const total = oneP + fiveP;
         const net = gross - total;
-        document.getElementById('bir_one_pct').value = oneP.toFixed(2);
-        document.getElementById('bir_five_pct').value = fiveP.toFixed(2);
+        document.getElementById('bir_withholding_a').value = oneP.toFixed(2);
+        document.getElementById('bir_withholding_b').value = fiveP.toFixed(2);
         document.getElementById('bir_total_display').value = total.toFixed(2);
         document.getElementById('bir').value = total.toFixed(2);
         document.getElementById('bir_net_amount').value = net.toFixed(2);
