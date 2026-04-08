@@ -36,41 +36,48 @@ $recentDisbursements = $conn->query("
     LIMIT 5
 ");
 
-// Get collection categories data for chart (including manual entries)
-// Tax Revenue - Manual entries + payments categorized as tax revenue
-$taxRevenueManual = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM monthly_manual_entries 
-    WHERE entry_type = 'Tax Revenue'
+// Get collection categories data for chart (based on current month)
+$chartMonth = (int) date('n');
+$chartYear = (int) date('Y');
+
+$birWithholdingRecords = $conn->query("
+    SELECT COALESCE(SUM(total_amount), 0) as total 
+    FROM bir_records 
+    WHERE MONTH(record_date) = $chartMonth 
+    AND YEAR(record_date) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
-$taxRevenue = $taxRevenueManual;
-
-// Tax on Goods and Services - Manual entries
-$taxGoodsServicesManual = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM monthly_manual_entries 
-    WHERE entry_type = 'Tax on Goods & Services'
+$birWithholdingDisbursements = $conn->query("
+    SELECT COALESCE(SUM(CAST(NULLIF(bir, '') AS DECIMAL(12,2))), 0) as total
+    FROM disbursements
+    WHERE MONTH(disburse_date) = $chartMonth
+    AND YEAR(disburse_date) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
-$taxGoodsServices = $taxGoodsServicesManual;
+$birWithholdingTotal = $birWithholdingRecords + $birWithholdingDisbursements;
 
 // Operating and Services - Payments with operating_services field + all cedula
 $operatingServicesPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
     WHERE operating_services IS NOT NULL AND operating_services != ''
+    AND MONTH(payment_date) = $chartMonth
+    AND YEAR(payment_date) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
 $operatingServicesCedula = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM cedula
+    WHERE MONTH(issued_date) = $chartMonth
+    AND YEAR(issued_date) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
 $operatingServicesManual = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM monthly_manual_entries 
     WHERE entry_type = 'Operating & Services'
+    AND month = $chartMonth
+    AND year = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
 $operatingServices = $operatingServicesPayments + $operatingServicesCedula + $operatingServicesManual;
@@ -79,16 +86,29 @@ $operatingServices = $operatingServicesPayments + $operatingServicesCedula + $op
 $otherCollectionsPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
-    WHERE operating_services IS NULL OR operating_services = ''
+    WHERE MONTH(payment_date) = $chartMonth
+    AND YEAR(payment_date) = $chartYear
+    AND (remarks IS NULL OR remarks NOT LIKE 'Pending Status%')
+")->fetch_assoc()['total'] ?? 0;
+
+$pendingPaidCollections = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total
+    FROM payment_status
+    WHERE payment_status = 'paid'
+    AND MONTH(created_at) = $chartMonth
+    AND YEAR(created_at) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
 $otherCollectionsManual = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM monthly_manual_entries 
     WHERE entry_type = 'Other'
+    AND month = $chartMonth
+    AND year = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
-$otherCollections = $otherCollectionsPayments + $otherCollectionsManual;
+$otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
+$totalMonthlyCollections = $operatingServices + $otherCollections + $birWithholdingTotal;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -257,17 +277,19 @@ $otherCollections = $otherCollectionsPayments + $otherCollectionsManual;
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['Tax Revenue', 'Tax on Goods & Services', 'Operating & Services', 'Other Collections'],
+                labels: ['TOTAL OTHER COLLECTIONS', 'TOTAL BIR WITHHOLDING',
+                    'Operating & Services', 'TOTAL MONTHLY COLLECTIONS'
+                ],
                 datasets: [{
                     label: 'Collections by Category',
                     data: [
-                        <?= $taxRevenue ?>
+                        <?= $otherCollections ?>
                         ,
-                        <?= $taxGoodsServices ?>
+                        <?= $birWithholdingTotal ?>
                         ,
                         <?= $operatingServices ?>
                         ,
-                        <?= $otherCollections ?>
+                        <?= $totalMonthlyCollections ?>
                     ],
                     backgroundColor: [
                         '#1F3A93',
