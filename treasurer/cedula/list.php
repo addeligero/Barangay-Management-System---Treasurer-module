@@ -2,7 +2,25 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-$result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
+$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : "";
+
+if ($searchQuery !== "") {
+    $searchParam = "%{$searchQuery}%";
+    $stmt = $conn->prepare("
+        SELECT * FROM cedula
+        WHERE full_name LIKE ?
+            OR cedula_no LIKE ?
+            OR tin LIKE ?
+            OR address LIKE ?
+            OR occupation LIKE ?
+        ORDER BY issued_date DESC
+    ");
+    $stmt->bind_param("sssss", $searchParam, $searchParam, $searchParam, $searchParam, $searchParam);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -27,7 +45,6 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
             </div>
             <ul class="sidebar-menu">
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="../search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="../pending_payments/list.php"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="list.php" class="active"><i class="fas fa-id-card"></i> Cedula</a></li>
@@ -61,11 +78,21 @@ $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
 
                 <div class="card">
                     <div class="card-header"
-                        style="display: flex; justify-content: space-between; align-items: center;">
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                         <h3><i class="fas fa-list"></i> All Cedula Records</h3>
-                        <a href="add.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> Issue New Cedula
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <form method="GET" action="list.php" style="display: flex; gap: 8px;">
+                                <input type="text" name="search" placeholder="Search name, cedula, or TIN..."
+                                    value="<?= htmlspecialchars($searchQuery) ?>"
+                                    style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 240px;">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </form>
+                            <a href="add.php" class="btn btn-success">
+                                <i class="fas fa-plus"></i> Issue New Cedula
+                            </a>
+                        </div>
                     </div>
 
                     <div class="table-responsive">

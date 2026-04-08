@@ -2,11 +2,30 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-$result = $conn->query("
-    SELECT * FROM payment_status
-    WHERE payment_status = 'pending'
-    ORDER BY created_at DESC, id DESC
-");
+$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : "";
+
+if ($searchQuery !== "") {
+    $searchParam = "%{$searchQuery}%";
+    $stmt = $conn->prepare("
+        SELECT * FROM payment_status
+        WHERE payment_status = 'pending'
+            AND (
+                resident_fname LIKE ?
+                OR certificate_type LIKE ?
+                OR purpose LIKE ?
+            )
+        ORDER BY created_at DESC, id DESC
+    ");
+    $stmt->bind_param("sss", $searchParam, $searchParam, $searchParam);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query("
+        SELECT * FROM payment_status
+        WHERE payment_status = 'pending'
+        ORDER BY created_at DESC, id DESC
+    ");
+}
 
 $success = "";
 if (isset($_GET['paid'])) {
@@ -39,7 +58,6 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
             </div>
             <ul class="sidebar-menu">
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="../search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="list.php" class="active"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
@@ -75,8 +93,16 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
 
                 <div class="card">
                     <div class="card-header"
-                        style="display: flex; justify-content: space-between; align-items: center;">
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                         <h3><i class="fas fa-list"></i> Pending Payments</h3>
+                        <form method="GET" action="list.php" style="display: flex; gap: 8px;">
+                            <input type="text" name="search" placeholder="Search resident or purpose..."
+                                value="<?= htmlspecialchars($searchQuery) ?>"
+                                style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 240px;">
+                            <button type="submit" class="btn btn-secondary">
+                                <i class="fas fa-search"></i> Search
+                            </button>
+                        </form>
                     </div>
 
                     <div class="table-responsive">

@@ -2,7 +2,27 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-$result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC, id DESC");
+$searchQuery = isset($_GET['search']) ? trim($_GET['search']) : "";
+
+if ($searchQuery !== "") {
+    $searchParam = "%{$searchQuery}%";
+    $stmt = $conn->prepare("
+        SELECT * FROM disbursements
+        WHERE check_no LIKE ?
+            OR payee LIKE ?
+            OR dv_no LIKE ?
+            OR purpose LIKE ?
+            OR fund LIKE ?
+            OR payroll LIKE ?
+            OR bir LIKE ?
+        ORDER BY disburse_date DESC, id DESC
+    ");
+    $stmt->bind_param("sssssss", $searchParam, $searchParam, $searchParam, $searchParam, $searchParam, $searchParam, $searchParam);
+    $stmt->execute();
+    $result = $stmt->get_result();
+} else {
+    $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC, id DESC");
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -26,7 +46,6 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
             </div>
             <ul class="sidebar-menu">
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="../search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="../payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="../pending_payments/list.php"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
@@ -65,11 +84,21 @@ $result = $conn->query("SELECT * FROM disbursements ORDER BY disburse_date DESC,
 
                 <div class="card">
                     <div class="card-header"
-                        style="display: flex; justify-content: space-between; align-items: center;">
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
                         <h3><i class="fas fa-list"></i> All Disbursement Records</h3>
-                        <a href="add.php" class="btn btn-success">
-                            <i class="fas fa-plus"></i> New Disbursement
-                        </a>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <form method="GET" action="list.php" style="display: flex; gap: 8px;">
+                                <input type="text" name="search" placeholder="Search payee, DV, check, fund..."
+                                    value="<?= htmlspecialchars($searchQuery) ?>"
+                                    style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 260px;">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </form>
+                            <a href="add.php" class="btn btn-success">
+                                <i class="fas fa-plus"></i> New Disbursement
+                            </a>
+                        </div>
                     </div>
 
                     <div class="table-responsive">
