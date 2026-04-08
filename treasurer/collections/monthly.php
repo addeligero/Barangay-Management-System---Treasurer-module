@@ -556,7 +556,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 <tr>
                                     <td style="padding-left: 30px; color: #555;">
                                         <i class="fas fa-chevron-right" style="font-size:11px; margin-right:6px;"></i>
-                                        Pending Status -
+                                        Paid Status -
                                         <?= htmlspecialchars($bd['certificate_type'] ?: 'Unspecified') ?>
                                     </td>
                                     <td>₱<?= number_format($bd['total'], 2) ?>
@@ -586,7 +586,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 </tr>
                                 <?php endforeach; ?>
                                 <tr class="total-row">
-                                    <td>TOTAL OTHER CERTIFICATE COLLECTIONS</td>
+                                    <td>TOTAL OTHER COLLECTIONS</td>
                                     <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
