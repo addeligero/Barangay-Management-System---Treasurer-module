@@ -133,6 +133,11 @@ if ($searchQuery !== "") {
                                     </td>
                                     <td>
                                         <div class="action-buttons">
+                                            <a class="btn btn-sm btn-secondary"
+                                                href="print.php?id=<?= $row['id'] ?>"
+                                                title="Print">
+                                                <i class="fas fa-print"></i>
+                                            </a>
 
                                             <a class="btn btn-sm btn-primary"
                                                 href="edit.php?id=<?= $row['id'] ?>"
