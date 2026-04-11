@@ -13,7 +13,8 @@ if (empty($name)) {
 
 // pangitaon sa cedula ang first (most complete info)
 $stmt = $conn->prepare("
-    SELECT full_name, address, birth_date, age, sex, birth_place, civil_status, occupation, tin, height, weight
+    SELECT full_name, surname, first_name, middle_name, address, birth_date, age, sex, birth_place, civil_status,
+           citizenship, icr_no, occupation, tin, height, weight, place_of_issue, year_issued
     FROM cedula 
     WHERE full_name = ?
     ORDER BY issued_date DESC

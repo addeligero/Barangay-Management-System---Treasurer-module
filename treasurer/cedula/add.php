@@ -79,6 +79,22 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                             </div>
                         </div>
 
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="year_issued"><i class="fas fa-calendar-check"></i> Year *</label>
+                                <input type="number" id="year_issued" name="year_issued"
+                                    value="<?= date('Y') ?>"
+                                    required>
+                            </div>
+
+                            <div class="form-group" style="flex: 2;">
+                                <label for="place_of_issue"><i class="fas fa-map"></i> Place of Issue
+                                    (City/Mun/Prov) *</label>
+                                <input type="text" id="place_of_issue" name="place_of_issue"
+                                    placeholder="City/Municipality, Province" required>
+                            </div>
+                        </div>
+
                         <div class="form-group" style="position: relative;">
                             <label for="full_name"><i class="fas fa-user"></i> Full Name * <small
                                     style="color: #666;">(Type to search existing records)</small></label>
@@ -86,6 +102,23 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                 placeholder="Enter full name (First M. Last)" required autocomplete="off">
                             <div id="suggestions"
                                 style="position: absolute; background: white; border: 1px solid #ddd; max-height: 200px; overflow-y: auto; width: calc(100% - 40px); z-index: 1000; display: none; border-radius: 5px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); margin-top: 5px;">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="surname"><i class="fas fa-user"></i> Surname *</label>
+                                <input type="text" id="surname" name="surname" placeholder="Surname" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="first_name"><i class="fas fa-user"></i> First Name *</label>
+                                <input type="text" id="first_name" name="first_name" placeholder="First name" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label for="middle_name"><i class="fas fa-user"></i> Middle Name</label>
+                                <input type="text" id="middle_name" name="middle_name" placeholder="Middle name">
                             </div>
                         </div>
 
@@ -146,6 +179,11 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
 
                         <div class="form-row">
                             <div class="form-group">
+                                <label for="icr_no"><i class="fas fa-id-badge"></i> ICR No. (If Alien)</label>
+                                <input type="text" id="icr_no" name="icr_no" placeholder="ICR no.">
+                            </div>
+
+                            <div class="form-group">
                                 <label for="occupation"><i class="fas fa-briefcase"></i> Occupation *</label>
                                 <input type="text" id="occupation" name="occupation" placeholder="Enter occupation"
                                     required>
@@ -178,17 +216,70 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                             </div>
 
                             <div class="form-group">
-                                <label for="annual_income"><i class="fas fa-coins"></i> Annual Income (PHP)</label>
+                                <label for="annual_income"><i class="fas fa-coins"></i> Taxable Amount (PHP)</label>
                                 <input type="number" id="annual_income" name="annual_income" step="0.01" min="0"
-                                    placeholder="e.g., 50000" oninput="calculateAmount()">
-                                <small style="color:#666;">Formula: Income &divide; 1,000 = Amount to Pay</small>
+                                    placeholder="e.g., 50000" oninput="calculateAdditionalFromIncome()">
+                                <small style="color:#666;">Auto-calculated for profession: Income &divide; 1,000</small>
                             </div>
 
                             <div class="form-group">
-                                <label for="amount"><i class="fas fa-peso-sign"></i> Amount *</label>
-                                <input type="number" id="amount" name="amount" step="0.01" value="0.00" required
+                                <label for="basic_tax"><i class="fas fa-receipt"></i> Basic Community Tax (PHP)</label>
+                                <input type="number" id="basic_tax" name="basic_tax" step="0.01" min="0" value="5.00"
+                                    oninput="computeTotals()">
+                                <small style="color:#666;">Regular: 5.00, Voluntary/Exempted: 1.00</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="additional_tax_business"><i class="fas fa-store"></i> Additional Tax -
+                                    Business (PHP)</label>
+                                <input type="number" id="additional_tax_business" name="additional_tax_business"
+                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="additional_tax_profession"><i class="fas fa-briefcase"></i> Additional Tax
+                                    - Profession (PHP)</label>
+                                <input type="number" id="additional_tax_profession" name="additional_tax_profession"
+                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="additional_tax_property"><i class="fas fa-home"></i> Additional Tax -
+                                    Property (PHP)</label>
+                                <input type="number" id="additional_tax_property" name="additional_tax_property"
+                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label for="community_tax_due"><i class="fas fa-calculator"></i> Community Tax Due
+                                    (PHP)</label>
+                                <input type="number" id="community_tax_due" name="community_tax_due" step="0.01"
+                                    value="5.00" readonly required
+                                    style="background:#e8f0ff; font-weight:bold; font-size:16px;">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="interest"><i class="fas fa-percentage"></i> Interest (PHP)</label>
+                                <input type="number" id="interest" name="interest" step="0.01" min="0" value="0.00"
+                                    oninput="computeTotals()">
+                            </div>
+
+                            <div class="form-group">
+                                <label for="amount"><i class="fas fa-peso-sign"></i> Total Amount Paid *</label>
+                                <input type="number" id="amount" name="amount" step="0.01" value="5.00" required
                                     readonly style="background:#e8f0ff; font-weight:bold; font-size:16px;">
-                                <small style="color:#666;">Auto-calculated: Income &divide; 1,000</small>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group" style="flex: 2;">
+                                <label for="amount_in_words"><i class="fas fa-spell-check"></i> Amount in Words</label>
+                                <input type="text" id="amount_in_words" name="amount_in_words"
+                                    placeholder="e.g., Seventy nine pesos">
                             </div>
                         </div>
 
@@ -213,10 +304,25 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
     </div>
 
     <script>
-        function calculateAmount() {
+        function computeTotals() {
+            const basicTax = parseFloat(document.getElementById('basic_tax').value) || 0;
+            const additionalBusiness = parseFloat(document.getElementById('additional_tax_business').value) || 0;
+            const additionalProfession = parseFloat(document.getElementById('additional_tax_profession').value) || 0;
+            const additionalProperty = parseFloat(document.getElementById('additional_tax_property').value) || 0;
+            const interest = parseFloat(document.getElementById('interest').value) || 0;
+            const due = basicTax + additionalBusiness + additionalProfession + additionalProperty;
+            document.getElementById('community_tax_due').value = due.toFixed(2);
+            document.getElementById('amount').value = (due + interest).toFixed(2);
+        }
+
+        function calculateAdditionalFromIncome() {
             const income = parseFloat(document.getElementById('annual_income').value) || 0;
             const computed = income / 1000;
-            document.getElementById('amount').value = (computed > 0 ? computed : 0).toFixed(2);
+            const professionField = document.getElementById('additional_tax_profession');
+            if (professionField) {
+                professionField.value = (computed > 0 ? computed : 0).toFixed(2);
+            }
+            computeTotals();
         }
 
         function calculateAge() {
@@ -284,6 +390,42 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                                         .birth_date;
                                                     calculateAge();
                                                 }
+                                                if (personData.surname) document
+                                                    .getElementById('surname')
+                                                    .value = personData.surname;
+                                                if (personData.first_name)
+                                                    document
+                                                    .getElementById(
+                                                        'first_name')
+                                                    .value = personData
+                                                    .first_name;
+                                                if (personData.middle_name)
+                                                    document
+                                                    .getElementById(
+                                                        'middle_name')
+                                                    .value = personData
+                                                    .middle_name;
+                                                if (personData.citizenship)
+                                                    document
+                                                    .getElementById(
+                                                        'citizenship')
+                                                    .value = personData
+                                                    .citizenship;
+                                                if (personData.icr_no) document
+                                                    .getElementById('icr_no')
+                                                    .value = personData.icr_no;
+                                                if (personData.place_of_issue)
+                                                    document
+                                                    .getElementById(
+                                                        'place_of_issue')
+                                                    .value = personData
+                                                    .place_of_issue;
+                                                if (personData.year_issued)
+                                                    document
+                                                    .getElementById(
+                                                        'year_issued')
+                                                    .value = personData
+                                                    .year_issued;
                                                 if (personData.sex) document
                                                     .getElementById('sex')
                                                     .value = personData.sex;
@@ -308,6 +450,8 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                                 if (personData.weight) document
                                                     .getElementById('weight')
                                                     .value = personData.weight;
+
+                                                syncFullName();
 
                                                 // Show notification
                                                 alert(
@@ -338,6 +482,32 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                 suggestionsDiv.style.display = 'none';
             }
         });
+
+        function syncFullName() {
+            const surname = document.getElementById('surname').value.trim();
+            const first = document.getElementById('first_name').value.trim();
+            const middle = document.getElementById('middle_name').value.trim();
+            if (!surname && !first && !middle) {
+                return;
+            }
+            let fullName = '';
+            if (surname && (first || middle)) {
+                fullName = surname + ', ' + first + (middle ? ' ' + middle : '');
+            } else {
+                fullName = surname || first || middle;
+            }
+            document.getElementById('full_name').value = fullName;
+        }
+
+        ['surname', 'first_name', 'middle_name'].forEach((fieldId) => {
+            const field = document.getElementById(fieldId);
+            if (!field) {
+                return;
+            }
+            field.addEventListener('input', syncFullName);
+        });
+
+        document.addEventListener('DOMContentLoaded', computeTotals);
 
         (function() {
             const forms = Array.from(document.querySelectorAll('form'));

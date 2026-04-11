@@ -420,7 +420,7 @@ switch ($birVatType) {
 
     <div class="voucher">
         <div class="voucher-header">
-            <img class="logo" src="../../assets/images/logo.jpg" alt="Barangay Logo">
+            <img class="logo" src="../../assets/images/logo2.jpeg" alt="Barangay Logo">
             <div class="center">
                 <div class="line-1">REPUBLIC OF THE PHILIPPINES</div>
                 <div class="line-2">PROVINCE OF AGUSAN DEL NORTE</div>
