@@ -57,9 +57,12 @@ CREATE TABLE IF NOT EXISTS payments (
     bir_tax DECIMAL(10, 2) DEFAULT 0,
     remarks TEXT,
     received_by INT,
+    resident_id INT DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (received_by) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_payments_resident_id ON payments (resident_id);
 
 -- ==========================================================================
 -- 2.1 PAYMENT STATUS TABLE

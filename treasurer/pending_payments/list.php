@@ -127,7 +127,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 <?php
                                     $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
                                     $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
-                                ?>
+                                    ?>
                                 <tr>
                                     <td><?= date('M d, Y', strtotime($row['created_at'])) ?>
                                     </td>
@@ -146,7 +146,8 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                     </td>
                                     <td>
                                         <?php if (!empty($row['proof_path'])): ?>
-                                        <a class="btn btn-sm btn-secondary" href="../../<?= htmlspecialchars($row['proof_path']) ?>"
+                                        <a class="btn btn-sm btn-secondary"
+                                            href="../../<?= htmlspecialchars($row['proof_path']) ?>"
                                             target="_blank" title="View Proof">
                                             <i class="fas fa-receipt"></i>
                                         </a>
@@ -154,7 +155,9 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                         <span class="text-muted">None</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td><span class="badge <?= $statusClass ?>"><?= $statusText ?></span></td>
+                                    <td><span
+                                            class="badge <?= $statusClass ?>"><?= $statusText ?></span>
+                                    </td>
                                     <td>
                                         <div class="action-buttons">
                                             <a class="btn btn-sm btn-secondary"

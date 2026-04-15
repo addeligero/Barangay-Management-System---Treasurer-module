@@ -99,7 +99,8 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                             <label><i class="fas fa-receipt"></i> Payment Proof</label>
                             <div>
                                 <a class="btn btn-sm btn-secondary"
-                                    href="../../<?= htmlspecialchars($pending['proof_path']) ?>" target="_blank">
+                                    href="../../<?= htmlspecialchars($pending['proof_path']) ?>"
+                                    target="_blank">
                                     <i class="fas fa-eye"></i> View Proof
                                 </a>
                             </div>
@@ -120,7 +121,8 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 <select id="payment_status" name="payment_status" required>
                                     <option value="pending" <?= $pending['payment_status'] === 'pending' ? 'selected' : '' ?>>Pending
                                     </option>
-                                    <option value="to_review" <?= $pending['payment_status'] === 'to_review' ? 'selected' : '' ?>>To Review
+                                    <option value="to_review" <?= $pending['payment_status'] === 'to_review' ? 'selected' : '' ?>>To
+                                        Review
                                     </option>
                                     <option value="paid" <?= $pending['payment_status'] === 'paid' ? 'selected' : '' ?>>Paid
                                     </option>

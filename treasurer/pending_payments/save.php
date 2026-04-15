@@ -46,6 +46,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     $paymentDate = date('Y-m-d');
 
     $received_by = resolve_received_by($conn);
+    $residentId = !empty($pending['resident_id']) ? intval($pending['resident_id']) : null;
 
     $remarks = "Pending Status #" . $pendingId;
     $operating_services = '';
@@ -53,11 +54,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     $conn->begin_transaction();
 
     $insertStmt = $conn->prepare("
-        INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, operating_services, amount, bir_tax, remarks, received_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+        INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, operating_services, amount, bir_tax, remarks, received_by, resident_id, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
     $insertStmt->bind_param(
-        "ssssssddsi",
+        "ssssssddsii",
         $nextReceipt,
         $paymentDate,
         $pending['resident_fname'],
@@ -67,7 +68,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
         $pending['amount'],
         $pending['bir_tax'],
         $remarks,
-        $received_by
+        $received_by,
+        $residentId
     );
     $insertOk = $insertStmt->execute();
     $insertStmt->close();
@@ -178,11 +180,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $insertOk = false;
     if ($updateOk) {
         $insertStmt = $conn->prepare("
-            INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, operating_services, amount, bir_tax, remarks, received_by, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
-        ");
+                INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, operating_services, amount, bir_tax, remarks, received_by, resident_id, created_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+            ");
         $insertStmt->bind_param(
-            "ssssssddsi",
+            "ssssssddsii",
             $nextReceipt,
             $paymentDate,
             $residentName,
@@ -192,7 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
             $amount,
             $birTax,
             $remarks,
-            $received_by
+            $received_by,
+            $residentId
         );
         $insertOk = $insertStmt->execute();
         $insertStmt->close();

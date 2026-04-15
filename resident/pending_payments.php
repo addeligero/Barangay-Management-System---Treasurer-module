@@ -187,6 +187,7 @@ $grandTotal = $amountTotal + $birTotal;
             <ul class="sidebar-menu">
                 <li><a href="pending_payments.php" class="active"><i class="fas fa-hourglass-half"></i> Pending
                         Payments</a></li>
+                <li><a href="payment_history.php"><i class="fas fa-receipt"></i> Payment History</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
@@ -246,7 +247,7 @@ $grandTotal = $amountTotal + $birTotal;
                     </div>
 
                     <div style="margin-bottom: 15px; color: #4a5568; font-size: 14px;">
-                        Showing records matched to your resident name. If you see missing items, please contact the
+                        Showing records linked to your resident account. If you see missing items, please contact the
                         treasurer.
                     </div>
 
