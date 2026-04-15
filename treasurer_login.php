@@ -1,5 +1,22 @@
 <?php
 session_start();
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
+if (isset($_SESSION['user_id'])) {
+    $role = strtolower(trim($_SESSION['role'] ?? ''));
+    if ($role === 'treasurer' || $role === 'admin') {
+        header("Location: treasurer/dashboard.php");
+        exit;
+    }
+}
+
+if (isset($_SESSION['resident_id'])) {
+    header("Location: resident/pending_payments.php");
+    exit;
+}
+
 include "config/database.php";
 
 $error = "";
@@ -20,19 +37,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         // MD5 password check
         if (md5($password) === $user['password']) {
 
-            $_SESSION['user_id'] = $user['id'];
-            $_SESSION['name'] = $user['name'];
-            $_SESSION['role'] = $user['role'];
+            // role-based access: only treasurer/admin can log in here
+            $role = strtolower(trim($user['role'] ?? ''));
+            if ($role === 'treasurer' || $role === 'admin') {
+                $_SESSION['user_id'] = $user['id'];
+                $_SESSION['name'] = $user['name'];
+                $_SESSION['role'] = $role;
 
-            // role-based redirect
-            if ($user['role'] === 'treasurer' || $user['role'] === 'admin') {
                 header("Location: treasurer/dashboard.php");
-                exit;
-            } else {
-                header("Location: fgindex.php");
                 exit;
             }
 
+            $error = "This account is not authorized for treasurer login.";
         } else {
             $error = "Invalid password";
         }

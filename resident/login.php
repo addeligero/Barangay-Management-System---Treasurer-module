@@ -1,5 +1,17 @@
 <?php
 session_start();
+header("Cache-Control: no-store, no-cache, must-revalidate, max-age=0");
+header("Pragma: no-cache");
+header("Expires: 0");
+
+if (isset($_SESSION['user_id'])) {
+    $role = strtolower(trim($_SESSION['role'] ?? ''));
+    if ($role === 'treasurer' || $role === 'admin') {
+        header("Location: ../treasurer/dashboard.php");
+        exit;
+    }
+}
+
 include "../config/database.php";
 
 if (isset($_SESSION['resident_id'])) {
