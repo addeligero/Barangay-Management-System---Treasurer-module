@@ -19,9 +19,6 @@ $totalBrgyClearance = $conn->query("
     SELECT COUNT(*) AS total FROM payments WHERE service_type = 'Barangay Clearance'
 ")->fetch_assoc()['total'] ?? 0;
 
-$totalBIR = $conn->query("
-    SELECT COALESCE(SUM(total_amount), 0) AS total FROM bir_records
-")->fetch_assoc()['total'] ?? 0;
 
 // Get recent transactions
 $recentPayments = $conn->query("
@@ -40,21 +37,6 @@ $recentDisbursements = $conn->query("
 $chartMonth = (int) date('n');
 $chartYear = (int) date('Y');
 
-$birWithholdingRecords = $conn->query("
-    SELECT COALESCE(SUM(total_amount), 0) as total 
-    FROM bir_records 
-    WHERE MONTH(record_date) = $chartMonth 
-    AND YEAR(record_date) = $chartYear
-")->fetch_assoc()['total'] ?? 0;
-
-$birWithholdingDisbursements = $conn->query("
-    SELECT COALESCE(SUM(CAST(NULLIF(bir, '') AS DECIMAL(12,2))), 0) as total
-    FROM disbursements
-    WHERE MONTH(disburse_date) = $chartMonth
-    AND YEAR(disburse_date) = $chartYear
-")->fetch_assoc()['total'] ?? 0;
-
-$birWithholdingTotal = $birWithholdingRecords + $birWithholdingDisbursements;
 
 // Operating and Services - Payments with operating_services field + all cedula
 $operatingServicesPayments = $conn->query("
@@ -108,7 +90,7 @@ $otherCollectionsManual = $conn->query("
 ")->fetch_assoc()['total'] ?? 0;
 
 $otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
-$totalMonthlyCollections = $operatingServices + $otherCollections + $birWithholdingTotal;
+$totalMonthlyCollections = $operatingServices + $otherCollections;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -134,11 +116,9 @@ $totalMonthlyCollections = $operatingServices + $otherCollections + $birWithhold
             </div>
             <ul class="sidebar-menu">
                 <li><a href="dashboard.php" class="active"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><a href="search.php"><i class="fas fa-search"></i> Search Payee</a></li>
                 <li><a href="payments/list.php"><i class="fas fa-money-bill-wave"></i> Payments</a></li>
                 <li><a href="pending_payments/list.php"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
-                <li><a href="bir/list.php"><i class="fas fa-percent"></i> BIR Records</a></li>
                 <li><a href="disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
                 <li><a href="collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
@@ -178,11 +158,6 @@ $totalMonthlyCollections = $operatingServices + $otherCollections + $birWithhold
                         </div>
                     </div>
 
-                    <div class="stat-card green">
-                        <h4><i class="fas fa-chart-bar"></i> BIR Collections</h4>
-                        <div class="stat-value">
-                            ₱<?= number_format($totalBIR, 2) ?></div>
-                    </div>
                 </div>
 
                 <!-- Chart Section -->
@@ -277,15 +252,11 @@ $totalMonthlyCollections = $operatingServices + $otherCollections + $birWithhold
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['TOTAL OTHER COLLECTIONS', 'TOTAL BIR WITHHOLDING',
-                    'Operating & Services', 'TOTAL MONTHLY COLLECTIONS'
-                ],
+                labels: ['TOTAL OTHER COLLECTIONS', 'Operating & Services', 'TOTAL MONTHLY COLLECTIONS'],
                 datasets: [{
                     label: 'Collections by Category',
                     data: [
                         <?= $otherCollections ?>
-                        ,
-                        <?= $birWithholdingTotal ?>
                         ,
                         <?= $operatingServices ?>
                         ,
@@ -293,13 +264,11 @@ $totalMonthlyCollections = $operatingServices + $otherCollections + $birWithhold
                     ],
                     backgroundColor: [
                         '#1F3A93',
-                        '#2E5CB8',
                         '#4A7FCB',
                         '#6BA3E0'
                     ],
                     borderColor: [
                         '#1a3280',
-                        '#264a9a',
                         '#3d6cb3',
                         '#5890c9'
                     ],
