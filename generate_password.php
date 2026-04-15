@@ -103,7 +103,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST" && !empty($_POST['new_password'])) {
 SET password = '$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi'
 WHERE username = 'treasurer';</pre>
 
-        <p><a href="debug_login.php">← Test Login</a> | <a href="index.php">Main Login Page →</a></p>
+        <p><a href="debug_login.php">← Test Login</a> | <a href="treasurer_login.php">Main Login Page →</a></p>
     </div>
 </body>
 

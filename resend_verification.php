@@ -93,7 +93,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         </form>
 
         <div style="margin-top: 15px; text-align: center;">
-            <a href="index.php">Back to login</a>
+            <a href="treasurer_login.php">Back to login</a>
         </div>
     </div>
 </body>

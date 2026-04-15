@@ -72,7 +72,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
         <button type="submit">Test Login</button>
     </form>
     <br>
-    <a href="index.php">Back to main login page</a>
+    <a href="treasurer_login.php">Back to main login page</a>
 </body>
 
 </html>

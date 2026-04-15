@@ -1,144 +1,60 @@
 <?php
 session_start();
-include "../config/database.php";
-
-if (isset($_SESSION['resident_id'])) {
-    header("Location: pending_payments.php");
-    exit;
-}
+include "config/database.php";
 
 $error = "";
-$notice = "";
-
-if (isset($_GET['error']) && $_GET['error'] === 'session') {
-    $notice = "Please login to continue.";
-} elseif (isset($_GET['error']) && $_GET['error'] === 'account') {
-    $error = "Account not found or inactive. Please contact the barangay office.";
-}
-
-function build_resident_name(array $resident, string $middleMode = 'full'): string
-{
-    $first = trim($resident['first_name'] ?? '');
-    $middle = trim($resident['middle_name'] ?? '');
-    $surname = trim($resident['surname'] ?? '');
-    $suffix = trim($resident['suffix'] ?? '');
-
-    $parts = [];
-    if ($first !== '') {
-        $parts[] = $first;
-    }
-
-    if ($middle !== '') {
-        if ($middleMode === 'initial') {
-            $parts[] = strtoupper(substr($middle, 0, 1)) . '.';
-        } elseif ($middleMode === 'full') {
-            $parts[] = $middle;
-        }
-    }
-
-    if ($surname !== '') {
-        $parts[] = $surname;
-    }
-
-    if ($suffix !== '') {
-        $parts[] = $suffix;
-    }
-
-    return trim(implode(' ', $parts));
-}
-
-function verify_resident_password(string $input, string $stored): bool
-{
-    if ($stored === '') {
-        return false;
-    }
-
-    if (preg_match('/^(\$2y\$|\$argon2)/i', $stored)) {
-        return password_verify($input, $stored);
-    }
-
-    if (preg_match('/^[a-f0-9]{32}$/i', $stored)) {
-        return md5($input) === strtolower($stored);
-    }
-
-    return hash_equals($stored, $input);
-}
 
 if ($_SERVER["REQUEST_METHOD"] === "POST") {
-    $username = trim($_POST['username'] ?? '');
-    $password = $_POST['password'] ?? '';
 
-    if ($username === '' || $password === '') {
-        $error = "Please enter your username and password.";
-    } else {
-        $stmt = $conn->prepare("SELECT id, first_name, middle_name, surname, suffix, username, password, account_status, lockout_until, login_attempts FROM residents WHERE username = ? LIMIT 1");
-        $stmt->bind_param("s", $username);
-        $stmt->execute();
-        $result = $stmt->get_result();
-        $resident = $result->fetch_assoc();
-        $stmt->close();
+    $username = $_POST['username'];
+    $password = $_POST['password'];
 
-        if (!$resident) {
-            $error = "Invalid username or password.";
-        } else {
-            $status = strtolower(trim($resident['account_status'] ?? 'active'));
-            if ($status !== 'active') {
-                $error = "Account status is $status. Please contact the barangay office.";
+    $stmt = $conn->prepare("SELECT * FROM users WHERE username = ?");
+    $stmt->bind_param("s", $username);
+    $stmt->execute();
+
+    $result = $stmt->get_result();
+
+    if ($user = $result->fetch_assoc()) {
+
+        // MD5 password check
+        if (md5($password) === $user['password']) {
+
+            $_SESSION['user_id'] = $user['id'];
+            $_SESSION['name'] = $user['name'];
+            $_SESSION['role'] = $user['role'];
+
+            // role-based redirect
+            if ($user['role'] === 'treasurer' || $user['role'] === 'admin') {
+                header("Location: treasurer/dashboard.php");
+                exit;
             } else {
-                $lockoutUntil = $resident['lockout_until'] ?? null;
-                if (!empty($lockoutUntil) && strtotime($lockoutUntil) > time()) {
-                    $error = "Account is temporarily locked. Try again after " . date('M d, Y h:i A', strtotime($lockoutUntil)) . ".";
-                } else {
-                    $storedPassword = $resident['password'] ?? '';
-                    if (verify_resident_password($password, $storedPassword)) {
-                        $update = $conn->prepare("UPDATE residents SET last_login = NOW(), login_attempts = 0, lockout_until = NULL WHERE id = ?");
-                        $update->bind_param("i", $resident['id']);
-                        $update->execute();
-                        $update->close();
-
-                        $_SESSION['resident_id'] = $resident['id'];
-                        $_SESSION['resident_name'] = build_resident_name($resident, 'full');
-                        $_SESSION['resident_username'] = $resident['username'];
-                        $_SESSION['user_type'] = 'resident';
-
-                        header("Location: pending_payments.php");
-                        exit;
-                    }
-
-                    $attempts = intval($resident['login_attempts'] ?? 0) + 1;
-                    $lockoutValue = null;
-                    if ($attempts >= 5) {
-                        $lockoutValue = date('Y-m-d H:i:s', time() + 900);
-                        $attempts = 0;
-                    }
-
-                    $update = $conn->prepare("UPDATE residents SET login_attempts = ?, lockout_until = ? WHERE id = ?");
-                    $update->bind_param("isi", $attempts, $lockoutValue, $resident['id']);
-                    $update->execute();
-                    $update->close();
-
-                    if ($lockoutValue !== null) {
-                        $error = "Too many attempts. Account locked for 15 minutes.";
-                    } else {
-                        $error = "Invalid username or password.";
-                    }
-                }
+                header("Location: fgindex.php");
+                exit;
             }
+
+        } else {
+            $error = "Invalid password";
         }
+
+    } else {
+        $error = "User not found";
     }
 }
 ?>
+
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Resident Login - Barangay Sto. Rosario</title>
-    <link rel="stylesheet" href="../assets/css/style.css">
+    <title>Barangay Sto. Rosario - Treasurer System Login</title>
+    <link rel="icon" type="image/x-icon" href="assets/images/logo.jpg">
+    <link rel="stylesheet" href="assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body.resident-portal {
+        body {
             background: linear-gradient(to bottom, #f0f4f8 0%, #d9e6f2 100%);
             min-height: 100vh;
             display: flex;
@@ -152,6 +68,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
+        /* Main content wrapper for side-by-side layout */
         .main-content-wrapper {
             display: flex;
             justify-content: center;
@@ -165,6 +82,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             width: 100%;
         }
 
+        /* Logo container - compact for side placement */
         .logo-container {
             background: var(--white);
             padding: 40px 35px;
@@ -231,7 +149,6 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             width: 100%;
             border: 1px solid rgba(31, 58, 147, 0.3);
             transition: transform 0.3s ease, box-shadow 0.3s ease;
-            margin-top: 0;
         }
 
         .login-container:hover {
@@ -287,6 +204,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             }
         }
 
+        /* Responsive - stack vertically on smaller screens */
         @media (max-width: 968px) {
             .main-content-wrapper {
                 flex-direction: column;
@@ -326,15 +244,18 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
     </style>
 </head>
 
-<body class="resident-portal">
+<body>
+    <!-- Header Banner -->
     <div class="header-banner">
-        <h1>RESIDENT PORTAL</h1>
+        <h1>TREASURER MANAGEMENT SYSTEM</h1>
     </div>
 
+    <!-- Main Content Wrapper -->
     <div class="main-content-wrapper">
+        <!-- Logo and Branding Section -->
         <div class="logo-container">
             <div class="logo-wrapper">
-                <img src="../assets/images/logo.jpg" alt="Barangay Logo" class="logo-img">
+                <img src="assets/images/logo.jpg" alt="Barangay Logo" class="logo-img">
             </div>
             <div class="branding">
                 <h2>Barangay</h2>
@@ -343,15 +264,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             </div>
         </div>
 
+        <!-- Login Form -->
         <div class="login-container">
-            <h3><i class="fas fa-user"></i> Resident Login</h3>
-
-            <?php if ($notice): ?>
-            <div class="success-message">
-                <i class="fas fa-info-circle"></i>
-                <?= htmlspecialchars($notice) ?>
-            </div>
-            <?php endif; ?>
+            <h3><i class="fas fa-sign-in-alt"></i> LOGIN TO YOUR ACCOUNT</h3>
 
             <?php if ($error): ?>
             <div class="error-message">
@@ -382,19 +297,28 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                     <i class="fas fa-sign-in-alt"></i> LOGIN
                 </button>
             </form>
-
             <div style="margin-top: 15px; text-align: center;">
-                <a href="../treasurer_login.php">Login as treasurer</a>
+                <a href="forgot_password.php">Forgot password?</a>
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+                <!--  <a href="register.php">Create an account</a>-->
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+                <a href="resident/login.php">Login as resident</a>
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
+                <a href="resend_verification.php">Resend verification email</a>
             </div>
         </div>
     </div>
 
+    <!-- Footer -->
     <div class="footer">
         <p>&copy; 2025 Barangay Sto. Rosario, Magallanes, Agusan del Norte</p>
         <p>Treasurer Management System | All Rights Reserved</p>
     </div>
 
-    <script src="../assets/js/password-toggle.js"></script>
+    <script src="assets/js/password-toggle.js"></script>
 </body>
 
 </html>

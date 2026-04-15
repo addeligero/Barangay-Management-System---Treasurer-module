@@ -101,7 +101,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
             <a href="verify_otp.php">Already have an OTP?</a>
         </div>
         <div style="margin-top: 8px; text-align: center;">
-            <a href="index.php">Back to login</a>
+            <a href="treasurer_login.php">Back to login</a>
         </div>
     </div>
 </body>
