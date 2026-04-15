@@ -104,7 +104,13 @@ $grandTotal = $amountTotal + $birTotal;
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
 
-<body>
+<body class="resident-portal">
+    <div class="mobile-topbar">
+        <button class="mobile-menu-btn" type="button" id="mobileMenuBtn" aria-label="Open menu">
+            <i class="fas fa-bars"></i>
+        </button>
+        <div class="portal-title">Resident Portal</div>
+    </div>
     <div class="dashboard-container">
         <aside class="sidebar">
             <div class="sidebar-header">
@@ -114,7 +120,8 @@ $grandTotal = $amountTotal + $birTotal;
                 <p>Resident Portal</p>
             </div>
             <ul class="sidebar-menu">
-                <li><a href="pending_payments.php" class="active"><i class="fas fa-hourglass-half"></i> Pending Payments</a></li>
+                <li><a href="pending_payments.php" class="active"><i class="fas fa-hourglass-half"></i> Pending
+                        Payments</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
         </aside>
@@ -129,25 +136,31 @@ $grandTotal = $amountTotal + $birTotal;
                 <div class="stats-grid">
                     <div class="stat-card blue">
                         <h4>Pending Items</h4>
-                        <div class="stat-value"><?= number_format($totalCount) ?></div>
+                        <div class="stat-value">
+                            <?= number_format($totalCount) ?>
+                        </div>
                     </div>
                     <div class="stat-card green">
                         <h4>Total Amount</h4>
-                        <div class="stat-value">PHP <?= number_format($amountTotal, 2) ?></div>
+                        <div class="stat-value">PHP
+                            <?= number_format($amountTotal, 2) ?>
+                        </div>
                     </div>
                     <div class="stat-card">
                         <h4>Total BIR Tax</h4>
-                        <div class="stat-value">PHP <?= number_format($birTotal, 2) ?></div>
+                        <div class="stat-value">PHP
+                            <?= number_format($birTotal, 2) ?>
+                        </div>
                     </div>
                 </div>
 
                 <div class="card">
-                    <div class="card-header" style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                    <div class="card-header resident-payments-header">
                         <h3><i class="fas fa-list"></i> Your Pending Payments</h3>
-                        <form method="GET" action="pending_payments.php" style="display: flex; gap: 8px;">
+                        <form method="GET" action="pending_payments.php" class="resident-search-form">
                             <input type="text" name="search" placeholder="Search certificate or purpose"
                                 value="<?= htmlspecialchars($searchQuery) ?>"
-                                style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 220px;">
+                                class="resident-search-input">
                             <button type="submit" class="btn btn-secondary">
                                 <i class="fas fa-search"></i> Search
                             </button>
@@ -155,7 +168,8 @@ $grandTotal = $amountTotal + $birTotal;
                     </div>
 
                     <div style="margin-bottom: 15px; color: #4a5568; font-size: 14px;">
-                        Showing records matched to your resident name. If you see missing items, please contact the treasurer.
+                        Showing records matched to your resident name. If you see missing items, please contact the
+                        treasurer.
                     </div>
 
                     <div class="table-responsive">
@@ -175,12 +189,22 @@ $grandTotal = $amountTotal + $birTotal;
                                 <?php if ($totalCount > 0): ?>
                                 <?php foreach ($rows as $row): ?>
                                 <tr>
-                                    <td><?= date('M d, Y', strtotime($row['created_at'])) ?></td>
-                                    <td><span class="badge badge-info"><?= htmlspecialchars($row['certificate_type']) ?></span></td>
-                                    <td><?= htmlspecialchars($row['purpose']) ?></td>
-                                    <td>PHP <?= number_format($row['amount'], 2) ?></td>
-                                    <td>PHP <?= number_format($row['bir_tax'], 2) ?></td>
-                                    <td><strong>PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?></strong></td>
+                                    <td><?= date('M d, Y', strtotime($row['created_at'])) ?>
+                                    </td>
+                                    <td><span
+                                            class="badge badge-info"><?= htmlspecialchars($row['certificate_type']) ?></span>
+                                    </td>
+                                    <td><?= htmlspecialchars($row['purpose']) ?>
+                                    </td>
+                                    <td>PHP
+                                        <?= number_format($row['amount'], 2) ?>
+                                    </td>
+                                    <td>PHP
+                                        <?= number_format($row['bir_tax'], 2) ?>
+                                    </td>
+                                    <td><strong>PHP
+                                            <?= number_format($row['amount'] + $row['bir_tax'], 2) ?></strong>
+                                    </td>
                                     <td><span class="badge badge-warning">Pending</span></td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -202,15 +226,34 @@ $grandTotal = $amountTotal + $birTotal;
                         <h3><i class="fas fa-user"></i> Resident Details</h3>
                     </div>
                     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px;">
-                        <div><strong>Name:</strong> <?= htmlspecialchars($fullName) ?></div>
-                        <div><strong>Username:</strong> <?= htmlspecialchars($resident['username']) ?></div>
-                        <div><strong>Barangay:</strong> <?= htmlspecialchars($resident['barangay'] ?? 'N/A') ?></div>
-                        <div><strong>Matched Total:</strong> PHP <?= number_format($grandTotal, 2) ?></div>
+                        <div><strong>Name:</strong>
+                            <?= htmlspecialchars($fullName) ?>
+                        </div>
+                        <div><strong>Username:</strong>
+                            <?= htmlspecialchars($resident['username']) ?>
+                        </div>
+                        <div><strong>Barangay:</strong>
+                            <?= htmlspecialchars($resident['barangay'] ?? 'N/A') ?>
+                        </div>
+                        <div><strong>Matched Total:</strong> PHP
+                            <?= number_format($grandTotal, 2) ?>
+                        </div>
                     </div>
                 </div>
             </div>
         </main>
     </div>
+
+    <script>
+        const mobileMenuBtn = document.getElementById('mobileMenuBtn');
+        const sidebar = document.querySelector('.sidebar');
+
+        if (mobileMenuBtn && sidebar) {
+            mobileMenuBtn.addEventListener('click', () => {
+                sidebar.classList.toggle('active');
+            });
+        }
+    </script>
 </body>
 
 </html>
