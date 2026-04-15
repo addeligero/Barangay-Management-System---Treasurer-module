@@ -304,6 +304,9 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
                 <a href="register.php">Create an account</a>
             </div>
             <div style="margin-top: 8px; text-align: center;">
+                <a href="resident/login.php">Resident portal</a>
+            </div>
+            <div style="margin-top: 8px; text-align: center;">
                 <a href="resend_verification.php">Resend verification email</a>
             </div>
         </div>

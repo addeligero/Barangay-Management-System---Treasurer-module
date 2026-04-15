@@ -87,6 +87,13 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 required>
                         </div>
 
+                        <div class="form-group">
+                            <label for="resident_id"><i class="fas fa-id-badge"></i> Resident ID</label>
+                            <input type="number" id="resident_id" name="resident_id" min="1"
+                                value="<?= htmlspecialchars($pending['resident_id'] ?? '') ?>"
+                                placeholder="Enter resident ID (optional)">
+                        </div>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="certificate_type"><i class="fas fa-certificate"></i> Certificate Type

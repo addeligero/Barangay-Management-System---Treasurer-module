@@ -67,6 +67,7 @@ CREATE TABLE IF NOT EXISTS payments (
 -- ==========================================================================
 CREATE TABLE IF NOT EXISTS payment_status (
     id INT AUTO_INCREMENT PRIMARY KEY,
+    resident_id INT DEFAULT NULL,
     certificate_type VARCHAR(100) NOT NULL,
     purpose VARCHAR(255) NOT NULL,
     resident_fname VARCHAR(150) NOT NULL,
@@ -75,6 +76,86 @@ CREATE TABLE IF NOT EXISTS payment_status (
     bir_tax DECIMAL(10, 2) DEFAULT 0,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+CREATE INDEX idx_payment_status_resident_id ON payment_status (resident_id);
+
+-- ============================================================================
+-- 2.2 RESIDENTS TABLE
+-- Stores resident profiles and login credentials
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS residents (
+    id INT(11) NOT NULL AUTO_INCREMENT,
+    first_name VARCHAR(100) NOT NULL,
+    middle_name VARCHAR(100) DEFAULT NULL,
+    surname VARCHAR(100) NOT NULL,
+    suffix VARCHAR(10) DEFAULT NULL COMMENT 'Name suffix: Jr., Sr., II, III, IV, V',
+    birthdate DATE NOT NULL COMMENT 'Full birthdate in YYYY-MM-DD format',
+    birthplace VARCHAR(150) DEFAULT NULL,
+    age INT(11) DEFAULT NULL,
+    sex VARCHAR(20) NOT NULL DEFAULT 'Male',
+    lgbtq_identity VARCHAR(100) DEFAULT NULL,
+    lgbtq_other_text VARCHAR(200) DEFAULT NULL,
+    civil_status ENUM('Single','Married','Widowed','Divorced') DEFAULT NULL,
+    nationality VARCHAR(50) DEFAULT 'Filipino',
+    religion VARCHAR(100) DEFAULT NULL,
+    ethnicity VARCHAR(100) DEFAULT NULL,
+    blood_type VARCHAR(10) DEFAULT NULL,
+    philhealth_no VARCHAR(30) DEFAULT NULL,
+    length_of_residency INT(11) DEFAULT NULL,
+    house_ownership VARCHAR(30) DEFAULT NULL,
+    house_material VARCHAR(50) DEFAULT NULL,
+    toilet_type VARCHAR(30) DEFAULT NULL,
+    water_source VARCHAR(50) DEFAULT NULL,
+    is_4ps VARCHAR(3) DEFAULT 'No',
+    is_nhts VARCHAR(3) DEFAULT 'No',
+    is_solo_parent VARCHAR(3) DEFAULT 'No',
+    is_smoker VARCHAR(3) DEFAULT 'No',
+    is_binge_drinker VARCHAR(3) DEFAULT 'No',
+    has_hypertension VARCHAR(3) DEFAULT 'No',
+    has_diabetes VARCHAR(3) DEFAULT 'No',
+    has_asthma VARCHAR(3) DEFAULT 'No',
+    has_tb VARCHAR(3) DEFAULT 'No',
+    has_cancer VARCHAR(3) DEFAULT 'No',
+    has_mental_health VARCHAR(3) DEFAULT 'No',
+    membership_type VARCHAR(30) DEFAULT NULL,
+    family_planning VARCHAR(3) DEFAULT 'No',
+    is_pwd ENUM('Yes','No') DEFAULT 'No',
+    pwd_type VARCHAR(200) DEFAULT NULL COMMENT 'Structured disability type; required only when is_pwd = Yes',
+    pwd_id_no VARCHAR(50) DEFAULT NULL,
+    is_deceased ENUM('Yes','No') DEFAULT 'No',
+    date_of_death DATE DEFAULT NULL,
+    is_newborn ENUM('Yes','No') DEFAULT 'No',
+    purok VARCHAR(50) DEFAULT NULL,
+    household_no VARCHAR(20) DEFAULT NULL,
+    barangay VARCHAR(100) NOT NULL DEFAULT 'Santo Rosario' COMMENT 'Allowed: Buhang | Caloc-an | Guiasan | Marcos | Poblacion | Santo Nino | Santo Rosario | Taod-oy',
+    municipality VARCHAR(100) DEFAULT NULL,
+    province VARCHAR(100) DEFAULT NULL,
+    household_position VARCHAR(50) DEFAULT NULL,
+    total_household INT(11) DEFAULT NULL,
+    voters_status ENUM('Yes','No') DEFAULT 'No',
+    educational_attainment ENUM('None','Elementary','High School','Senior High','College','Vocational','Post Graduate') DEFAULT NULL,
+    grade_level VARCHAR(50) DEFAULT NULL,
+    school_name VARCHAR(150) DEFAULT NULL,
+    contact_no VARCHAR(20) DEFAULT NULL,
+    occupation_type VARCHAR(100) DEFAULT NULL COMMENT 'Employment category: Employed, Self-employed, Student, Unemployed, Retired, Homemaker, Farmer, Informal Worker, OFW, Government Employee, PWD, Other',
+    occupation VARCHAR(100) DEFAULT NULL COMMENT 'Occupation or student status',
+    monthly_income DECIMAL(15,2) DEFAULT NULL COMMENT 'Self-reported monthly income in PHP',
+    annual_income DECIMAL(15,2) DEFAULT NULL COMMENT 'Auto-computed: monthly_income x 12 (PHP)',
+    socioeconomic_status VARCHAR(50) DEFAULT NULL COMMENT 'PSA-based SES: Poor | Low Income | Lower Middle Income | Middle Income | Upper Middle Income | High Income',
+    image_path VARCHAR(255) NOT NULL,
+    id_front_image VARCHAR(255) DEFAULT NULL,
+    id_back_image VARCHAR(255) DEFAULT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+    username VARCHAR(50) DEFAULT NULL,
+    password VARCHAR(255) DEFAULT NULL,
+    account_status ENUM('active','inactive','suspended') DEFAULT 'active',
+    user_role ENUM('resident','admin','staff') DEFAULT 'resident',
+    last_login DATETIME DEFAULT NULL,
+    login_attempts INT(3) NOT NULL DEFAULT 0,
+    lockout_until DATETIME DEFAULT NULL,
+    PRIMARY KEY (id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 -- ============================================================================
 -- 3. CEDULA TABLE
@@ -210,6 +291,11 @@ INSERT INTO users (username, email, email_verified_at, password, name, role) VAL
 ('staff2', 'staff2@example.com', NOW(), MD5('staff123'), 'Leo M. Padilla', 'staff'),
 ('collector', 'collector@example.com', NOW(), MD5('collector123'), 'Nina S. Cruz', 'staff');
 
+-- Sample resident login (for resident portal testing)
+INSERT INTO users (username, email, email_verified_at, password, name, role) VALUES
+('resident1', 'resident1@example.com', NOW(), MD5('resident123'), 'Luis P. Garcia', 'resident')
+ON DUPLICATE KEY UPDATE password = MD5('resident123');
+
 -- ============================================================================
 -- SAMPLE PASSWORD RESET DATA
 -- ============================================================================
@@ -239,6 +325,26 @@ INSERT INTO payment_status (certificate_type, purpose, resident_fname, payment_s
 ('Barangay ID', 'New ID request', 'Carmela P. Reyes', 'paid', 50.00, 0),
 ('Barangay Clearance', 'Loan application', 'Rogelio M. Perez', 'pending', 150.00, 0),
 ('Barangay Clearance', 'Travel requirement', 'Liza T. Ramos', 'paid', 150.00, 0);
+
+-- ============================================================================
+-- SAMPLE RESIDENTS DATA
+-- ============================================================================
+INSERT INTO residents (
+    first_name,
+    middle_name,
+    surname,
+    suffix,
+    birthdate,
+    sex,
+    image_path,
+    username,
+    password,
+    account_status,
+    user_role,
+    barangay,
+    contact_no
+) VALUES
+('Luis', 'P.', 'Garcia', NULL, '1992-07-18', 'Male', 'assets/images/residents/default.png', 'resident1', MD5('resident123'), 'active', 'resident', 'Santo Rosario', '09171234567');
 
 -- ============================================================================
 -- SAMPLE CEDULA DATA

@@ -94,6 +94,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
     $pendingId = intval($_POST['id'] ?? 0);
     $residentName = trim($_POST['resident_fname'] ?? '');
+    $residentIdInput = trim($_POST['resident_id'] ?? '');
+    $residentId = $residentIdInput === '' ? null : intval($residentIdInput);
     $certificateType = trim($_POST['certificate_type'] ?? '');
     $purpose = trim($_POST['purpose'] ?? '');
     $amount = floatval($_POST['amount'] ?? 0);
@@ -135,10 +137,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     if ($status === 'pending') {
         $updateStmt = $conn->prepare("
             UPDATE payment_status
-            SET certificate_type = ?, purpose = ?, resident_fname = ?, payment_status = 'pending', amount = ?, bir_tax = ?
+            SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = 'pending', amount = ?, bir_tax = ?
             WHERE id = ?
         ");
-        $updateStmt->bind_param("sssddi", $certificateType, $purpose, $residentName, $amount, $birTax, $pendingId);
+        $updateStmt->bind_param("sssiddi", $certificateType, $purpose, $residentName, $residentId, $amount, $birTax, $pendingId);
         $updateOk = $updateStmt->execute();
         $updateStmt->close();
 
@@ -166,10 +168,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
 
     $updateStmt = $conn->prepare("
         UPDATE payment_status
-        SET certificate_type = ?, purpose = ?, resident_fname = ?, payment_status = 'paid', amount = ?, bir_tax = ?, created_at = NOW()
+        SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = 'paid', amount = ?, bir_tax = ?, created_at = NOW()
         WHERE id = ?
     ");
-    $updateStmt->bind_param("sssddi", $certificateType, $purpose, $residentName, $amount, $birTax, $pendingId);
+    $updateStmt->bind_param("sssiddi", $certificateType, $purpose, $residentName, $residentId, $amount, $birTax, $pendingId);
     $updateOk = $updateStmt->execute();
     $updateStmt->close();
 
