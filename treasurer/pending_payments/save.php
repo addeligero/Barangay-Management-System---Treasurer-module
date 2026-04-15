@@ -27,7 +27,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
         exit;
     }
 
-    $pendingStmt = $conn->prepare("SELECT * FROM payment_status WHERE id = ? AND payment_status = 'pending'");
+    $pendingStmt = $conn->prepare("SELECT * FROM payment_status WHERE id = ? AND payment_status IN ('pending', 'to_review')");
     $pendingStmt->bind_param("i", $pendingId);
     $pendingStmt->execute();
     $pendingResult = $pendingStmt->get_result();
@@ -117,7 +117,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
         exit;
     }
 
-    if (!in_array($status, ['pending', 'paid'], true)) {
+    if (!in_array($status, ['pending', 'to_review', 'paid'], true)) {
         header("Location: edit.php?id=$pendingId&error=Invalid payment status.");
         exit;
     }
@@ -134,13 +134,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $currentStatus = $checkResult->fetch_assoc()['payment_status'];
     $checkStmt->close();
 
-    if ($status === 'pending') {
+    if ($status !== 'paid') {
         $updateStmt = $conn->prepare("
             UPDATE payment_status
-            SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = 'pending', amount = ?, bir_tax = ?
+            SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = ?, amount = ?, bir_tax = ?
             WHERE id = ?
         ");
-        $updateStmt->bind_param("sssiddi", $certificateType, $purpose, $residentName, $residentId, $amount, $birTax, $pendingId);
+        $updateStmt->bind_param("sssisddi", $certificateType, $purpose, $residentName, $residentId, $status, $amount, $birTax, $pendingId);
         $updateOk = $updateStmt->execute();
         $updateStmt->close();
 

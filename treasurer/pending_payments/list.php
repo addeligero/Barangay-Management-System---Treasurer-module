@@ -8,7 +8,7 @@ if ($searchQuery !== "") {
     $searchParam = "%{$searchQuery}%";
     $stmt = $conn->prepare("
         SELECT * FROM payment_status
-        WHERE payment_status = 'pending'
+        WHERE payment_status IN ('pending', 'to_review')
             AND (
                 resident_fname LIKE ?
                 OR certificate_type LIKE ?
@@ -22,7 +22,7 @@ if ($searchQuery !== "") {
 } else {
     $result = $conn->query("
         SELECT * FROM payment_status
-        WHERE payment_status = 'pending'
+        WHERE payment_status IN ('pending', 'to_review')
         ORDER BY created_at DESC, id DESC
     ");
 }
@@ -73,7 +73,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
         <!-- Main Content -->
         <main class="main-content">
             <div class="content-header">
-                <h1><i class="fas fa-hourglass-half"></i> Pending Payment Status</h1>
+                <h1><i class="fas fa-hourglass-half"></i> Pending & To Review Payments</h1>
             </div>
 
             <div class="content-body">
@@ -94,7 +94,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                 <div class="card">
                     <div class="card-header"
                         style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
-                        <h3><i class="fas fa-list"></i> Pending Payments</h3>
+                        <h3><i class="fas fa-list"></i> Pending & To Review</h3>
                         <form method="GET" action="list.php" style="display: flex; gap: 8px;">
                             <input type="text" name="search" placeholder="Search resident or purpose..."
                                 value="<?= htmlspecialchars($searchQuery) ?>"
@@ -116,6 +116,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                     <th>Amount</th>
                                     <th>BIR Tax</th>
                                     <th>Total</th>
+                                    <th>Proof</th>
                                     <th>Status</th>
                                     <th>Actions</th>
                                 </tr>
@@ -123,6 +124,10 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                             <tbody>
                                 <?php if ($result && $result->num_rows > 0): ?>
                                 <?php while ($row = $result->fetch_assoc()): ?>
+                                <?php
+                                    $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
+                                    $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
+                                ?>
                                 <tr>
                                     <td><?= date('M d, Y', strtotime($row['created_at'])) ?>
                                     </td>
@@ -139,7 +144,17 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                     </td>
                                     <td><strong>₱<?= number_format($row['amount'] + $row['bir_tax'], 2) ?></strong>
                                     </td>
-                                    <td><span class="badge badge-warning">Pending</span></td>
+                                    <td>
+                                        <?php if (!empty($row['proof_path'])): ?>
+                                        <a class="btn btn-sm btn-secondary" href="../../<?= htmlspecialchars($row['proof_path']) ?>"
+                                            target="_blank" title="View Proof">
+                                            <i class="fas fa-receipt"></i>
+                                        </a>
+                                        <?php else: ?>
+                                        <span class="text-muted">None</span>
+                                        <?php endif; ?>
+                                    </td>
+                                    <td><span class="badge <?= $statusClass ?>"><?= $statusText ?></span></td>
                                     <td>
                                         <div class="action-buttons">
                                             <a class="btn btn-sm btn-secondary"
@@ -156,7 +171,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 <?php endwhile; ?>
                                 <?php else: ?>
                                 <tr>
-                                    <td colspan="9" style="text-align: center; padding: 40px;">
+                                    <td colspan="10" style="text-align: center; padding: 40px;">
                                         <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
                                         <p style="margin-top: 15px; color: #999;">No pending payments found</p>
                                     </td>

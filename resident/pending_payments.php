@@ -58,10 +58,75 @@ if ($status !== 'active') {
 
 $fullName = build_resident_name($resident, 'full');
 
+$success = '';
+$error = '';
+
+if (isset($_GET['submitted'])) {
+    $success = 'Payment proof submitted. Please wait for treasurer review.';
+} elseif (isset($_GET['error'])) {
+    $error = $_GET['error'];
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submit_proof') {
+    $paymentId = intval($_POST['payment_id'] ?? 0);
+
+    if ($paymentId <= 0) {
+        $error = 'Invalid payment reference.';
+    } elseif (!isset($_FILES['proof_file']) || $_FILES['proof_file']['error'] !== UPLOAD_ERR_OK) {
+        $error = 'Please upload a valid proof image.';
+    } else {
+        $fileTmp = $_FILES['proof_file']['tmp_name'];
+        $fileSize = intval($_FILES['proof_file']['size'] ?? 0);
+        $fileName = $_FILES['proof_file']['name'] ?? '';
+        $extension = strtolower(pathinfo($fileName, PATHINFO_EXTENSION));
+
+        $allowedExt = ['jpg', 'jpeg', 'png'];
+        if (!in_array($extension, $allowedExt, true)) {
+            $error = 'Proof must be a JPG or PNG image.';
+        } elseif ($fileSize > 5 * 1024 * 1024) {
+            $error = 'Proof must be 5MB or smaller.';
+        } else {
+            $checkStmt = $conn->prepare("SELECT id FROM payment_status WHERE id = ? AND resident_id = ? AND payment_status = 'pending'");
+            $checkStmt->bind_param("ii", $paymentId, $residentId);
+            $checkStmt->execute();
+            $checkResult = $checkStmt->get_result();
+            $hasRow = $checkResult->num_rows > 0;
+            $checkStmt->close();
+
+            if (!$hasRow) {
+                $error = 'Payment is not available for proof upload.';
+            } else {
+                $uploadDir = __DIR__ . '/../uploads/payment_proofs';
+                if (!is_dir($uploadDir)) {
+                    mkdir($uploadDir, 0775, true);
+                }
+
+                $safeName = 'proof_' . $paymentId . '_' . time() . '.' . $extension;
+                $targetPath = $uploadDir . '/' . $safeName;
+                $relativePath = 'uploads/payment_proofs/' . $safeName;
+
+                if (move_uploaded_file($fileTmp, $targetPath)) {
+                    $updateStmt = $conn->prepare("UPDATE payment_status SET proof_path = ?, proof_uploaded_at = NOW(), payment_status = 'to_review' WHERE id = ? AND resident_id = ?");
+                    $updateStmt->bind_param("sii", $relativePath, $paymentId, $residentId);
+                    $updateOk = $updateStmt->execute();
+                    $updateStmt->close();
+
+                    if ($updateOk) {
+                        header('Location: pending_payments.php?submitted=1');
+                        exit;
+                    }
+                }
+
+                $error = 'Failed to upload proof. Please try again.';
+            }
+        }
+    }
+}
+
 $searchQuery = trim($_GET['search'] ?? '');
 $searchParam = "%{$searchQuery}%";
 
-$sql = "SELECT * FROM payment_status WHERE payment_status = 'pending' AND resident_id = ?";
+$sql = "SELECT * FROM payment_status WHERE payment_status IN ('pending', 'to_review') AND resident_id = ?";
 $params = [$residentId];
 $types = "i";
 
@@ -133,6 +198,19 @@ $grandTotal = $amountTotal + $birTotal;
             </div>
 
             <div class="content-body">
+                <?php if ($success): ?>
+                <div class="success-message">
+                    <i class="fas fa-check-circle"></i>
+                    <?= htmlspecialchars($success) ?>
+                </div>
+                <?php endif; ?>
+
+                <?php if ($error): ?>
+                <div class="error-message">
+                    <i class="fas fa-exclamation-circle"></i>
+                    <?= htmlspecialchars($error) ?>
+                </div>
+                <?php endif; ?>
                 <div class="stats-grid">
                     <div class="stat-card blue">
                         <h4>Pending Items</h4>
@@ -183,11 +261,16 @@ $grandTotal = $amountTotal + $birTotal;
                                     <th>BIR Tax</th>
                                     <th>Total</th>
                                     <th>Status</th>
+                                    <th>Action</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <?php if ($totalCount > 0): ?>
                                 <?php foreach ($rows as $row): ?>
+                                <?php
+                                    $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
+                                    $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
+                                    ?>
                                 <tr>
                                     <td><?= date('M d, Y', strtotime($row['created_at'])) ?>
                                     </td>
@@ -205,12 +288,27 @@ $grandTotal = $amountTotal + $birTotal;
                                     <td><strong>PHP
                                             <?= number_format($row['amount'] + $row['bir_tax'], 2) ?></strong>
                                     </td>
-                                    <td><span class="badge badge-warning">Pending</span></td>
+                                    <td><span
+                                            class="badge <?= $statusClass ?>"><?= $statusText ?></span>
+                                    </td>
+                                    <td>
+                                        <?php if ($row['payment_status'] === 'pending'): ?>
+                                        <button type="button" class="btn btn-sm btn-primary pay-btn"
+                                            data-id="<?= $row['id'] ?>"
+                                            data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                            data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                            data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>">
+                                            <i class="fas fa-qrcode"></i> Pay
+                                        </button>
+                                        <?php else: ?>
+                                        <span class="text-muted">Submitted</span>
+                                        <?php endif; ?>
+                                    </td>
                                 </tr>
                                 <?php endforeach; ?>
                                 <?php else: ?>
                                 <tr>
-                                    <td colspan="7" style="text-align: center; padding: 40px;">
+                                    <td colspan="8" style="text-align: center; padding: 40px;">
                                         <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
                                         <p style="margin-top: 15px; color: #999;">No pending payments found</p>
                                     </td>
@@ -244,15 +342,76 @@ $grandTotal = $amountTotal + $birTotal;
         </main>
     </div>
 
+    <div id="payModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-qrcode" style="color: #1e3a5f; font-size: 40px;"></i>
+                <h2>Pay & Upload Proof</h2>
+            </div>
+            <div class="modal-body">
+                <div class="qr-wrapper">
+                    <img src="../assets/images/qr.jpg" alt="Instapay QR Code" class="qr-image">
+                    <p class="qr-note">Scan the QR code to pay, then upload your proof below.</p>
+                </div>
+                <div class="payment-summary" id="paymentSummary"></div>
+                <form method="POST" enctype="multipart/form-data" class="proof-form">
+                    <input type="hidden" name="action" value="submit_proof">
+                    <input type="hidden" name="payment_id" id="payPaymentId">
+                    <div class="form-group">
+                        <label for="proof_file"><i class="fas fa-file-upload"></i> Proof of Payment</label>
+                        <input type="file" id="proof_file" name="proof_file" accept="image/png, image/jpeg" required>
+                        <small style="color: #666;">Accepted: JPG or PNG (max 5MB)</small>
+                    </div>
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-secondary" id="closePayModal">
+                            <i class="fas fa-times"></i> Cancel
+                        </button>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-paper-plane"></i> Submit Proof
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
     <script>
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const sidebar = document.querySelector('.sidebar');
+        const payModal = document.getElementById('payModal');
+        const payButtons = document.querySelectorAll('.pay-btn');
+        const paymentSummary = document.getElementById('paymentSummary');
+        const payPaymentId = document.getElementById('payPaymentId');
+        const closePayModal = document.getElementById('closePayModal');
 
         if (mobileMenuBtn && sidebar) {
             mobileMenuBtn.addEventListener('click', () => {
                 sidebar.classList.toggle('active');
             });
         }
+
+        payButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                payPaymentId.value = button.dataset.id;
+                paymentSummary.innerHTML =
+                    `<strong>Certificate:</strong> ${button.dataset.certificate}<br>` +
+                    `<strong>Purpose:</strong> ${button.dataset.purpose}<br>` +
+                    `<strong>Total:</strong> ${button.dataset.total}`;
+                payModal.style.display = 'flex';
+            });
+        });
+
+        if (closePayModal) {
+            closePayModal.addEventListener('click', () => {
+                payModal.style.display = 'none';
+            });
+        }
+
+        window.addEventListener('click', (event) => {
+            if (event.target === payModal) {
+                payModal.style.display = 'none';
+            }
+        });
     </script>
 </body>
 

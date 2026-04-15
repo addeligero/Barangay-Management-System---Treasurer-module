@@ -94,6 +94,18 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 placeholder="Enter resident ID (optional)">
                         </div>
 
+                        <?php if (!empty($pending['proof_path'])): ?>
+                        <div class="form-group">
+                            <label><i class="fas fa-receipt"></i> Payment Proof</label>
+                            <div>
+                                <a class="btn btn-sm btn-secondary"
+                                    href="../../<?= htmlspecialchars($pending['proof_path']) ?>" target="_blank">
+                                    <i class="fas fa-eye"></i> View Proof
+                                </a>
+                            </div>
+                        </div>
+                        <?php endif; ?>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="certificate_type"><i class="fas fa-certificate"></i> Certificate Type
@@ -107,6 +119,8 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 <label for="payment_status"><i class="fas fa-clipboard-check"></i> Status *</label>
                                 <select id="payment_status" name="payment_status" required>
                                     <option value="pending" <?= $pending['payment_status'] === 'pending' ? 'selected' : '' ?>>Pending
+                                    </option>
+                                    <option value="to_review" <?= $pending['payment_status'] === 'to_review' ? 'selected' : '' ?>>To Review
                                     </option>
                                     <option value="paid" <?= $pending['payment_status'] === 'paid' ? 'selected' : '' ?>>Paid
                                     </option>

@@ -436,6 +436,39 @@ body {
   text-transform: uppercase;
 }
 
+.resident-portal .payment-summary {
+  margin: 16px 0;
+  padding: 12px 14px;
+  background: #f7fafc;
+  border-radius: 8px;
+  border: 1px solid var(--gray-border);
+  font-size: 14px;
+  line-height: 1.6;
+}
+
+.resident-portal .qr-wrapper {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+.resident-portal .qr-image {
+  width: 220px;
+  max-width: 100%;
+  border-radius: 12px;
+  border: 1px solid var(--gray-border);
+  background: var(--white);
+}
+
+.resident-portal .qr-note {
+  color: var(--text-light);
+  font-size: 13px;
+  text-align: center;
+  margin: 0;
+}
+
 /* Stats Cards */
 .stats-grid {
   display: grid;
@@ -569,6 +602,76 @@ tbody td {
   .card {
     box-shadow: none;
     border: 1px solid var(--gray-border);
+  }
+}
+
+/* Modal */
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.7);
+  z-index: 9999;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  animation: fadeIn 0.3s ease;
+}
+
+.modal-content {
+  background: var(--white);
+  border-radius: 12px;
+  max-width: 520px;
+  width: 92%;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+  animation: slideDown 0.3s ease;
+}
+
+.modal-header {
+  padding: 24px 30px;
+  text-align: center;
+  border-bottom: 2px solid #f0f0f0;
+}
+
+.modal-header h2 {
+  margin: 12px 0 0 0;
+  color: #333;
+  font-size: 22px;
+}
+
+.modal-body {
+  padding: 24px 30px 30px;
+}
+
+.modal-footer {
+  padding: 20px 30px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  border-top: 2px solid #f0f0f0;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    transform: translateY(-50px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateY(0);
+    opacity: 1;
   }
 }
 
@@ -732,4 +835,14 @@ tbody td {
 .badge-info {
   background: #bee3f8;
   color: #2c5282;
+}
+
+.badge-review {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.text-muted {
+  color: #8a97a6;
+  font-size: 13px;
 }

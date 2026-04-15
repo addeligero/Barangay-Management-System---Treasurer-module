@@ -74,6 +74,8 @@ CREATE TABLE IF NOT EXISTS payment_status (
     payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
     amount DECIMAL(10, 2) NOT NULL,
     bir_tax DECIMAL(10, 2) DEFAULT 0,
+    proof_path VARCHAR(255) DEFAULT NULL,
+    proof_uploaded_at DATETIME DEFAULT NULL,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
