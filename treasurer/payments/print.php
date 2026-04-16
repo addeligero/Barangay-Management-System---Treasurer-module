@@ -8,7 +8,12 @@ if ($paymentId <= 0) {
     exit;
 }
 
-$stmt = $conn->prepare("SELECT payments.*, users.name AS received_by_name FROM payments LEFT JOIN users ON payments.received_by = users.id WHERE payments.id = ?");
+$stmt = $conn->prepare("
+    SELECT payments.*, users.name AS received_by_name
+    FROM payments
+    LEFT JOIN users ON payments.received_by = users.id
+    WHERE payments.id = ?
+");
 $stmt->bind_param("i", $paymentId);
 $stmt->execute();
 $result = $stmt->get_result();
@@ -22,250 +27,287 @@ if ($result->num_rows === 0) {
 $payment = $result->fetch_assoc();
 $stmt->close();
 
+function e($value)
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function money($value)
+{
+    return number_format((float)$value, 2);
+}
+
 $paymentDate = !empty($payment['payment_date'])
-    ? date('F d, Y', strtotime($payment['payment_date']))
-    : date('F d, Y');
-$amount = (float) ($payment['amount'] ?? 0);
-$birTax = (float) ($payment['bir_tax'] ?? 0);
+    ? date('m/d/Y', strtotime($payment['payment_date']))
+    : date('m/d/Y');
+
+$amount = (float)($payment['amount'] ?? 0);
+$birTax = (float)($payment['bir_tax'] ?? 0);
 $total = $amount + $birTax;
-$remarks = trim((string) ($payment['remarks'] ?? ''));
-$receivedBy = trim((string) ($payment['received_by_name'] ?? ''));
-$printedOn = date('F d, Y h:i A');
+
+$receiptNo   = trim((string)($payment['receipt_no'] ?? ''));
+$payerName   = trim((string)($payment['payer_name'] ?? ''));
+$serviceType = trim((string)($payment['service_type'] ?? ''));
+$purpose     = trim((string)($payment['purpose'] ?? ''));
+$remarks     = trim((string)($payment['remarks'] ?? ''));
+$receivedBy  = trim((string)($payment['received_by_name'] ?? ''));
+
+// optional splits for better fitting
+$descLine1 = $purpose;
+$descLine2 = $remarks;
+
+// combine if needed
+if ($descLine2 === '') {
+    $descLine2 = $serviceType;
+}
 ?>
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Print Payment Record</title>
+    <title>Print Official Receipt</title>
     <style>
-        :root {
-            color-scheme: light;
+        @page {
+            size: 95mm 165mm;
+            /* adjust to your actual OR paper */
+            margin: 0;
+        }
+
+        * {
+            box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #fff;
+            font-family: Arial, Helvetica, sans-serif;
         }
 
         body {
-            font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            background: #f5f6f8;
-            color: #222;
+            background: #f3f3f3;
         }
 
-        .page {
-            max-width: 860px;
-            margin: 30px auto;
-            background: #fff;
-            padding: 32px 40px 40px;
-            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
-        }
-
-        .print-actions {
+        .toolbar {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 9999;
             display: flex;
-            justify-content: flex-end;
-            gap: 10px;
-            margin-bottom: 24px;
+            gap: 8px;
         }
 
-        .print-actions button,
-        .print-actions a {
-            background: #1f3c88;
+        .btn {
+            border: 1px solid #333;
+            background: #1f3a93;
             color: #fff;
-            border: none;
-            padding: 10px 16px;
-            border-radius: 6px;
+            padding: 8px 12px;
+            font-size: 13px;
             text-decoration: none;
-            font-size: 14px;
             cursor: pointer;
         }
 
-        .print-actions a {
-            background: #5a5f6a;
+        .btn.back {
+            background: #666;
         }
 
-        .receipt-header {
-            display: flex;
-            gap: 16px;
-            align-items: center;
-            border-bottom: 2px solid #e4e7ec;
-            padding-bottom: 18px;
-            margin-bottom: 26px;
+        .sheet {
+            position: relative;
+            width: 95mm;
+            /* adjust */
+            height: 165mm;
+            /* adjust */
+            margin: 10px auto;
+            background: #fff;
+            overflow: hidden;
         }
 
-        .receipt-header img {
-            width: 80px;
-            height: 80px;
-            border-radius: 50%;
-            border: 3px solid #1f3c88;
-            object-fit: cover;
+        .field {
+            position: absolute;
+            font-size: 9px;
+            line-height: 1;
+            white-space: nowrap;
+            color: #000;
         }
 
-        .receipt-header h1 {
-            margin: 0;
-            font-size: 22px;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+        .small {
+            font-size: 8px;
         }
 
-        .receipt-header p {
-            margin: 6px 0 8px;
-            font-size: 14px;
-            color: #555;
+        .tiny {
+            font-size: 7px;
         }
 
-        .receipt-header h2 {
-            margin: 0;
-            font-size: 18px;
-            color: #1f3c88;
-        }
-
-        .meta-row {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 18px;
-            font-size: 13px;
-            color: #666;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-bottom: 24px;
-        }
-
-        th,
-        td {
-            text-align: left;
-            padding: 10px 12px;
-            border-bottom: 1px solid #e8eaef;
-            vertical-align: top;
-        }
-
-        th {
-            width: 30%;
-            background: #f7f8fb;
-            font-weight: 600;
-            color: #333;
-        }
-
-        .total-row td {
+        .bold {
             font-weight: 700;
-            color: #1f3c88;
-            background: #f0f4ff;
         }
 
-        .signature-block {
-            display: flex;
-            gap: 40px;
-            margin-top: 40px;
+        .wrap {
+            white-space: normal;
+            line-height: 1.15;
+            word-break: break-word;
         }
 
-        .signature {
-            flex: 1;
+        .right {
+            text-align: right;
         }
 
-        .signature-line {
-            margin-top: 50px;
-            border-top: 1px solid #333;
-            padding-top: 6px;
-            font-size: 12px;
-            color: #555;
+        .center {
             text-align: center;
         }
 
         @media print {
             body {
                 background: #fff;
-            }
-
-            .page {
-                box-shadow: none;
-                margin: 0;
                 padding: 0;
+                margin: 0;
             }
 
-            .print-actions {
+            .toolbar {
                 display: none;
+            }
+
+            .sheet {
+                margin: 0 auto;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="page">
-        <div class="print-actions">
-            <button type="button" onclick="window.print()">Print</button>
-            <a href="list.php">Back to Payments</a>
-        </div>
 
-        <div class="receipt-header">
-            <img src="../../assets/images/logo.jpg" alt="Barangay Logo">
-            <div>
-                <h1>Barangay Sto. Rosario</h1>
-                <p>Magallanes, Agusan del Norte</p>
-                <h2>Payment Record</h2>
-            </div>
-        </div>
-
-        <div class="meta-row">
-            <div>Receipt No:
-                <strong><?= htmlspecialchars($payment['receipt_no']) ?></strong>
-            </div>
-            <div>Printed: <?= htmlspecialchars($printedOn) ?></div>
-        </div>
-
-        <table>
-            <tr>
-                <th>Payment Date</th>
-                <td><?= htmlspecialchars($paymentDate) ?></td>
-            </tr>
-            <tr>
-                <th>Payer Name</th>
-                <td><?= htmlspecialchars($payment['payer_name']) ?>
-                </td>
-            </tr>
-            <tr>
-                <th>Service Type</th>
-                <td><?= htmlspecialchars($payment['service_type']) ?>
-                </td>
-            </tr>
-            <tr>
-                <th>Purpose</th>
-                <td><?= htmlspecialchars($payment['purpose']) ?>
-                </td>
-            </tr>
-            <tr>
-                <th>Amount</th>
-                <td>PHP <?= number_format($amount, 2) ?></td>
-            </tr>
-            <tr>
-                <th>BIR Tax/Fee</th>
-                <td>PHP <?= number_format($birTax, 2) ?></td>
-            </tr>
-            <tr class="total-row">
-                <td>Total</td>
-                <td>PHP <?= number_format($total, 2) ?></td>
-            </tr>
-            <tr>
-                <th>Remarks</th>
-                <td><?= $remarks !== '' ? htmlspecialchars($remarks) : 'N/A' ?>
-                </td>
-            </tr>
-            <tr>
-                <th>Received By</th>
-                <td><?= $receivedBy !== '' ? htmlspecialchars($receivedBy) : 'N/A' ?>
-                </td>
-            </tr>
-        </table>
-
-        <div class="signature-block">
-            <div class="signature">
-                <div class="signature-line">Payer Signature</div>
-            </div>
-            <div class="signature">
-                <div class="signature-line">Treasurer Signature</div>
-            </div>
-        </div>
+    <div class="toolbar">
+        <button class="btn" onclick="window.print()">Print</button>
+        <a href="list.php" class="btn back">Back</a>
     </div>
+
+    <div class="sheet">
+
+        <!-- RECEIPT NUMBER -->
+        <div class="field bold" style="top: 27mm; left: 61mm; font-size: 10px; letter-spacing: 1px;">
+            <?= e($receiptNo) ?>
+        </div>
+
+        <!-- RECEIVED FROM -->
+        <div class="field" style="top: 37.5mm; left: 24mm; width: 42mm;">
+            <?= e($payerName) ?>
+        </div>
+
+        <!-- DATE -->
+        <div class="field" style="top: 37.5mm; left: 72mm; width: 18mm;">
+            <?= e($paymentDate) ?>
+        </div>
+
+        <!-- TIN OF BUYER -->
+        <div class="field" style="top: 42.8mm; left: 23mm; width: 33mm;">
+            <?= e($payment['payer_tin'] ?? '') ?>
+        </div>
+
+        <!-- OSCA/PWD NO -->
+        <div class="field" style="top: 42.8mm; left: 63mm; width: 24mm;">
+            <?= e($payment['osca_pwd_no'] ?? '') ?>
+        </div>
+
+        <!-- ADDRESS -->
+        <div class="field" style="top: 48.3mm; left: 17mm; width: 72mm;">
+            <?= e($payment['payer_address'] ?? '') ?>
+        </div>
+
+        <!-- BUSINESS STYLE -->
+        <div class="field" style="top: 53.7mm; left: 24mm; width: 33mm;">
+            <?= e($serviceType) ?>
+        </div>
+
+        <!-- SIGNATURE -->
+        <div class="field" style="top: 53.7mm; left: 62mm; width: 24mm;">
+            <?= e($receivedBy) ?>
+        </div>
+
+        <!-- DESCRIPTION LINES -->
+        <div class="field wrap" style="top: 69mm; left: 4mm; width: 42mm; height: 6mm;">
+            <?= e($descLine1) ?>
+        </div>
+
+        <div class="field wrap" style="top: 75mm; left: 4mm; width: 42mm; height: 6mm;">
+            <?= e($descLine2) ?>
+        </div>
+
+        <!-- QTY -->
+        <div class="field center" style="top: 69mm; left: 47.5mm; width: 7mm;">
+            <?= e($payment['qty'] ?? '1') ?>
+        </div>
+
+        <!-- UNIT -->
+        <div class="field center" style="top: 69mm; left: 57mm; width: 8mm;">
+            <?= e($payment['unit'] ?? '') ?>
+        </div>
+
+        <!-- UNIT PRICE -->
+        <div class="field right" style="top: 69mm; left: 66.5mm; width: 10mm;">
+            <?= e(money($amount)) ?>
+        </div>
+
+        <!-- AMOUNT -->
+        <div class="field right" style="top: 69mm; left: 79mm; width: 12mm;">
+            <?= e(money($amount)) ?>
+        </div>
+
+        <!-- SELLER INFO -->
+        <div class="field tiny" style="top: 117.5mm; left: 4mm; width: 36mm;">
+            <?= e($payment['seller_registered_name'] ?? 'Barangay Sto. Rosario') ?>
+        </div>
+
+        <div class="field tiny" style="top: 126.5mm; left: 4mm; width: 36mm;">
+            <?= e($payment['seller_tin'] ?? '') ?>
+        </div>
+
+        <div class="field tiny" style="top: 135mm; left: 4mm; width: 36mm;">
+            <?= e($payment['seller_trade_name'] ?? '') ?>
+        </div>
+
+        <div class="field tiny" style="top: 143.8mm; left: 4mm; width: 36mm;">
+            <?= e($payment['seller_address'] ?? '') ?>
+        </div>
+
+        <div class="field tiny" style="top: 152.5mm; left: 4mm; width: 36mm;">
+            <?= e($payment['seller_business_style'] ?? '') ?>
+        </div>
+
+        <!-- TOTALS RIGHT SIDE -->
+        <div class="field right" style="top: 118mm; left: 73mm; width: 16mm;">
+            <?= e(money($amount)) ?>
+        </div>
+
+        <div class="field right" style="top: 126.5mm; left: 73mm; width: 16mm;">
+            <?= e(money((float)($payment['sc_pwd_discount'] ?? 0))) ?>
+        </div>
+
+        <div class="field right" style="top: 135mm; left: 73mm; width: 16mm;">
+            <?= e(money((float)($payment['total_due'] ?? $amount))) ?>
+        </div>
+
+        <div class="field right" style="top: 143.7mm; left: 73mm; width: 16mm;">
+            <?= e(money($birTax)) ?>
+        </div>
+
+        <div class="field right bold" style="top: 152.2mm; left: 73mm; width: 16mm;">
+            <?= e(money($total)) ?>
+        </div>
+
+        <div class="field right" style="top: 161mm; left: 73mm; width: 16mm;">
+            <?= e(money((float)($payment['sales_subject_vat'] ?? 0))) ?>
+        </div>
+
+        <div class="field right" style="top: 166.2mm; left: 73mm; width: 16mm;">
+            <?= e(money((float)($payment['vat_exempt_sales'] ?? 0))) ?>
+        </div>
+
+    </div>
+
 </body>
 
 </html>
