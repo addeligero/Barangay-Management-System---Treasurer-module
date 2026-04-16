@@ -54,17 +54,9 @@ $operatingServicesCedula = $conn->query("
     AND YEAR(issued_date) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
-$operatingServicesManual = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM monthly_manual_entries 
-    WHERE entry_type = 'Operating & Services'
-    AND month = $chartMonth
-    AND year = $chartYear
-")->fetch_assoc()['total'] ?? 0;
+$operatingServices = $operatingServicesPayments + $operatingServicesCedula;
 
-$operatingServices = $operatingServicesPayments + $operatingServicesCedula + $operatingServicesManual;
-
-// Other Collections - Payments without operating_services (like clearances, permits) + manual entries
+// Other Collections - Payments without operating_services (like clearances, permits)
 $otherCollectionsPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
@@ -81,15 +73,7 @@ $pendingPaidCollections = $conn->query("
     AND YEAR(created_at) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
-$otherCollectionsManual = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM monthly_manual_entries 
-    WHERE entry_type = 'Other'
-    AND month = $chartMonth
-    AND year = $chartYear
-")->fetch_assoc()['total'] ?? 0;
-
-$otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
+$otherCollections = $otherCollectionsPayments + $pendingPaidCollections;
 $totalMonthlyCollections = $operatingServices + $otherCollections;
 ?>
 <!DOCTYPE html>

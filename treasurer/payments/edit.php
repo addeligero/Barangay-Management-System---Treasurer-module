@@ -134,24 +134,6 @@ $totalValue = number_format(((float) $payment['amount']) + ((float) $payment['bi
                             </div>
 
                             <div class="form-group">
-                                <label for="operating_services"><i class="fas fa-cogs"></i> Operating and
-                                    Services</label>
-                                <select id="operating_services" name="operating_services">
-                                    <option value="">-- Select --</option>
-                                    <option value="Garbage" <?= $payment['operating_services'] === 'Garbage' ? 'selected' : '' ?>>Garbage
-                                    </option>
-                                    <option value="Donation" <?= $payment['operating_services'] === 'Donation' ? 'selected' : '' ?>>Donation
-                                    </option>
-                                    <option value="Fines" <?= $payment['operating_services'] === 'Fines' ? 'selected' : '' ?>>Fines
-                                    </option>
-                                    <option value="Brgy. Clearance" <?= $payment['operating_services'] === 'Brgy. Clearance' ? 'selected' : '' ?>>Brgy.
-                                        Clearance</option>
-                                    <option value="Res. Cert." <?= $payment['operating_services'] === 'Res. Cert.' ? 'selected' : '' ?>>Res.
-                                        Cert.</option>
-                                </select>
-                            </div>
-
-                            <div class="form-group">
                                 <label for="purpose"><i class="fas fa-info-circle"></i> Purpose *</label>
                                 <input type="text" id="purpose" name="purpose"
                                     value="<?= htmlspecialchars($payment['purpose']) ?>"

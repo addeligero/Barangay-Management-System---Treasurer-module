@@ -25,15 +25,7 @@ for ($month = 1; $month <= 12; $month++) {
         AND YEAR(payment_date) = $year
     ")->fetch_assoc()['total'] ?? 0;
     
-    $taxRevenueManual = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM monthly_manual_entries 
-        WHERE entry_type = 'Tax Revenue'
-        AND month = $month 
-        AND year = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['taxRevenue'][$month] = $realPropertyTax + $taxRevenueManual;
+    $monthlyData['taxRevenue'][$month] = $realPropertyTax;
     
     // Tax on Goods and Services
     $internalRevenue = $conn->query("
@@ -44,15 +36,7 @@ for ($month = 1; $month <= 12; $month++) {
         AND YEAR(payment_date) = $year
     ")->fetch_assoc()['total'] ?? 0;
     
-    $taxGoodsServicesManual = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM monthly_manual_entries 
-        WHERE entry_type = 'Tax on Goods & Services'
-        AND month = $month 
-        AND year = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['taxGoodsServices'][$month] = $internalRevenue + $taxGoodsServicesManual;
+    $monthlyData['taxGoodsServices'][$month] = $internalRevenue;
     
     // Operating and Services
     $operatingServicesPayments = $conn->query("
@@ -71,15 +55,7 @@ for ($month = 1; $month <= 12; $month++) {
         AND YEAR(issued_date) = $year
     ")->fetch_assoc()['total'] ?? 0;
     
-    $operatingServicesManual = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM monthly_manual_entries 
-        WHERE entry_type = 'Operating & Services'
-        AND month = $month 
-        AND year = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['operatingServices'][$month] = $operatingServicesPayments + $operatingServicesCedula + $operatingServicesManual;
+    $monthlyData['operatingServices'][$month] = $operatingServicesPayments + $operatingServicesCedula;
     
     // Other Collections
     $otherCollectionsPayments = $conn->query("
@@ -89,15 +65,7 @@ for ($month = 1; $month <= 12; $month++) {
         AND YEAR(payment_date) = $year
     ")->fetch_assoc()['total'] ?? 0;
     
-    $otherCollectionsManual = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM monthly_manual_entries 
-        WHERE entry_type = 'Other'
-        AND month = $month 
-        AND year = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['otherCollections'][$month] = $otherCollectionsPayments + $otherCollectionsManual;
+    $monthlyData['otherCollections'][$month] = $otherCollectionsPayments;
     
     // Monthly total
     $monthlyData['totals'][$month] =

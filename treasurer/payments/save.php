@@ -7,7 +7,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $paymentId = intval($_POST['id']);
         $payer_name = $_POST['payer_name'];
         $service_type = $_POST['service_type'];
-        $operating_services = $_POST['operating_services'] ?? '';
         $purpose = $_POST['purpose'];
         $amount = $_POST['amount'];
         $bir_tax = $_POST['bir_tax'];
@@ -17,11 +16,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         $stmt = $conn->prepare("
             UPDATE payments
-            SET receipt_no = ?, payment_date = ?, payer_name = ?, service_type = ?, purpose = ?, operating_services = ?, amount = ?, bir_tax = ?, remarks = ?
+            SET receipt_no = ?, payment_date = ?, payer_name = ?, service_type = ?, purpose = ?, amount = ?, bir_tax = ?, remarks = ?
             WHERE id = ?
         ");
 
-        $stmt->bind_param("ssssssddsi", $receipt_no, $payment_date, $payer_name, $service_type, $purpose, $operating_services, $amount, $bir_tax, $remarks, $paymentId);
+        $stmt->bind_param("sssssddsi", $receipt_no, $payment_date, $payer_name, $service_type, $purpose, $amount, $bir_tax, $remarks, $paymentId);
 
         if ($stmt->execute()) {
             header("Location: list.php?updated=1");
@@ -33,7 +32,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $payer_name = $_POST['payer_name'];
     $service_type = $_POST['service_type'];
-    $operating_services = $_POST['operating_services'] ?? '';
     $purpose = $_POST['purpose'];
     $amount = $_POST['amount'];
     $bir_tax = $_POST['bir_tax'];
@@ -54,12 +52,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userCheck->close();
     }
 
-    $stmt = $conn->prepare("
-        INSERT INTO payments (payer_name, service_type, operating_services, purpose, amount, bir_tax, receipt_no, payment_date, remarks, received_by, created_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
+    $stmt = $conn->prepare("\
+        INSERT INTO payments (payer_name, service_type, purpose, amount, bir_tax, receipt_no, payment_date, remarks, received_by, created_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
     
-    $stmt->bind_param("ssssddsssi", $payer_name, $service_type, $operating_services, $purpose, $amount, $bir_tax, $receipt_no, $payment_date, $remarks, $received_by);
+    $stmt->bind_param("sssddsssi", $payer_name, $service_type, $purpose, $amount, $bir_tax, $receipt_no, $payment_date, $remarks, $received_by);
     
     if ($stmt->execute()) {
         header("Location: list.php?success=1");

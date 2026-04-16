@@ -2,80 +2,11 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
-// Handle manual entry save
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['save_manual'])) {
-    $month = $_POST['month'];
-    $year = $_POST['year'];
-    $entryName = trim($_POST['entry_name']);
-    $amount = floatval($_POST['amount']);
-    $entryType = $_POST['entry_type'] ?? '';
-    
-    if (!empty($entryName)) {
-        $stmt = $conn->prepare("
-            INSERT INTO monthly_manual_entries (month, year, entry_name, amount, entry_type)
-            VALUES (?, ?, ?, ?, ?)
-            ON DUPLICATE KEY UPDATE 
-            amount = VALUES(amount),
-            entry_type = VALUES(entry_type)
-        ");
-        $stmt->bind_param("iisds", $month, $year, $entryName, $amount, $entryType);
-        $stmt->execute();
-    }
-    
-    header("Location: monthly.php?month=" . str_pad($month, 2, '0', STR_PAD_LEFT) . "&year=$year&saved=1");
-    exit;
-}
-
-// Handle manual entry delete
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['delete_entry'])) {
-    $entryId = intval($_POST['entry_id']);
-    $month = $_POST['month'];
-    $year = $_POST['year'];
-    
-    $stmt = $conn->prepare("DELETE FROM monthly_manual_entries WHERE id = ?");
-    $stmt->bind_param("i", $entryId);
-    $stmt->execute();
-    
-    header("Location: monthly.php?month=" . str_pad($month, 2, '0', STR_PAD_LEFT) . "&year=$year&deleted=1");
-    exit;
-}
-
 // Get current month and year or from filter
 $month = $_GET['month'] ?? date('m');
 $year = $_GET['year'] ?? date('Y');
 
-// Get all manual entries for this month/year
-$manualEntries = [];
-$result = $conn->query("
-    SELECT id, entry_name, amount, entry_type
-    FROM monthly_manual_entries
-    WHERE month = $month AND year = $year
-    ORDER BY entry_name
-");
-while ($row = $result->fetch_assoc()) {
-    $manualEntries[$row['entry_name']] = $row;
-}
-
-// Group manual entries by category
-$taxRevenueEntries = [];
-$operatingServicesEntries = [];
-$otherCollectionsEntries = [];
-
-foreach ($manualEntries as $entry) {
-    switch ($entry['entry_type']) {
-        case 'Tax Revenue':
-            $taxRevenueEntries[] = $entry;
-            break;
-        case 'Operating & Services':
-            $operatingServicesEntries[] = $entry;
-            break;
-        case 'Other':
-            $otherCollectionsEntries[] = $entry;
-            break;
-    }
-}
-
-// Operating and Services (from payments + cedula + manual entries)
+// Operating and Services (from payments + cedula)
 $operatingServicesPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
@@ -92,10 +23,9 @@ $operatingServicesCedula = $conn->query("
     AND YEAR(issued_date) = $year
 ")->fetch_assoc()['total'] ?? 0;
 
-$operatingServicesManual = array_sum(array_column($operatingServicesEntries, 'amount'));
-$operatingServices = $operatingServicesPayments + $operatingServicesCedula + $operatingServicesManual;
+$operatingServices = $operatingServicesPayments + $operatingServicesCedula;
 
-// Other Collections (from payments + paid pending status + manual entries)
+// Other Collections (from payments + paid pending status)
 $otherCollectionsPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
@@ -126,8 +56,7 @@ while ($row = $pendingBreakdownResult->fetch_assoc()) {
     $pendingPaidBreakdown[] = $row;
 }
 
-$otherCollectionsManual = array_sum(array_column($otherCollectionsEntries, 'amount'));
-$otherCollections = $otherCollectionsPayments + $pendingPaidCollections + $otherCollectionsManual;
+$otherCollections = $otherCollectionsPayments + $pendingPaidCollections;
 
 
 // Operating & Services breakdown by type (Garbage, Donation, Fines, etc.)
@@ -250,140 +179,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
             </div>
 
             <div class="content-body">
-                <?php if (isset($_GET['saved'])): ?>
-                <div class="card" style="background: #d4edda; border-left: 5px solid #28a745; margin-bottom: 20px;">
-                    <div style="padding: 15px; color: #155724;">
-                        <i class="fas fa-check-circle"></i> <strong>Manual entry saved successfully!</strong>
-                    </div>
-                </div>
-                <?php endif; ?>
-                <?php if (isset($_GET['deleted'])): ?>
-                <div class="card" style="background: #f8d7da; border-left: 5px solid #dc3545; margin-bottom: 20px;">
-                    <div style="padding: 15px; color: #721c24;">
-                        <i class="fas fa-trash-alt"></i> <strong>Manual entry deleted successfully!</strong>
-                    </div>
-                </div>
-                <?php endif; ?>
-
-                <!-- Manual Entry Management -->
-                <div class="card no-print">
-                    <div class="card-header">
-                        <h3><i class="fas fa-edit"></i> Manage Manual Entries</h3>
-                        <p style="color: #666; font-size: 14px; margin-top: 5px;">Add custom entries for manually
-                            inputted values (e.g., Real Property Tax, Internal Revenue Allotment, etc.)</p>
-                    </div>
-
-                    <!-- Existing Manual Entries -->
-                    <?php if (!empty($manualEntries)): ?>
-                    <div style="margin: 20px; overflow-x: auto;">
-                        <table style="width: 100%; border-collapse: collapse;">
-                            <thead>
-                                <tr style="background: #f8f9fa; border-bottom: 2px solid #dee2e6; color: #000;">
-                                    <th style="padding: 12px; text-align: left; font-weight: 600; color: #000;">Entry
-                                        Name</th>
-                                    <th style="padding: 12px; text-align: right; font-weight: 600; color: #000;">Amount
-                                    </th>
-                                    <th style="padding: 12px; text-align: center; font-weight: 600; color: #000;">Type
-                                    </th>
-                                    <th
-                                        style="padding: 12px; text-align: center; font-weight: 600; width: 100px; color: #000;">
-                                        Action</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <?php foreach ($manualEntries as $entry): ?>
-                                <tr style="border-bottom: 1px solid #dee2e6;">
-                                    <td style="padding: 12px;">
-                                        <?= htmlspecialchars($entry['entry_name']) ?>
-                                    </td>
-                                    <td style="padding: 12px; text-align: right; font-weight: 500;">
-                                        ₱<?= number_format($entry['amount'], 2) ?>
-                                    </td>
-                                    <td style="padding: 12px; text-align: center;">
-                                        <?php if ($entry['entry_type']): ?>
-                                        <span
-                                            style="background: #e7f3ff; color: #004085; padding: 4px 8px; border-radius: 3px; font-size: 12px;">
-                                            <?= htmlspecialchars($entry['entry_type']) ?>
-                                        </span>
-                                        <?php else: ?>
-                                        <span style="color: #999;">-</span>
-                                        <?php endif; ?>
-                                    </td>
-                                    <td style="padding: 12px; text-align: center;">
-                                        <form method="POST" style="display: inline;"
-                                            onsubmit="return confirm('Delete this entry?');">
-                                            <input type="hidden" name="entry_id"
-                                                value="<?= $entry['id'] ?>">
-                                            <input type="hidden" name="month"
-                                                value="<?= $month ?>">
-                                            <input type="hidden" name="year"
-                                                value="<?= $year ?>">
-                                            <input type="hidden" name="delete_entry" value="1">
-                                            <button type="submit"
-                                                style="background: #dc3545; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px;">
-                                                <i class="fas fa-trash"></i> Delete
-                                            </button>
-                                        </form>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                            </tbody>
-                        </table>
-                    </div>
-                    <?php endif; ?>
-
-                    <!-- Add New Entry Form -->
-                    <form method="POST"
-                        style="margin: 20px; display: grid; grid-template-columns: 2fr 1fr 1fr 1fr 1fr auto; gap: 15px; align-items: end; background: #f8f9fa; padding: 20px; border-radius: 8px;">
-                        <input type="hidden" name="save_manual" value="1">
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label for="entry_name"><i class="fas fa-tag"></i> Entry Name</label>
-                            <input type="text" id="entry_name" name="entry_name" placeholder="e.g., Real Property Tax"
-                                required>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label for="amount"><i class="fas fa-peso-sign"></i> Amount (₱)</label>
-                            <input type="number" id="amount" name="amount" step="0.01" placeholder="0.00" required>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label for="entry_type"><i class="fas fa-list"></i> Category</label>
-                            <select id="entry_type" name="entry_type">
-                                <option value="">- Select -</option>
-                                <option value="Tax Revenue">Tax Revenue</option>
-                                <option value="Other">Other</option>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label for="entry_month"><i class="fas fa-calendar-alt"></i> Month</label>
-                            <select id="entry_month" name="month">
-                                <?php for ($m = 1; $m <= 12; $m++): ?>
-                                <option value="<?= $m ?>" <?= $m == $month ? 'selected' : '' ?>>
-                                    <?= date('F', mktime(0, 0, 0, $m, 1)) ?>
-                                </option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
-
-                        <div class="form-group" style="margin-bottom: 0;">
-                            <label for="entry_year"><i class="fas fa-calendar"></i> Year</label>
-                            <select id="entry_year" name="year">
-                                <?php for ($y = date('Y'); $y >= 2020; $y--): ?>
-                                <option value="<?= $y ?>" <?= $y == $year ? 'selected' : '' ?>><?= $y ?>
-                                </option>
-                                <?php endfor; ?>
-                            </select>
-                        </div>
-
-                        <button type="submit" class="btn btn-primary" style="margin-bottom: 0;">
-                            <i class="fas fa-plus"></i> Add Entry
-                        </button>
-                    </form>
-                </div>
-
                 <!-- Print Header -->
                 <div class="print-header">
                     <div
@@ -483,14 +278,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     <td>₱<?= number_format($operatingServicesCedula, 2) ?>
                                     </td>
                                 </tr>
-                                <?php foreach ($operatingServicesEntries as $entry): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
-                                    </td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
                                 <tr class="total-row">
                                     <td>TOTAL OPERATING AND SERVICES</td>
                                     <td>₱<?= number_format($operatingServices, 2) ?>
@@ -559,14 +346,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     </td>
                                 </tr>
                                 <?php endif; ?>
-                                <?php foreach ($otherCollectionsEntries as $entry): ?>
-                                <tr>
-                                    <td><?= htmlspecialchars($entry['entry_name']) ?>
-                                    </td>
-                                    <td>₱<?= number_format($entry['amount'], 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
                                 <tr class="total-row">
                                     <td>TOTAL OTHER COLLECTIONS</td>
                                     <td>₱<?= number_format($otherCollections, 2) ?>

@@ -29,7 +29,6 @@ $amount = (float) ($payment['amount'] ?? 0);
 $birTax = (float) ($payment['bir_tax'] ?? 0);
 $total = $amount + $birTax;
 $remarks = trim((string) ($payment['remarks'] ?? ''));
-$operatingServices = trim((string) ($payment['operating_services'] ?? ''));
 $receivedBy = trim((string) ($payment['received_by_name'] ?? ''));
 $printedOn = date('F d, Y h:i A');
 ?>
@@ -227,11 +226,6 @@ $printedOn = date('F d, Y h:i A');
             <tr>
                 <th>Service Type</th>
                 <td><?= htmlspecialchars($payment['service_type']) ?>
-                </td>
-            </tr>
-            <tr>
-                <th>Operating Services</th>
-                <td><?= $operatingServices !== '' ? htmlspecialchars($operatingServices) : 'N/A' ?>
                 </td>
             </tr>
             <tr>
