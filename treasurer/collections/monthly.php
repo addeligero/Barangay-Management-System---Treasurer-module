@@ -6,25 +6,6 @@ include "../../config/session.php";
 $month = $_GET['month'] ?? date('m');
 $year = $_GET['year'] ?? date('Y');
 
-// Operating and Services (from payments + cedula)
-$operatingServicesPayments = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE operating_services IS NOT NULL 
-    AND operating_services != ''
-    AND MONTH(payment_date) = $month 
-    AND YEAR(payment_date) = $year
-")->fetch_assoc()['total'] ?? 0;
-
-$operatingServicesCedula = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM cedula 
-    WHERE MONTH(issued_date) = $month 
-    AND YEAR(issued_date) = $year
-")->fetch_assoc()['total'] ?? 0;
-
-$operatingServices = $operatingServicesPayments + $operatingServicesCedula;
-
 // Other Collections (from payments + paid pending status)
 $otherCollectionsPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
@@ -58,21 +39,6 @@ while ($row = $pendingBreakdownResult->fetch_assoc()) {
 
 $otherCollections = $otherCollectionsPayments + $pendingPaidCollections;
 
-
-// Operating & Services breakdown by type (Garbage, Donation, Fines, etc.)
-$operatingBreakdown = [];
-$breakdownResult = $conn->query("
-    SELECT operating_services, COALESCE(SUM(amount), 0) as total
-    FROM payments
-    WHERE operating_services IS NOT NULL AND operating_services != ''
-    AND MONTH(payment_date) = $month AND YEAR(payment_date) = $year
-    GROUP BY operating_services
-    ORDER BY operating_services
-");
-while ($row = $breakdownResult->fetch_assoc()) {
-    $operatingBreakdown[] = $row;
-}
-
 // Other Collections breakdown by service type
 $otherCollectionsBreakdown = [];
 $otherBreakdownResult = $conn->query("
@@ -88,7 +54,7 @@ while ($row = $otherBreakdownResult->fetch_assoc()) {
     $otherCollectionsBreakdown[] = $row;
 }
 
-$totalCollections = $operatingServices + $otherCollections;
+$totalCollections = $otherCollections;
 
 $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 ?>
@@ -238,53 +204,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         <h3><i class="fas fa-file-invoice-dollar"></i>
                             <?= $monthName ?>
                         </h3>
-                    </div>
-
-                    <!-- Operating and Services -->
-                    <div class="report-section">
-                        <h4
-                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
-                            <i class="fas fa-cogs"></i> OPERATING AND SERVICES
-                        </h4>
-                        <table class="report-table">
-                            <tbody>
-                                <?php if (!empty($operatingBreakdown)): ?>
-                                <?php foreach ($operatingBreakdown as $bd): ?>
-                                <tr>
-                                    <td style="padding-left: 30px; color: #555;">
-                                        <i class="fas fa-chevron-right" style="font-size:11px; margin-right:6px;"></i>
-                                        <?= htmlspecialchars($bd['operating_services']) ?>
-                                    </td>
-                                    <td>₱<?= number_format($bd['total'], 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <tr>
-                                    <td style="font-weight: 600;">
-                                        <em>Subtotal – Operating &amp; Services from Payments</em>
-                                    </td>
-                                    <td>₱<?= number_format($operatingServicesPayments, 2) ?>
-                                    </td>
-                                </tr>
-                                <?php else: ?>
-                                <tr>
-                                    <td>Operating and Services from Payments</td>
-                                    <td>₱<?= number_format($operatingServicesPayments, 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endif; ?>
-                                <tr>
-                                    <td>Operating and Services from Cedula</td>
-                                    <td>₱<?= number_format($operatingServicesCedula, 2) ?>
-                                    </td>
-                                </tr>
-                                <tr class="total-row">
-                                    <td>TOTAL OPERATING AND SERVICES</td>
-                                    <td>₱<?= number_format($operatingServices, 2) ?>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
                     </div>
 
                     <!-- Other Collections -->
