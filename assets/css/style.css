@@ -846,3 +846,245 @@ tbody td {
   color: #8a97a6;
   font-size: 13px;
 }
+
+/* Landing Page */
+.landing-page {
+  font-family: "Manrope", "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+  color: #0c2633;
+  background: radial-gradient(
+    circle at top,
+    #eef9ff 0%,
+    #e8f0ff 45%,
+    #f8fbff 100%
+  );
+  min-height: 100vh;
+  position: relative;
+  overflow-x: hidden;
+}
+
+.landing-page::before,
+.landing-page::after {
+  content: "";
+  position: absolute;
+  width: 420px;
+  height: 420px;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(90, 190, 255, 0.35),
+    rgba(90, 190, 255, 0)
+  );
+  filter: blur(10px);
+  z-index: 0;
+}
+
+.landing-page::before {
+  top: -120px;
+  right: -140px;
+}
+
+.landing-page::after {
+  bottom: -180px;
+  left: -120px;
+  background: radial-gradient(
+    circle,
+    rgba(118, 230, 200, 0.35),
+    rgba(118, 230, 200, 0)
+  );
+}
+
+.landing-hero {
+  position: relative;
+  z-index: 1;
+  min-height: 100vh;
+  padding: 40px 80px 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 70px;
+}
+
+.landing-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 20px;
+}
+
+.landing-brand {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.landing-eyebrow {
+  text-transform: uppercase;
+  font-size: 12px;
+  letter-spacing: 2px;
+  font-weight: 600;
+  color: #3c6074;
+}
+
+.landing-title {
+  font-family: "Fraunces", "Times New Roman", serif;
+  font-size: 32px;
+  font-weight: 700;
+  color: #0b2b3a;
+}
+
+.landing-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.landing-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 60px;
+  align-items: center;
+}
+
+.landing-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  max-width: 560px;
+}
+
+.landing-tag {
+  background: rgba(11, 43, 58, 0.08);
+  color: #0b2b3a;
+  padding: 6px 16px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.4px;
+  width: fit-content;
+}
+
+.landing-headline {
+  font-family: "Fraunces", "Times New Roman", serif;
+  font-size: 44px;
+  line-height: 1.15;
+  color: #0b2b3a;
+}
+
+.landing-subtitle {
+  font-size: 17px;
+  line-height: 1.7;
+  color: #3a5b6d;
+}
+
+.landing-cta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+}
+
+.landing-page .btn {
+  text-transform: none;
+  letter-spacing: 0.3px;
+  font-size: 15px;
+  border-radius: 12px;
+  text-decoration: none;
+}
+
+.landing-btn {
+  padding: 12px 22px;
+  border: 2px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.landing-btn--solid {
+  background: #0b2b3a;
+  color: #ffffff;
+  box-shadow: 0 12px 25px rgba(11, 43, 58, 0.25);
+}
+
+.landing-btn--solid:hover {
+  background: #12384a;
+  transform: translateY(-2px);
+}
+
+.landing-btn--ghost {
+  background: rgba(255, 255, 255, 0.75);
+  color: #0b2b3a;
+  border-color: rgba(11, 43, 58, 0.2);
+}
+
+.landing-btn--ghost:hover {
+  border-color: #0b2b3a;
+  transform: translateY(-2px);
+}
+
+.landing-visual {
+  display: flex;
+  justify-content: center;
+}
+
+.landing-image-card {
+  position: relative;
+  padding: 28px;
+  border-radius: 28px;
+  background: linear-gradient(145deg, #f4fbff 0%, #e7f2ff 60%, #e6f9f4 100%);
+  box-shadow: 0 30px 60px rgba(11, 43, 58, 0.15);
+  overflow: hidden;
+}
+
+.landing-image-card img {
+  width: 100%;
+  max-width: 420px;
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+
+.landing-image-glow {
+  position: absolute;
+  inset: auto -20% -30% -20%;
+  height: 55%;
+  background: radial-gradient(
+    circle,
+    rgba(255, 232, 153, 0.7),
+    rgba(255, 232, 153, 0)
+  );
+  z-index: 0;
+}
+
+@media (max-width: 1024px) {
+  .landing-hero {
+    padding: 36px 40px 70px;
+  }
+
+  .landing-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .landing-visual {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 768px) {
+  .landing-hero {
+    padding: 28px 22px 60px;
+    gap: 50px;
+  }
+
+  .landing-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .landing-title {
+    font-size: 26px;
+  }
+
+  .landing-headline {
+    font-size: 32px;
+  }
+}
