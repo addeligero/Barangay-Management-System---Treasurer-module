@@ -20,31 +20,46 @@ if ($result->num_rows === 0) {
 
 $disbursement = $result->fetch_assoc();
 
+function e($value)
+{
+    return htmlspecialchars((string) $value, ENT_QUOTES, 'UTF-8');
+}
+
+function money($value)
+{
+    return number_format((float) $value, 2);
+}
+
 function parseAccountingEntries($text)
 {
     $rows = [];
     $text = trim((string) $text);
+
     if ($text === '') {
         return $rows;
     }
 
     if ($text[0] === '[' || $text[0] === '{') {
         $decoded = json_decode($text, true);
+
         if (is_array($decoded)) {
             if (array_keys($decoded) !== range(0, count($decoded) - 1)) {
                 $decoded = [$decoded];
             }
+
             foreach ($decoded as $row) {
                 if (!is_array($row)) {
                     continue;
                 }
+
                 $rows[] = [
-                    'name' => $row['name'] ?? '',
-                    'code' => $row['code'] ?? '',
-                    'debit' => $row['debit'] ?? '',
+                    'name'   => $row['name'] ?? '',
+                    'code'   => $row['code'] ?? '',
+                    'debit'  => $row['debit'] ?? '',
                     'credit' => $row['credit'] ?? ''
                 ];
             }
+
             if (!empty($rows)) {
                 return $rows;
             }
@@ -57,53 +72,62 @@ function parseAccountingEntries($text)
         if ($line === '') {
             continue;
         }
+
         $parts = array_map('trim', explode('|', $line));
         $rows[] = [
-            'name' => $parts[0] ?? '',
-            'code' => $parts[1] ?? '',
-            'debit' => $parts[2] ?? '',
+            'name'   => $parts[0] ?? '',
+            'code'   => $parts[1] ?? '',
+            'debit'  => $parts[2] ?? '',
             'credit' => $parts[3] ?? ''
         ];
     }
+
     return $rows;
 }
 
 $accountingRows = parseAccountingEntries($disbursement['accounting_entries'] ?? '');
-$amount = number_format((float) $disbursement['release_amount'], 2);
-$releaseAmount = number_format((float) $disbursement['release_amount'], 2);
-$disburseDate = date('M d, Y', strtotime($disbursement['disburse_date']));
+
+$disburseDate = !empty($disbursement['disburse_date'])
+    ? date('F j-Y', strtotime($disbursement['disburse_date']))
+    : '';
+
 $receivedDate = !empty($disbursement['received_date'])
-    ? date('M d, Y', strtotime($disbursement['received_date']))
+    ? date('F j-Y', strtotime($disbursement['received_date']))
     : $disburseDate;
+
+$amount = (float) ($disbursement['release_amount'] ?? 0);
+$amountFormatted = money($amount);
+
 $birVatType = $disbursement['bir_vat_type'] ?? '';
 $birGross = isset($disbursement['bir_gross']) ? (float) $disbursement['bir_gross'] : 0.0;
 $birWithholdingA = isset($disbursement['bir_withholding_a']) ? (float) $disbursement['bir_withholding_a'] : 0.0;
 $birWithholdingB = isset($disbursement['bir_withholding_b']) ? (float) $disbursement['bir_withholding_b'] : 0.0;
 $birTotal = isset($disbursement['bir']) ? (float) $disbursement['bir'] : 0.0;
-$hasBirBreakdown = ($birVatType !== '')
-    || ($disbursement['bir_gross'] ?? '') !== ''
-    || ($disbursement['bir_withholding_a'] ?? '') !== ''
-    || ($disbursement['bir_withholding_b'] ?? '') !== ''
-    || ($disbursement['bir'] ?? '') !== '';
+
+$hasBirBreakdown =
+    $birGross > 0 ||
+    $birWithholdingA > 0 ||
+    $birWithholdingB > 0 ||
+    $birTotal > 0 ||
+    $birVatType !== '';
 
 switch ($birVatType) {
     case 'Reg. VAT':
-        $birLabelOne = '1% EWT';
-        $birLabelFive = '5% VAT Withholding';
-        break;
-    case 'Non-VAT Supplies':
-        $birLabelOne = '1% Withholding';
-        $birLabelFive = '3% Withholding';
+        $birLabelA = '1%';
+        $birLabelB = '5%';
         break;
     case 'Non-VAT Services':
-        $birLabelOne = '2% Withholding';
-        $birLabelFive = '3% Withholding';
+        $birLabelA = '2%';
+        $birLabelB = '3%';
         break;
     default:
-        $birLabelOne = 'Withholding A';
-        $birLabelFive = 'Withholding B';
+        $birLabelA = '1%';
+        $birLabelB = '5%';
         break;
 }
+
+$bankName = trim((string)($disbursement['bank_name'] ?? 'Land Bank'));
+$blankRowsNeeded = max(0, 3 - count($accountingRows));
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -112,527 +136,728 @@ switch ($birVatType) {
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Print Disbursement Voucher -
-        <?= htmlspecialchars($disbursement['dv_no']) ?>
+        <?= e($disbursement['dv_no'] ?? '') ?>
     </title>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
         * {
             box-sizing: border-box;
+            -webkit-print-color-adjust: exact !important;
+            print-color-adjust: exact !important;
+        }
+
+        :root {
+            --border: #111;
+            --shade: #efb083;
+        }
+
+        @page {
+            size: A4 portrait;
+            margin: 4mm;
+        }
+
+        html,
+        body {
+            margin: 0;
+            padding: 0;
+            background: #e9e9e9;
+            font-family: Arial, Helvetica, sans-serif;
+            color: #000;
         }
 
         body {
-            margin: 0;
-            padding: 20px;
-            font-family: Arial, sans-serif;
-            background: #f5f5f5;
-            color: #111;
+            padding: 10px;
         }
 
-        .print-toolbar {
+        .toolbar {
             display: flex;
-            gap: 10px;
             justify-content: flex-end;
-            margin-bottom: 15px;
+            gap: 8px;
+            margin-bottom: 10px;
         }
 
-        .print-btn,
-        .back-btn {
-            border: none;
+        .btn {
+            border: 1px solid #333;
             background: #1f3a93;
             color: #fff;
-            padding: 10px 16px;
-            border-radius: 4px;
+            padding: 8px 12px;
             cursor: pointer;
-            font-size: 14px;
-        }
-
-        .back-btn {
-            background: #2c5282;
             text-decoration: none;
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
+            font-size: 13px;
         }
 
-        .voucher {
-            max-width: 900px;
+        .btn.back {
+            background: #5b6b8a;
+        }
+
+        .sheet {
+            width: 202mm;
             margin: 0 auto;
             background: #fff;
-            border: 2px solid #222;
+            border: 2px solid var(--border);
+            overflow: hidden;
         }
 
-        .voucher-header {
-            display: flex;
+        .header {
+            display: grid;
+            grid-template-columns: 78px 1fr 78px;
             align-items: center;
-            gap: 10px;
-            padding: 10px 14px;
-            border-bottom: 2px solid #222;
+            border-bottom: 2px solid var(--border);
+            padding: 2px 6px 1px;
         }
 
-        .voucher-header .logo {
-            width: 70px;
-            height: 70px;
+        .logo-wrap {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .logo {
+            width: 50px;
+            height: 50px;
             object-fit: contain;
         }
 
-        .voucher-header .center {
-            flex: 1;
+        .header-text {
             text-align: center;
+            line-height: 1.12;
         }
 
-        .voucher-header .center .line-1 {
-            font-size: 12px;
-            letter-spacing: 0.5px;
+        .header-text .line {
+            font-size: 8px;
+            font-weight: 400;
         }
 
-        .voucher-header .center .line-2 {
-            font-size: 12px;
+        .header-text .barangay {
+            margin-top: 4px;
+            font-size: 8px;
+            font-weight: 700;
         }
 
-        .voucher-header .center .line-3 {
-            font-size: 12px;
-        }
-
-        .voucher-header .center .line-4 {
-            font-size: 11px;
-            margin-top: 2px;
-        }
-
-        .voucher-title {
+        .title {
             text-align: center;
-            font-weight: bold;
-            font-size: 20px;
-            padding: 6px 0 8px;
-            border-bottom: 2px solid #222;
+            font-size: 26px;
+            font-weight: 900;
             letter-spacing: 1px;
+            line-height: 1;
+            padding: 1px 0 3px;
+            border-bottom: 2px solid var(--border);
         }
 
-        .meta-grid {
-            display: grid;
-            grid-template-columns: 2fr 1fr;
-            border-bottom: 2px solid #222;
-        }
-
-        .meta-left,
-        .meta-right {
-            padding: 10px 12px;
-        }
-
-        .meta-row {
-            display: flex;
-            gap: 6px;
-            margin-bottom: 6px;
-            font-size: 12px;
-        }
-
-        .meta-row .label {
-            width: 70px;
-            font-weight: bold;
-        }
-
-        .meta-right .label {
-            width: 80px;
-        }
-
-        .particulars-table {
+        table {
             width: 100%;
             border-collapse: collapse;
+            table-layout: fixed;
         }
 
-        .particulars-table th,
-        .particulars-table td {
-            border: 1px solid #222;
-            padding: 8px;
-            font-size: 12px;
+        td,
+        th {
+            border: 1px solid var(--border);
+            padding: 1px 4px;
             vertical-align: top;
         }
 
-        .particulars-table th {
-            background: #f1f1f1;
+        .meta-table td {
+            font-size: 10px;
+            line-height: 1;
+            height: 20px;
+            padding: 1px 4px;
+        }
+
+        .meta-table .label,
+        .meta-table .right-label,
+        .received-table .mini-label,
+        .section-title,
+        .accounting-table th {
+            background: var(--shade);
+            font-weight: 700;
+        }
+
+        .meta-table .label {
+            width: 68px;
+            white-space: nowrap;
+        }
+
+        .meta-table .right-label {
+            width: 74px;
+            white-space: nowrap;
+        }
+
+        .meta-table .value {
+            overflow: hidden;
+            white-space: nowrap;
+            text-overflow: clip;
+            font-size: 9px;
+        }
+
+        .particulars-head th {
+            background: #fff;
+            font-size: 16px;
+            font-weight: 900;
             text-align: center;
-            font-weight: bold;
+            padding: 3px 2px;
         }
 
-        .particulars-amount {
-            text-align: right;
-            font-weight: bold;
+        .particulars-cell {
+            height: 105px;
+            font-size: 9px;
+            line-height: 1.15;
+            padding-top: 2px;
         }
 
-        .bir-breakdown {
-            margin-top: 8px;
-            padding-top: 6px;
-            border-top: 1px dashed #777;
-            font-size: 11px;
+        .particulars-text {
+            white-space: pre-line;
+            min-height: 28px;
         }
 
-        .bir-breakdown .row {
-            display: flex;
-            justify-content: space-between;
-            gap: 10px;
+        .support-line {
+            margin-top: 4px;
+        }
+
+        .bir-lines {
             margin-top: 2px;
+            font-size: 9px;
         }
 
-        .cert-section {
+        .bir-line {
             display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            border-top: 2px solid #222;
-            border-bottom: 2px solid #222;
+            grid-template-columns: 1fr 82px;
+            gap: 6px;
+            align-items: end;
+            margin-top: 1px;
+        }
+
+        .bir-line .right {
+            text-align: right;
+        }
+
+        .bir-line .under {
+            border-top: 1px solid #666;
+            padding-top: 1px;
+        }
+
+        .amount-box {
+            font-size: 9px;
+            line-height: 1.1;
+            height: 105px;
+            position: relative;
+            padding-top: 6px;
+        }
+
+        .amount-box .currency {
+            display: block;
+            margin-top: 4px;
+        }
+
+        .amount-box .value {
+            display: block;
+            text-align: right;
+            font-size: 9px;
+        }
+
+        .amount-box .line {
+            border-top: 1px solid #666;
+            margin: 2px 0;
+        }
+
+        .cert-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
         .cert-box {
-            border-right: 1px solid #222;
-            padding: 8px 10px;
-            min-height: 110px;
-            font-size: 11px;
+            min-height: 86px;
+            border-right: 1px solid var(--border);
+            padding: 4px 4px 2px;
+            font-size: 8px;
+            line-height: 1.28;
+            overflow: hidden;
         }
 
         .cert-box:last-child {
-            border-right: none;
+            border-right: 0;
         }
 
-        .cert-box .sign-name {
-            margin-top: 28px;
-            font-weight: bold;
-            text-align: center;
-        }
-
-        .cert-box .sign-label {
-            text-align: center;
-            font-size: 10px;
-        }
-
-        .received-section {
-            border-bottom: 2px solid #222;
-            padding: 8px 10px;
-            font-size: 11px;
-        }
-
-        .received-grid {
-            display: grid;
-            grid-template-columns: 1.5fr 1fr;
-            gap: 16px;
+        .sign-name {
             margin-top: 10px;
-        }
-
-        .received-sign .sign-line {
-            margin-top: 24px;
-            border-top: 1px solid #111;
             text-align: center;
-            padding-top: 4px;
-            font-weight: bold;
-        }
-
-        .received-sign .sign-label {
-            text-align: center;
+            font-weight: 900;
             font-size: 10px;
+            text-decoration: underline;
+            text-underline-offset: 2px;
         }
 
-        .received-fields .field-row {
-            display: flex;
-            justify-content: space-between;
-            border-bottom: 1px solid #111;
-            padding: 6px 0 4px;
-            gap: 10px;
+        .sign-role {
+            text-align: center;
+            font-size: 7px;
+            font-weight: 700;
+            margin-top: 3px;
+            line-height: 1.1;
+            white-space: nowrap;
+            overflow: hidden;
         }
 
-        .received-fields .field-row:last-child {
-            border-bottom: none;
+        .sign-date {
+            margin-top: 4px;
+            text-align: center;
+            font-size: 8px;
         }
 
-        .accounting-section {
-            padding: 8px 10px;
-            border-bottom: 2px solid #222;
-        }
-
-        .accounting-title {
-            font-weight: bold;
-            margin-bottom: 6px;
+        .section-title {
             font-size: 12px;
+            font-weight: 900;
+            line-height: 1;
+            padding: 2px 4px;
+            border-top: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
         }
 
-        .accounting-table {
-            width: 100%;
-            border-collapse: collapse;
+        .received-table td {
+            font-size: 9px;
+            line-height: 1;
+            height: 18px;
+            padding: 1px 4px;
         }
 
-        .accounting-table th,
-        .accounting-table td {
-            border: 1px solid #222;
-            padding: 6px;
-            font-size: 11px;
+        .received-table .mini-label {
+            width: 95px;
+            white-space: nowrap;
         }
 
-        .accounting-table th {
-            background: #f1f1f1;
+        .received-name {
+            text-align: center;
+            font-weight: 700;
+            text-transform: uppercase;
+            margin-top: 10px;
+            white-space: nowrap;
+            overflow: hidden;
+            font-size: 8px;
+        }
+
+        .received-caption {
+            text-align: center;
+            font-weight: 700;
+            font-size: 9px;
+            margin-top: 1px;
+        }
+
+        .received-value-center {
             text-align: center;
         }
 
-        .accounting-table td.amount {
+        .received-value-right {
             text-align: right;
         }
 
-        .footer-sign {
-            display: grid;
-            grid-template-columns: repeat(3, 1fr);
-            gap: 10px;
-            padding: 10px 12px 16px;
+        .accounting-table th {
+            font-size: 11px;
+            font-weight: 900;
+            text-align: center;
+            line-height: 1;
+            padding: 2px 2px;
         }
 
-        .footer-box {
+        .accounting-table td {
+            font-size: 9px;
+            line-height: 1;
+            height: 18px;
+            padding: 1px 4px;
+        }
+
+        .accounting-table .center {
+            text-align: center;
+        }
+
+        .accounting-table .money {
+            text-align: right;
+            white-space: nowrap;
+        }
+
+        .footer {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            border-left: 1px solid var(--border);
+            border-right: 1px solid var(--border);
+            border-bottom: 1px solid var(--border);
+        }
+
+        .footer-left,
+        .footer-right {
+            padding: 6px 4px 4px;
+            position: relative;
+        }
+
+        .footer-right {
+            border-left: 1px solid var(--border);
+        }
+
+        .footer-left {
+            display: grid;
+            grid-template-rows: auto auto;
+            row-gap: 10px;
+        }
+
+        .footer-label {
+            font-size: 10px;
+            margin-bottom: 4px;
+        }
+
+        .footer-name {
             text-align: center;
             font-size: 11px;
+            font-weight: 900;
+            text-decoration: underline;
+            text-underline-offset: 2px;
+            margin-top: 4px;
         }
 
-        .footer-box .name {
-            margin-top: 24px;
-            border-top: 1px solid #111;
-            padding-top: 4px;
-            font-weight: bold;
+        .footer-role {
+            text-align: center;
+            font-size: 9px;
+            margin-top: 2px;
+            font-weight: 700;
         }
 
-        .footer-box .label {
+        .footer-date {
+            text-align: center;
             font-size: 10px;
+            margin-top: 8px;
+        }
+
+        .footer-date-line {
+            display: inline-block;
+            min-width: 110px;
+            border-bottom: 1px solid #666;
+            height: 10px;
+            vertical-align: bottom;
         }
 
         @media print {
+
+            html,
             body {
                 background: #fff;
-                padding: 0;
+                width: 210mm;
             }
 
-            .print-toolbar {
+            body {
+                padding: 0;
+                margin: 0;
+            }
+
+            .toolbar {
                 display: none;
             }
 
-            .voucher {
-                border: none;
-                max-width: none;
+            .sheet {
+                width: 202mm;
+                margin: 0 auto;
+                border: 2px solid var(--border);
+                box-shadow: none;
             }
         }
     </style>
 </head>
 
 <body>
-    <div class="print-toolbar">
-        <button class="print-btn" onclick="window.print()"><i class="fas fa-print"></i> Print</button>
-        <a class="back-btn" href="list.php"><i class="fas fa-arrow-left"></i> Back</a>
+    <div class="toolbar">
+        <button class="btn" onclick="window.print()">Print</button>
+        <a href="list.php" class="btn back">Back</a>
     </div>
 
-    <div class="voucher">
-        <div class="voucher-header">
-            <img class="logo" src="../../assets/images/logo2.jpeg" alt="Barangay Logo">
-            <div class="center">
-                <div class="line-1">REPUBLIC OF THE PHILIPPINES</div>
-                <div class="line-2">PROVINCE OF AGUSAN DEL NORTE</div>
-                <div class="line-3">MUNICIPALITY OF MAGALLANES</div>
-                <div class="line-4">BARANGAY STO. ROSARIO / TIN NO: 004-75-387-000</div>
+    <div class="sheet">
+        <div class="header">
+            <div class="logo-wrap">
+                <img src="../../assets/images/logo2.jpeg" alt="Logo" class="logo">
             </div>
-            <img class="logo" src="../../assets/images/logo.jpg" alt="Barangay Logo">
-        </div>
 
-        <div class="voucher-title">DISBURSEMENT VOUCHER</div>
-
-        <div class="meta-grid">
-            <div class="meta-left">
-                <div class="meta-row">
-                    <div class="label">Payee:</div>
-                    <div>
-                        <?= htmlspecialchars($disbursement['payee']) ?>
-                    </div>
-                </div>
-                <div class="meta-row">
-                    <div class="label">Address:</div>
-                    <div>
-                        <?= htmlspecialchars($disbursement['payee_address'] ?? '') ?>
-                    </div>
-                </div>
-                <div class="meta-row">
-                    <div class="label">TIN No.:</div>
-                    <div>
-                        <?= htmlspecialchars($disbursement['payee_tin'] ?? '') ?>
-                    </div>
-                </div>
+            <div class="header-text">
+                <div class="line">REPUBLIC OF THE PHILIPPINES</div>
+                <div class="line">PROVINCE OF AGUSAN DEL NORTE</div>
+                <div class="line">MUNICIPALITY OF MAGALLANES</div>
+                <div class="barangay">BARANGAY STO ROSARIO / TIN NO.: 004-375-387- 000</div>
             </div>
-            <div class="meta-right">
-                <div class="meta-row">
-                    <div class="label">DV No.:</div>
-                    <div>
-                        <?= htmlspecialchars($disbursement['dv_no']) ?>
-                    </div>
-                </div>
-                <div class="meta-row">
-                    <div class="label">Date:</div>
-                    <div><?= $disburseDate ?></div>
-                </div>
-                <div class="meta-row">
-                    <div class="label">Fund:</div>
-                    <div>
-                        <?= htmlspecialchars($disbursement['fund'] ?? '') ?>
-                    </div>
-                </div>
-                <div class="meta-row">
-                    <div class="label">Check No.:</div>
-                    <div>
-                        <?= htmlspecialchars($disbursement['check_no']) ?>
-                    </div>
-                </div>
+
+            <div class="logo-wrap">
+                <img src="../../assets/images/logo.jpg" alt="Logo" class="logo">
             </div>
         </div>
 
-        <table class="particulars-table">
-            <thead>
+        <div class="title">DISBURSEMENT VOUCHER</div>
+
+        <table class="meta-table">
+            <colgroup>
+                <col style="width:68px;">
+                <col>
+                <col style="width:74px;">
+                <col style="width:120px;">
+            </colgroup>
+            <tr>
+                <td class="label">PAYEE:</td>
+                <td class="value">
+                    <?= e($disbursement['payee'] ?? '') ?>
+                </td>
+                <td class="right-label">DV NO.:</td>
+                <td class="value">
+                    <?= e($disbursement['dv_no'] ?? '') ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">ADDRESS</td>
+                <td class="value">
+                    <?= e($disbursement['payee_address'] ?? '') ?>
+                </td>
+                <td class="right-label">DATE:</td>
+                <td class="value">
+                    <?= e($disbursement['disburse_date'] ? date('F j-Y', strtotime($disbursement['disburse_date'])) : '') ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="label">TIN NO:</td>
+                <td class="value">
+                    <?= e($disbursement['payee_tin'] ?? '') ?>
+                </td>
+                <td class="right-label">FUND:</td>
+                <td class="value">
+                    <?= e($disbursement['fund'] ?? '') ?>
+                </td>
+            </tr>
+        </table>
+
+        <table>
+            <colgroup>
+                <col>
+                <col style="width:190px;">
+            </colgroup>
+            <thead class="particulars-head">
                 <tr>
                     <th>PARTICULARS</th>
-                    <th style="width: 180px;">AMOUNT</th>
+                    <th>AMOUNT</th>
                 </tr>
-                <td>
-                    <?= nl2br(htmlspecialchars($disbursement['purpose'])) ?>
-                    <?php if ($hasBirBreakdown): ?>
-                    <div class="bir-breakdown">
-                        <div class="row"><strong>BIR Breakdown</strong></div>
-                        <div class="row"><span>VAT
-                                Type</span><span><?= htmlspecialchars($birVatType ?: 'N/A') ?></span>
-                        </div>
-                        <div class="row"><span>Gross</span><span>Php.
-                                <?= number_format($birGross, 2) ?></span>
-                        </div>
-                        <div class="row">
-                            <span><?= htmlspecialchars($birLabelOne) ?></span><span>Php.
-                                <?= number_format($birWithholdingA, 2) ?></span>
-                        </div>
-                        <div class="row">
-                            <span><?= htmlspecialchars($birLabelFive) ?></span><span>Php.
-                                <?= number_format($birWithholdingB, 2) ?></span>
-                        </div>
-                        <div class="row"><span>Total Withholding</span><span>Php.
-                                <?= number_format($birTotal, 2) ?></span>
-                        </div>
-                    </div>
-                    <?php endif; ?>
-                </td>
+            </thead>
             <tbody>
                 <tr>
-                    <td>
+                    <td class="particulars-cell">
+                        <div class="particulars-text">
+                            <?= nl2br(e($disbursement['purpose'] ?? '')) ?>
+                        </div>
+
+                        <?php if ($hasBirBreakdown): ?>
+                        <div class="bir-lines">
+                            <?php if ($birTotal > 0): ?>
+                            <div class="bir-line">
+                                <span></span>
+                                <span
+                                    class="right"><?= money($birTotal) ?></span>
+                            </div>
+                            <?php endif; ?>
+
+                            <div class="support-line">Supporting papers hereto attached covering the amount of .</div>
+
+                            <?php if ($birGross > 0): ?>
+                            <div class="bir-line">
+                                <span><?= e($birLabelA) ?></span>
+                                <span
+                                    class="right"><?= money($birGross) ?></span>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if ($birWithholdingA > 0): ?>
+                            <div class="bir-line">
+                                <span><?= e($birLabelA) ?></span>
+                                <span
+                                    class="right"><?= money($birWithholdingA) ?></span>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if ($birWithholdingB > 0): ?>
+                            <div class="bir-line">
+                                <span><?= e($birLabelB) ?></span>
+                                <span
+                                    class="right under"><?= money($birWithholdingB) ?></span>
+                            </div>
+                            <?php endif; ?>
+
+                            <?php if ($birTotal > 0): ?>
+                            <div class="bir-line">
+                                <span></span>
+                                <span
+                                    class="right"><?= money($birTotal) ?></span>
+                            </div>
+                            <?php endif; ?>
+                        </div>
+                        <?php else: ?>
+                        <div class="support-line">Supporting papers hereto attached covering the amount of .</div>
+                        <?php endif; ?>
                     </td>
-                    <td class="particulars-amount">Php.
-                        <?= $amount ?>
+
+                    <td class="amount-box">
+                        <span class="currency">Php</span>
+                        <span
+                            class="value"><?= $amountFormatted ?></span>
+
+                        <?php if ($birTotal > 0): ?>
+                        <span
+                            class="value"><?= money($birTotal) ?></span>
+                        <div class="line"></div>
+                        <span
+                            class="value"><?= money($amount - $birTotal) ?></span>
+                        <?php endif; ?>
                     </td>
                 </tr>
             </tbody>
         </table>
 
-        <div class="cert-section">
+        <div class="cert-row">
             <div class="cert-box">
-                <div><strong>A.</strong> Certified as to availability of appropriation for obligation.</div>
+                <strong>A.</strong> Certified as to availability<br>
+                of appropriation for obligation.
                 <div class="sign-name">
-                    <?= htmlspecialchars($disbursement['signatory_a'] ?? '') ?>
+                    <?= e($disbursement['signatory_a'] ?? '') ?>
                 </div>
-                <div class="sign-label">Chairman, Committee on Appropriation</div>
-            </div>
-            <div class="cert-box">
-                <div><strong>B.</strong> Certified as to availability of funds for the purpose and completeness &amp;
-                    propriety of supporting documents.</div>
-                <div class="sign-name">
-                    <?= htmlspecialchars($disbursement['signatory_b'] ?? '') ?>
+                <div class="sign-role">CHAIRMAN, COMMITTEE ON APPROPRIATION</div>
+                <div class="sign-date">
+                    DATE:&nbsp;&nbsp;&nbsp;<?= e($disburseDate) ?>
                 </div>
-                <div class="sign-label">Barangay Treasurer</div>
             </div>
-            <div class="cert-box">
-                <div><strong>C.</strong> Certified as to validity, propriety and legality of claim &amp; approved for
-                    payment.</div>
-                <div class="sign-name">
-                    <?= htmlspecialchars($disbursement['signatory_c'] ?? '') ?>
-                </div>
-                <div class="sign-label">Punong Barangay</div>
-            </div>
-        </div>
 
-        <div class="received-section">
-            <strong>D. RECEIVED PAYMENT</strong>
-            <div class="received-grid">
-                <div class="received-sign">
-                    <div class="sign-line">
-                        <?= htmlspecialchars($disbursement['signatory_received_by'] ?? $disbursement['payee']) ?>
-                    </div>
-                    <div class="sign-label">Signature over printed name</div>
+            <div class="cert-box">
+                <strong>B.</strong> Certified as to availability of funds<br>
+                for the purpose and completeness and<br>
+                propriety of supporting documents.
+                <div class="sign-name">
+                    <?= e($disbursement['signatory_b'] ?? '') ?>
                 </div>
-                <div class="received-fields">
-                    <div class="field-row">
-                        <span>Check No.</span>
-                        <span><?= htmlspecialchars($disbursement['check_no']) ?></span>
-                    </div>
-                    <div class="field-row">
-                        <span>OR No.</span>
-                        <span><?= htmlspecialchars($disbursement['or_no'] ?? '') ?></span>
-                    </div>
-                    <div class="field-row">
-                        <span>Date</span>
-                        <span><?= $receivedDate ?></span>
-                    </div>
+                <div class="sign-role">BARANGAY TREASURER</div>
+                <div class="sign-date">
+                    DATE:&nbsp;&nbsp;&nbsp;<?= e($disburseDate) ?>
+                </div>
+            </div>
+
+            <div class="cert-box">
+                <strong>C.</strong> Certified as to validity propriety<br>
+                and legality of claim &amp; approved<br>
+                for payment .
+                <div class="sign-name">
+                    <?= e($disbursement['signatory_c'] ?? '') ?>
+                </div>
+                <div class="sign-role">PUNONG BARANGAY</div>
+                <div class="sign-date">
+                    DATE:&nbsp;&nbsp;&nbsp;<?= e($disburseDate) ?>
                 </div>
             </div>
         </div>
 
-        <div class="accounting-section">
-            <div class="accounting-title">E. ACCOUNTING ENTRIES</div>
-            <table class="accounting-table">
-                <thead>
-                    <tr>
-                        <th style="width: 50%;">ACCOUNT NAME</th>
-                        <th style="width: 20%;">ACCOUNT CODE</th>
-                        <th style="width: 15%;">DEBIT</th>
-                        <th style="width: 15%;">CREDIT</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <?php if (!empty($accountingRows)): ?>
-                    <?php foreach ($accountingRows as $row): ?>
-                    <tr>
-                        <td><?= htmlspecialchars($row['name']) ?>
-                        </td>
-                        <td><?= htmlspecialchars($row['code']) ?>
-                        </td>
-                        <td class="amount">
-                            <?= htmlspecialchars($row['debit']) ?>
-                        </td>
-                        <td class="amount">
-                            <?= htmlspecialchars($row['credit']) ?>
-                        </td>
-                    </tr>
-                    <?php endforeach; ?>
-                    <?php else: ?>
-                    <tr>
-                        <td>&nbsp;</td>
-                        <td></td>
-                        <td class="amount"></td>
-                        <td class="amount"></td>
-                    </tr>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </div>
+        <div class="section-title">D. RECEIVED PAYMENT</div>
 
-        <div class="footer-sign">
-            <div class="footer-box">
-                <div>Prepared by:</div>
-                <div class="name">
-                    <?= htmlspecialchars($disbursement['signatory_prepared_by'] ?? '') ?>
+        <table class="received-table">
+            <colgroup>
+                <col>
+                <col style="width:95px;">
+                <col style="width:115px;">
+            </colgroup>
+            <tr>
+                <td rowspan="4" style="vertical-align: bottom;">
+                    <div class="received-name">
+                        <?= e($disbursement['signatory_received_by'] ?? $disbursement['payee'] ?? '') ?>
+                    </div>
+                    <div class="received-caption">SIGNATURE OVER PRINTED NAME</div>
+                </td>
+                <td class="mini-label">CHECK NO.</td>
+                <td class="received-value-right">
+                    <?= e($disbursement['check_no'] ?? '') ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="mini-label">BANK NAME</td>
+                <td class="received-value-center"><?= e($bankName) ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="mini-label">OR. NO.</td>
+                <td><?= e($disbursement['or_no'] ?? '') ?>
+                </td>
+            </tr>
+            <tr>
+                <td class="mini-label">DATE</td>
+                <td><?= e($receivedDate) ?></td>
+            </tr>
+        </table>
+
+        <div class="section-title">E. ACCOUNTING ENTRIES</div>
+
+        <table class="accounting-table">
+            <colgroup>
+                <col>
+                <col style="width:95px;">
+                <col style="width:115px;">
+                <col style="width:105px;">
+            </colgroup>
+            <thead>
+                <tr>
+                    <th>ACCOUNT NAME</th>
+                    <th>ACCOUNT CODE</th>
+                    <th>DEBIT</th>
+                    <th>CREDIT</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php foreach ($accountingRows as $row): ?>
+                <tr>
+                    <td class="center">
+                        <?= e($row['name']) ?>
+                    </td>
+                    <td class="center">
+                        <?= e($row['code']) ?>
+                    </td>
+                    <td class="money">
+                        <?= e($row['debit']) ?>
+                    </td>
+                    <td class="money">
+                        <?= e($row['credit']) ?>
+                    </td>
+                </tr>
+                <?php endforeach; ?>
+
+                <?php for ($i = 0; $i < $blankRowsNeeded; $i++): ?>
+                <tr>
+                    <td>&nbsp;</td>
+                    <td></td>
+                    <td></td>
+                    <td></td>
+                </tr>
+                <?php endfor; ?>
+            </tbody>
+        </table>
+
+        <div class="footer">
+            <div class="footer-left">
+                <div>
+                    <div class="footer-label">PREPARED BY:</div>
+                    <div class="footer-name">
+                        <?= e($disbursement['signatory_prepared_by'] ?? '') ?>
+                    </div>
+                    <div class="footer-role">BARANGAY TREASURER</div>
                 </div>
-                <div class="label">Barangay Treasurer</div>
+
+                <div>
+                    <div class="footer-label">CHECKED BY:</div>
+                    <div class="footer-name">
+                        <?= e($disbursement['signatory_checked_by'] ?? '') ?>
+                    </div>
+                    <div class="footer-role">BARANGAY BOOKKEEPER</div>
+                </div>
             </div>
-            <div class="footer-box">
-                <div>Checked by:</div>
-                <div class="name">
-                    <?= htmlspecialchars($disbursement['signatory_checked_by'] ?? '') ?>
+
+            <div class="footer-right">
+                <div class="footer-label">APPROVED BY:</div>
+                <div class="footer-name">
+                    <?= e($disbursement['signatory_approved_by'] ?? '') ?>
                 </div>
-                <div class="label">Barangay Bookkeeper</div>
-            </div>
-            <div class="footer-box">
-                <div>Approved by:</div>
-                <div class="name">
-                    <?= htmlspecialchars($disbursement['signatory_approved_by'] ?? '') ?>
-                </div>
-                <div class="label">Municipal Accountant</div>
+                <div class="footer-role">MUNICIPAL ACCOUNTANT</div>
+                <div class="footer-date">DATE: <span class="footer-date-line"></span></div>
             </div>
         </div>
     </div>
