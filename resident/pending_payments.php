@@ -86,7 +86,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submi
         } elseif ($fileSize > 5 * 1024 * 1024) {
             $error = 'Proof must be 5MB or smaller.';
         } else {
-            $checkStmt = $conn->prepare("SELECT id FROM payment_status WHERE id = ? AND resident_id = ? AND payment_status = 'pending'");
+            $checkStmt = $conn->prepare("SELECT id FROM payment_status WHERE id = ? AND resident_id = ? AND payment_status IN ('pending', 'to_review')");
             $checkStmt->bind_param("ii", $paymentId, $residentId);
             $checkStmt->execute();
             $checkResult = $checkStmt->get_result();
@@ -270,7 +270,7 @@ $grandTotal = $amountTotal + $birTotal;
                                 <?php if ($totalCount > 0): ?>
                                 <?php foreach ($rows as $row): ?>
                                 <?php
-                                    $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
+                                                    $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
                                     $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
                                     ?>
                                 <tr>
@@ -294,14 +294,37 @@ $grandTotal = $amountTotal + $birTotal;
                                             class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                                     </td>
                                     <td>
+                                        <?php
+                                            $proofPath = trim((string) ($row['proof_path'] ?? ''));
+                                    $hasProof = $proofPath !== '';
+                                    $proofUrl = $hasProof ? '../' . $proofPath : '';
+                                    ?>
                                         <?php if ($row['payment_status'] === 'pending'): ?>
                                         <button type="button" class="btn btn-sm btn-primary pay-btn"
                                             data-id="<?= $row['id'] ?>"
                                             data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
                                             data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
-                                            data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>">
+                                            data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
+                                            data-mode="pay">
                                             <i class="fas fa-qrcode"></i> Pay
                                         </button>
+                                        <?php elseif ($row['payment_status'] === 'to_review'): ?>
+                                        <button type="button" class="btn btn-sm btn-secondary pay-btn"
+                                            data-id="<?= $row['id'] ?>"
+                                            data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                            data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                            data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
+                                            data-mode="update"
+                                            data-proof="<?= htmlspecialchars($proofUrl) ?>">
+                                            <i class="fas fa-pen"></i> Update Proof
+                                        </button>
+                                        <?php if ($hasProof): ?>
+                                        <a class="btn btn-sm btn-secondary"
+                                            href="<?= htmlspecialchars($proofUrl) ?>"
+                                            target="_blank" rel="noopener">
+                                            <i class="fas fa-eye"></i> View Proof
+                                        </a>
+                                        <?php endif; ?>
                                         <?php else: ?>
                                         <span class="text-muted">Submitted</span>
                                         <?php endif; ?>
@@ -348,14 +371,18 @@ $grandTotal = $amountTotal + $birTotal;
         <div class="modal-content">
             <div class="modal-header">
                 <i class="fas fa-qrcode" style="color: #1e3a5f; font-size: 40px;"></i>
-                <h2>Pay & Upload Proof</h2>
+                <h2 id="payModalTitle">Pay & Upload Proof</h2>
             </div>
             <div class="modal-body">
                 <div class="qr-wrapper">
                     <img src="../assets/images/qr.jpg" alt="Instapay QR Code" class="qr-image">
-                    <p class="qr-note">Scan the QR code to pay, then upload your proof below.</p>
+                    <p class="qr-note" id="payModalNote">Scan the QR code to pay, then upload your proof below.</p>
                 </div>
                 <div class="payment-summary" id="paymentSummary"></div>
+                <div id="proofPreview" style="display: none; margin-top: 12px;">
+                    <img id="proofPreviewImg" alt="Uploaded proof"
+                        style="width: 100%; border-radius: 12px; border: 1px solid #e2e8f0;">
+                </div>
                 <form method="POST" enctype="multipart/form-data" class="proof-form">
                     <input type="hidden" name="action" value="submit_proof">
                     <input type="hidden" name="payment_id" id="payPaymentId">
@@ -385,6 +412,10 @@ $grandTotal = $amountTotal + $birTotal;
         const paymentSummary = document.getElementById('paymentSummary');
         const payPaymentId = document.getElementById('payPaymentId');
         const closePayModal = document.getElementById('closePayModal');
+        const payModalTitle = document.getElementById('payModalTitle');
+        const payModalNote = document.getElementById('payModalNote');
+        const proofPreview = document.getElementById('proofPreview');
+        const proofPreviewImg = document.getElementById('proofPreviewImg');
 
         if (mobileMenuBtn && sidebar) {
             mobileMenuBtn.addEventListener('click', () => {
@@ -394,11 +425,29 @@ $grandTotal = $amountTotal + $birTotal;
 
         payButtons.forEach((button) => {
             button.addEventListener('click', () => {
+                const mode = button.dataset.mode || 'pay';
+                const proofUrl = button.dataset.proof || '';
                 payPaymentId.value = button.dataset.id;
                 paymentSummary.innerHTML =
                     `<strong>Certificate:</strong> ${button.dataset.certificate}<br>` +
                     `<strong>Purpose:</strong> ${button.dataset.purpose}<br>` +
                     `<strong>Total:</strong> ${button.dataset.total}`;
+                if (mode === 'update') {
+                    payModalTitle.textContent = 'Update Proof of Payment';
+                    payModalNote.textContent = 'Upload a clearer proof image for review.';
+                    if (proofUrl) {
+                        proofPreviewImg.src = proofUrl;
+                        proofPreview.style.display = 'block';
+                    } else {
+                        proofPreview.style.display = 'none';
+                        proofPreviewImg.removeAttribute('src');
+                    }
+                } else {
+                    payModalTitle.textContent = 'Pay & Upload Proof';
+                    payModalNote.textContent = 'Scan the QR code to pay, then upload your proof below.';
+                    proofPreview.style.display = 'none';
+                    proofPreviewImg.removeAttribute('src');
+                }
                 payModal.style.display = 'flex';
             });
         });

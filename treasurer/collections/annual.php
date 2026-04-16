@@ -7,79 +7,42 @@ $year = $_GET['year'] ?? date('Y');
 
 // Initialize arrays for monthly data
 $monthlyData = [
-    'taxRevenue' => [],
-    'taxGoodsServices' => [],
-    'operatingServices' => [],
-    'otherCollections' => [],
+    'certificates' => [],
+    'documentaryFees' => [],
     'totals' => []
 ];
 
 // Get data for each month
 for ($month = 1; $month <= 12; $month++) {
-    // Tax Revenue
-    $realPropertyTax = $conn->query("
+    // Certificates (payments)
+    $certificates = $conn->query("
         SELECT COALESCE(SUM(amount), 0) as total 
         FROM payments 
-        WHERE purpose LIKE '%real property%' 
-        AND MONTH(payment_date) = $month 
-        AND YEAR(payment_date) = $year
+        WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month 
+        AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
     ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['taxRevenue'][$month] = $realPropertyTax;
-    
-    // Tax on Goods and Services
-    $internalRevenue = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
+
+    $monthlyData['certificates'][$month] = $certificates;
+
+    // Documentary Stamp Fees (BIR tax)
+    $documentaryFees = $conn->query("
+        SELECT COALESCE(SUM(bir_tax), 0) as total 
         FROM payments 
-        WHERE purpose LIKE '%internal revenue%' 
-        AND MONTH(payment_date) = $month 
-        AND YEAR(payment_date) = $year
+        WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month 
+        AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
     ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['taxGoodsServices'][$month] = $internalRevenue;
-    
-    // Operating and Services
-    $operatingServicesPayments = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM payments 
-        WHERE operating_services IS NOT NULL 
-        AND operating_services != ''
-        AND MONTH(payment_date) = $month 
-        AND YEAR(payment_date) = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $operatingServicesCedula = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM cedula 
-        WHERE MONTH(issued_date) = $month 
-        AND YEAR(issued_date) = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['operatingServices'][$month] = $operatingServicesPayments + $operatingServicesCedula;
-    
-    // Other Collections
-    $otherCollectionsPayments = $conn->query("
-        SELECT COALESCE(SUM(amount), 0) as total 
-        FROM payments 
-        WHERE MONTH(payment_date) = $month 
-        AND YEAR(payment_date) = $year
-    ")->fetch_assoc()['total'] ?? 0;
-    
-    $monthlyData['otherCollections'][$month] = $otherCollectionsPayments;
+
+    $monthlyData['documentaryFees'][$month] = $documentaryFees;
     
     // Monthly total
     $monthlyData['totals'][$month] =
-        $monthlyData['taxRevenue'][$month] +
-        $monthlyData['taxGoodsServices'][$month] +
-        $monthlyData['operatingServices'][$month] +
-        $monthlyData['otherCollections'][$month];
+        $monthlyData['certificates'][$month] +
+        $monthlyData['documentaryFees'][$month];
 }
 
 // Calculate yearly totals
-$yearlyTaxRevenue = array_sum($monthlyData['taxRevenue']);
-$yearlyTaxGoodsServices = array_sum($monthlyData['taxGoodsServices']);
-$yearlyOperatingServices = array_sum($monthlyData['operatingServices']);
-$yearlyOtherCollections = array_sum($monthlyData['otherCollections']);
+$yearlyCertificates = array_sum($monthlyData['certificates']);
+$yearlyDocumentaryFees = array_sum($monthlyData['documentaryFees']);
 $yearlyGrandTotal = array_sum($monthlyData['totals']);
 
 $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
@@ -245,10 +208,8 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                         <thead>
                             <tr>
                                 <th>Month</th>
-                                <th>Tax Revenue</th>
-                                <th>Tax on Goods & Services</th>
-                                <th>Operating & Services</th>
-                                <th>Other Collections</th>
+                                <th>Certificates</th>
+                                <th>Documentary Stamp Fees</th>
                                 <th>Monthly Total</th>
                             </tr>
                         </thead>
@@ -256,13 +217,9 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                             <?php for ($month = 1; $month <= 12; $month++): ?>
                             <tr>
                                 <td><?= $monthNames[$month] ?></td>
-                                <td>₱<?= number_format($monthlyData['taxRevenue'][$month], 2) ?>
+                                <td>₱<?= number_format($monthlyData['certificates'][$month], 2) ?>
                                 </td>
-                                <td>₱<?= number_format($monthlyData['taxGoodsServices'][$month], 2) ?>
-                                </td>
-                                <td>₱<?= number_format($monthlyData['operatingServices'][$month], 2) ?>
-                                </td>
-                                <td>₱<?= number_format($monthlyData['otherCollections'][$month], 2) ?>
+                                <td>₱<?= number_format($monthlyData['documentaryFees'][$month], 2) ?>
                                 </td>
                                 <td><strong>₱<?= number_format($monthlyData['totals'][$month], 2) ?></strong>
                                 </td>
@@ -270,13 +227,9 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                             <?php endfor; ?>
                             <tr class="total-row">
                                 <td>ANNUAL TOTAL</td>
-                                <td>₱<?= number_format($yearlyTaxRevenue, 2) ?>
+                                <td>₱<?= number_format($yearlyCertificates, 2) ?>
                                 </td>
-                                <td>₱<?= number_format($yearlyTaxGoodsServices, 2) ?>
-                                </td>
-                                <td>₱<?= number_format($yearlyOperatingServices, 2) ?>
-                                </td>
-                                <td>₱<?= number_format($yearlyOtherCollections, 2) ?>
+                                <td>₱<?= number_format($yearlyDocumentaryFees, 2) ?>
                                 </td>
                                 <td>₱<?= number_format($yearlyGrandTotal, 2) ?>
                                 </td>
@@ -289,33 +242,12 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                 <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; margin-top: 30px;"
                     class="no-print">
                     <div class="card"
-                        style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white;">
-                        <div style="padding: 20px;">
-                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-coins"></i> Tax Revenue</h4>
-                            <p style="font-size: 28px; font-weight: 700; margin: 0;">
-                                ₱<?= number_format($yearlyTaxRevenue, 2) ?>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="card"
-                        style="background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); color: white;">
-                        <div style="padding: 20px;">
-                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-shopping-cart"></i> Tax on
-                                Goods & Services</h4>
-                            <p style="font-size: 28px; font-weight: 700; margin: 0;">
-                                ₱<?= number_format($yearlyTaxGoodsServices, 2) ?>
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="card"
                         style="background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); color: white;">
                         <div style="padding: 20px;">
-                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-cogs"></i> Operating &
-                                Services</h4>
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-receipt"></i> Certificates
+                            </h4>
                             <p style="font-size: 28px; font-weight: 700; margin: 0;">
-                                ₱<?= number_format($yearlyOperatingServices, 2) ?>
+                                ₱<?= number_format($yearlyCertificates, 2) ?>
                             </p>
                         </div>
                     </div>
@@ -323,10 +255,10 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                     <div class="card"
                         style="background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); color: white;">
                         <div style="padding: 20px;">
-                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-receipt"></i> Other
-                                Collections</h4>
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-stamp"></i> Documentary Stamp
+                                Fees</h4>
                             <p style="font-size: 28px; font-weight: 700; margin: 0;">
-                                ₱<?= number_format($yearlyOtherCollections, 2) ?>
+                                ₱<?= number_format($yearlyDocumentaryFees, 2) ?>
                             </p>
                         </div>
                     </div>

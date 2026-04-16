@@ -625,6 +625,8 @@ tbody td {
   border-radius: 12px;
   max-width: 520px;
   width: 92%;
+  max-height: 90vh;
+  overflow-y: auto;
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
   animation: slideDown 0.3s ease;
 }
@@ -643,6 +645,11 @@ tbody td {
 
 .modal-body {
   padding: 24px 30px 30px;
+}
+
+.modal-body img {
+  max-width: 100%;
+  height: auto;
 }
 
 .modal-footer {
