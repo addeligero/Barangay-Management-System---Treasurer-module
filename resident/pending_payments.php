@@ -221,17 +221,12 @@ $grandTotal = $amountTotal + $birTotal;
                         </div>
                     </div>
                     <div class="stat-card green">
-                        <h4>Total Amount</h4>
+                        <h4>Total Amount To pay</h4>
                         <div class="stat-value">PHP
                             <?= number_format($amountTotal, 2) ?>
                         </div>
                     </div>
-                    <div class="stat-card">
-                        <h4>Total BIR Tax</h4>
-                        <div class="stat-value">PHP
-                            <?= number_format($birTotal, 2) ?>
-                        </div>
-                    </div>
+
                 </div>
 
                 <div class="card">

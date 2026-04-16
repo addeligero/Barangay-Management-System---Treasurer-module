@@ -38,43 +38,23 @@ $chartMonth = (int) date('n');
 $chartYear = (int) date('Y');
 
 
-// Operating and Services - Payments with operating_services field + all cedula
-$operatingServicesPayments = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE operating_services IS NOT NULL AND operating_services != ''
-    AND MONTH(payment_date) = $chartMonth
-    AND YEAR(payment_date) = $chartYear
-")->fetch_assoc()['total'] ?? 0;
-
-$operatingServicesCedula = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM cedula
-    WHERE MONTH(issued_date) = $chartMonth
-    AND YEAR(issued_date) = $chartYear
-")->fetch_assoc()['total'] ?? 0;
-
-$operatingServices = $operatingServicesPayments + $operatingServicesCedula;
-
-// Other Collections - Payments without operating_services (like clearances, permits)
-$otherCollectionsPayments = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total 
-    FROM payments 
-    WHERE MONTH(payment_date) = $chartMonth
-    AND YEAR(payment_date) = $chartYear
-    AND (remarks IS NULL OR remarks NOT LIKE 'Pending Status%')
-")->fetch_assoc()['total'] ?? 0;
-
-$pendingPaidCollections = $conn->query("
+// Certificates (payments only)
+$certificates = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total
-    FROM payment_status
-    WHERE payment_status = 'paid'
-    AND MONTH(created_at) = $chartMonth
-    AND YEAR(created_at) = $chartYear
+    FROM payments
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $chartMonth
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $chartYear
 ")->fetch_assoc()['total'] ?? 0;
 
-$otherCollections = $otherCollectionsPayments + $pendingPaidCollections;
-$totalMonthlyCollections = $operatingServices + $otherCollections;
+// Documentary Stamp Fees (BIR tax)
+$documentaryStampFees = $conn->query("
+    SELECT COALESCE(SUM(bir_tax), 0) as total
+    FROM payments
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $chartMonth
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $chartYear
+")->fetch_assoc()['total'] ?? 0;
+
+$totalMonthlyCollections = $certificates + $documentaryStampFees;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -236,13 +216,13 @@ $totalMonthlyCollections = $operatingServices + $otherCollections;
         new Chart(ctx, {
             type: 'bar',
             data: {
-                labels: ['TOTAL OTHER COLLECTIONS', 'Operating & Services', 'TOTAL MONTHLY COLLECTIONS'],
+                labels: ['Certificates', 'Docu Stamp Total', 'TOTAL MONTHLY COLLECTIONS'],
                 datasets: [{
                     label: 'Collections by Category',
                     data: [
-                        <?= $otherCollections ?>
+                        <?= $certificates ?>
                         ,
-                        <?= $operatingServices ?>
+                        <?= $documentaryStampFees ?>
                         ,
                         <?= $totalMonthlyCollections ?>
                     ],
