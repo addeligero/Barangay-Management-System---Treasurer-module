@@ -37,6 +37,13 @@ while ($row = $pendingBreakdownResult->fetch_assoc()) {
     $pendingPaidBreakdown[] = $row;
 }
 
+$documentaryStampFees = $conn->query("
+    SELECT COALESCE(SUM(bir_tax), 0) as total
+    FROM payments
+    WHERE MONTH(payment_date) = $month
+    AND YEAR(payment_date) = $year
+")->fetch_assoc()['total'] ?? 0;
+
 $otherCollections = $otherCollectionsPayments + $pendingPaidCollections;
 
 // Other Collections breakdown by service type
@@ -54,7 +61,7 @@ while ($row = $otherBreakdownResult->fetch_assoc()) {
     $otherCollectionsBreakdown[] = $row;
 }
 
-$totalCollections = $otherCollections;
+$totalCollections = $otherCollections + $documentaryStampFees;
 
 $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 ?>
@@ -265,14 +272,37 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     </td>
                                 </tr>
                                 <?php endif; ?>
+
                                 <tr class="total-row">
                                     <td>TOTAL OTHER COLLECTIONS</td>
                                     <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
+
                             </tbody>
+                            <tbody>
                         </table>
                     </div>
+
+                    <!--total docu stamp fees-->
+                    <div class="report-section">
+                        <h4
+                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
+                            <i class="fas fa-receipt"></i> Documentary Stamp
+                        </h4>
+                        <table class="report-table">
+                            <tbody>
+
+                                <tr class="total-row">
+                                    <td>TOTAL FEES</td>
+                                    <td>₱<?= number_format($documentaryStampFees, 2) ?>
+                                    </td>
+                                </tr>
+                            </tbody>
+                            <tbody>
+                        </table>
+                    </div>
+
 
                     <!-- Grand Total -->
                     <div class="report-section" style="margin-top: 40px;">
