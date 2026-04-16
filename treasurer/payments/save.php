@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $userCheck->close();
     }
 
-    $stmt = $conn->prepare("\
+    $stmt = $conn->prepare("
         INSERT INTO payments (payer_name, service_type, purpose, amount, bir_tax, receipt_no, payment_date, remarks, received_by, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");

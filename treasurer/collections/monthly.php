@@ -6,55 +6,32 @@ include "../../config/session.php";
 $month = $_GET['month'] ?? date('m');
 $year = $_GET['year'] ?? date('Y');
 
-// Other Collections (from payments + paid pending status)
+// Other Collections (from payments)
 $otherCollectionsPayments = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
-    WHERE MONTH(payment_date) = $month 
-    AND YEAR(payment_date) = $year
-    AND (remarks IS NULL OR remarks NOT LIKE 'Pending Status%')
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month 
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
 ")->fetch_assoc()['total'] ?? 0;
-
-$pendingPaidCollections = $conn->query("
-    SELECT COALESCE(SUM(amount), 0) as total
-    FROM payment_status
-    WHERE payment_status = 'paid'
-    AND MONTH(created_at) = $month
-    AND YEAR(created_at) = $year
-")->fetch_assoc()['total'] ?? 0;
-
-$pendingPaidBreakdown = [];
-$pendingBreakdownResult = $conn->query("
-    SELECT certificate_type, COALESCE(SUM(amount), 0) as total
-    FROM payment_status
-    WHERE payment_status = 'paid'
-    AND MONTH(created_at) = $month
-    AND YEAR(created_at) = $year
-    GROUP BY certificate_type
-    ORDER BY certificate_type
-");
-while ($row = $pendingBreakdownResult->fetch_assoc()) {
-    $pendingPaidBreakdown[] = $row;
-}
 
 $documentaryStampFees = $conn->query("
     SELECT COALESCE(SUM(bir_tax), 0) as total
     FROM payments
-    WHERE MONTH(payment_date) = $month
-    AND YEAR(payment_date) = $year
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
 ")->fetch_assoc()['total'] ?? 0;
 
-$otherCollections = $otherCollectionsPayments + $pendingPaidCollections;
+$otherCollections = $otherCollectionsPayments;
 
 // Other Collections breakdown by service type
 $otherCollectionsBreakdown = [];
 $otherBreakdownResult = $conn->query("
-    SELECT service_type, COALESCE(SUM(amount), 0) as total
+    SELECT COALESCE(NULLIF(TRIM(service_type), ''), 'Unspecified') AS service_type,
+           COALESCE(SUM(amount), 0) as total
     FROM payments
-    WHERE MONTH(payment_date) = $month
-    AND YEAR(payment_date) = $year
-    AND (remarks IS NULL OR remarks NOT LIKE 'Pending Status%')
-    GROUP BY service_type
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
+    GROUP BY COALESCE(NULLIF(TRIM(service_type), ''), 'Unspecified')
     ORDER BY service_type
 ");
 while ($row = $otherBreakdownResult->fetch_assoc()) {
@@ -217,7 +194,7 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                     <div class="report-section">
                         <h4
                             style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
-                            <i class="fas fa-receipt"></i> OTHER COLLECTIONS
+                            <i class="fas fa-receipt"></i> CERTIFICATES
                         </h4>
                         <table class="report-table">
                             <tbody>
@@ -246,41 +223,13 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     </td>
                                 </tr>
                                 <?php endif; ?>
-                                <?php if (!empty($pendingPaidBreakdown)): ?>
-                                <?php foreach ($pendingPaidBreakdown as $bd): ?>
-                                <tr>
-                                    <td style="padding-left: 30px; color: #555;">
-                                        <i class="fas fa-chevron-right" style="font-size:11px; margin-right:6px;"></i>
-                                        Paid Status -
-                                        <?= htmlspecialchars($bd['certificate_type'] ?: 'Unspecified') ?>
-                                    </td>
-                                    <td>₱<?= number_format($bd['total'], 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endforeach; ?>
-                                <tr>
-                                    <td style="font-weight: 600;">
-                                        <em>Subtotal – Pending Status (Paid)</em>
-                                    </td>
-                                    <td>₱<?= number_format($pendingPaidCollections, 2) ?>
-                                    </td>
-                                </tr>
-                                <?php else: ?>
-                                <tr>
-                                    <td>Pending Status (Paid)</td>
-                                    <td>₱<?= number_format($pendingPaidCollections, 2) ?>
-                                    </td>
-                                </tr>
-                                <?php endif; ?>
-
                                 <tr class="total-row">
-                                    <td>TOTAL OTHER COLLECTIONS</td>
+                                    <td>TOTAL COLLECTIONS</td>
                                     <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
 
                             </tbody>
-                            <tbody>
                         </table>
                     </div>
 
@@ -299,7 +248,6 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                     </td>
                                 </tr>
                             </tbody>
-                            <tbody>
                         </table>
                     </div>
 
