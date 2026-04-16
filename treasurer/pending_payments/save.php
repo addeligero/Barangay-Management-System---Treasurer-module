@@ -52,7 +52,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
 
     $conn->begin_transaction();
 
-    $insertStmt = $conn->prepare("\
+    $insertStmt = $conn->prepare("
         INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, amount, bir_tax, remarks, received_by, resident_id, created_at)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NOW())
     ");
@@ -73,14 +73,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     $insertStmt->close();
 
     $updateOk = false;
+    $cedulaOk = true;
     if ($insertOk) {
         $updateStmt = $conn->prepare("UPDATE payment_status SET payment_status = 'paid', created_at = NOW() WHERE id = ?");
         $updateStmt->bind_param("i", $pendingId);
         $updateOk = $updateStmt->execute();
         $updateStmt->close();
+
+        if ($updateOk && strcasecmp(trim((string) $pending['certificate_type']), 'Cedula') === 0) {
+            $yearIssued = intval(date('Y', strtotime($paymentDate)));
+            $cedulaStmt = $conn->prepare("
+                UPDATE cedula
+                SET issued_by = ?, issued_date = ?, year_issued = ?
+                WHERE issued_by IS NULL AND full_name = ?
+                ORDER BY id DESC
+                LIMIT 1
+            ");
+            $cedulaStmt->bind_param("isis", $received_by, $paymentDate, $yearIssued, $pending['resident_fname']);
+            $cedulaOk = $cedulaStmt->execute();
+            $cedulaStmt->close();
+        }
     }
 
-    if ($insertOk && $updateOk) {
+    if ($insertOk && $updateOk && $cedulaOk) {
         $conn->commit();
         header("Location: list.php?paid=1");
     } else {
@@ -175,6 +190,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $updateStmt->close();
 
     $insertOk = false;
+    $cedulaOk = true;
     if ($updateOk) {
         $insertStmt = $conn->prepare("\
                 INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, amount, bir_tax, remarks, received_by, resident_id, created_at)
@@ -195,9 +211,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
         );
         $insertOk = $insertStmt->execute();
         $insertStmt->close();
+
+        if ($insertOk && strcasecmp(trim($certificateType), 'Cedula') === 0) {
+            $yearIssued = intval(date('Y', strtotime($paymentDate)));
+            $cedulaStmt = $conn->prepare("\
+                UPDATE cedula
+                SET issued_by = ?, issued_date = ?, year_issued = ?
+                WHERE issued_by IS NULL AND full_name = ?
+                ORDER BY id DESC
+                LIMIT 1
+            ");
+            $cedulaStmt->bind_param("isis", $received_by, $paymentDate, $yearIssued, $residentName);
+            $cedulaOk = $cedulaStmt->execute();
+            $cedulaStmt->close();
+        }
     }
 
-    if ($updateOk && $insertOk) {
+    if ($updateOk && $insertOk && $cedulaOk) {
         $conn->commit();
         header("Location: list.php?paid=1");
     } else {

@@ -8,17 +8,20 @@ if ($searchQuery !== "") {
     $searchParam = "%{$searchQuery}%";
     $stmt = $conn->prepare("
         SELECT * FROM payments
-        WHERE receipt_no LIKE ?
-            OR payer_name LIKE ?
-            OR service_type LIKE ?
-            OR purpose LIKE ?
+        WHERE service_type <> 'Cedula'
+            AND (
+                receipt_no LIKE ?
+                OR payer_name LIKE ?
+                OR service_type LIKE ?
+                OR purpose LIKE ?
+            )
         ORDER BY id DESC
     ");
     $stmt->bind_param("ssss", $searchParam, $searchParam, $searchParam, $searchParam);
     $stmt->execute();
     $result = $stmt->get_result();
 } else {
-    $result = $conn->query("SELECT * FROM payments ORDER BY id DESC");
+    $result = $conn->query("SELECT * FROM payments WHERE service_type <> 'Cedula' ORDER BY id DESC");
 }
 ?>
 <!DOCTYPE html>

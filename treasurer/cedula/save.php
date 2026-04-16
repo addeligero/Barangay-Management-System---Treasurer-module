@@ -198,7 +198,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $issued_by
     );
 
-    $stmt->execute();
-    header("Location: list.php?success=1");
+    $conn->begin_transaction();
+
+    $cedulaOk = $stmt->execute();
+    $stmt->close();
+
+    if (!$cedulaOk) {
+        $conn->rollback();
+        header("Location: add.php?error=Failed to issue cedula");
+        exit();
+    }
+
+    $receiptNo = trim((string) ($_POST['or_number'] ?? ''));
+    if ($receiptNo === '') {
+        $receiptNo = trim((string) ($_POST['cedula_no'] ?? ''));
+    }
+
+    $paymentStmt = $conn->prepare("
+        INSERT INTO payments (receipt_no, payment_date, payer_name, service_type, purpose, amount, bir_tax, remarks, received_by, resident_id, created_at)
+        VALUES (?, ?, ?, 'Cedula', 'Cedula Issuance', ?, 0, ?, ?, NULL, NOW())
+    ");
+
+    $paymentRemarks = trim((string) ($remarks ?? ''));
+    $paymentStmt->bind_param(
+        "sssdsi",
+        $receiptNo,
+        $issued_date,
+        $_POST['full_name'],
+        $amount,
+        $paymentRemarks,
+        $issued_by
+    );
+
+    $paymentOk = $paymentStmt->execute();
+    $paymentStmt->close();
+
+    if ($paymentOk) {
+        $conn->commit();
+        header("Location: list.php?success=1");
+    } else {
+        $conn->rollback();
+        header("Location: add.php?error=Failed to save payment");
+    }
     exit();
 }

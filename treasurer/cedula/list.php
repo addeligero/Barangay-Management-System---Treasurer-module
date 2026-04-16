@@ -8,18 +8,21 @@ if ($searchQuery !== "") {
     $searchParam = "%{$searchQuery}%";
     $stmt = $conn->prepare("
         SELECT * FROM cedula
-        WHERE full_name LIKE ?
-            OR cedula_no LIKE ?
-            OR tin LIKE ?
-            OR address LIKE ?
-            OR occupation LIKE ?
+        WHERE issued_by IS NOT NULL
+            AND (
+                full_name LIKE ?
+                OR cedula_no LIKE ?
+                OR tin LIKE ?
+                OR address LIKE ?
+                OR occupation LIKE ?
+            )
         ORDER BY issued_date DESC
     ");
     $stmt->bind_param("sssss", $searchParam, $searchParam, $searchParam, $searchParam, $searchParam);
     $stmt->execute();
     $result = $stmt->get_result();
 } else {
-    $result = $conn->query("SELECT * FROM cedula ORDER BY issued_date DESC");
+    $result = $conn->query("SELECT * FROM cedula WHERE issued_by IS NOT NULL ORDER BY issued_date DESC");
 }
 ?>
 <!DOCTYPE html>
