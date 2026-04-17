@@ -154,6 +154,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'rejec
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete') {
+    $pendingId = intval($_POST['id'] ?? 0);
+
+    if ($pendingId <= 0) {
+        header("Location: list.php?error=Invalid pending payment ID.");
+        exit;
+    }
+
+    $checkStmt = $conn->prepare("SELECT payment_status, proof_path FROM payment_status WHERE id = ?");
+    $checkStmt->bind_param("i", $pendingId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+    if ($checkResult->num_rows === 0) {
+        $checkStmt->close();
+        header("Location: list.php?error=Pending payment not found.");
+        exit;
+    }
+    $row = $checkResult->fetch_assoc();
+    $checkStmt->close();
+
+    if (!in_array($row['payment_status'], ['pending', 'to_review', 'rejected'], true)) {
+        header("Location: list.php?error=Cannot delete a paid payment.");
+        exit;
+    }
+
+    $proofPath = trim((string) $row['proof_path']);
+
+    $deleteStmt = $conn->prepare("DELETE FROM payment_status WHERE id = ?");
+    $deleteStmt->bind_param("i", $pendingId);
+    $deleteOk = $deleteStmt->execute();
+    $deleteStmt->close();
+
+    if ($deleteOk) {
+        if ($proofPath !== '') {
+            $baseDir = realpath(__DIR__ . "/../..");
+            $fullPath = $baseDir ? realpath($baseDir . "/" . $proofPath) : false;
+            if ($fullPath && $baseDir && strpos($fullPath, $baseDir) === 0 && is_file($fullPath)) {
+                @unlink($fullPath);
+            }
+        }
+        header("Location: list.php?deleted=1");
+    } else {
+        header("Location: list.php?error=Failed to delete payment.");
+    }
+
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
     $pendingId = intval($_POST['id'] ?? 0);
     $residentName = trim($_POST['resident_fname'] ?? '');

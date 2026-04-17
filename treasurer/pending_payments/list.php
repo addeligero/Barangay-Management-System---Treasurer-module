@@ -3,12 +3,26 @@ include "../../config/database.php";
 include "../../config/session.php";
 
 $searchQuery = isset($_GET['search']) ? trim($_GET['search']) : "";
+$statusFilter = isset($_GET['status']) ? trim($_GET['status']) : "open";
+
+$allowedFilters = [
+    'pending' => ['pending'],
+    'rejected' => ['rejected'],
+    'open' => ['pending', 'to_review'],
+];
+
+if (!array_key_exists($statusFilter, $allowedFilters)) {
+    $statusFilter = 'open';
+}
+
+$statusValues = $allowedFilters[$statusFilter];
+$statusSql = "'" . implode("','", $statusValues) . "'";
 
 if ($searchQuery !== "") {
     $searchParam = "%{$searchQuery}%";
     $stmt = $conn->prepare("
         SELECT * FROM payment_status
-        WHERE payment_status IN ('pending', 'to_review')
+        WHERE payment_status IN ($statusSql)
             AND (
                 resident_fname LIKE ?
                 OR certificate_type LIKE ?
@@ -22,7 +36,7 @@ if ($searchQuery !== "") {
 } else {
     $result = $conn->query("
         SELECT * FROM payment_status
-        WHERE payment_status IN ('pending', 'to_review')
+        WHERE payment_status IN ($statusSql)
         ORDER BY created_at DESC, id DESC
     ");
 }
@@ -32,6 +46,8 @@ if (isset($_GET['paid'])) {
     $success = "Pending payment marked as paid.";
 } elseif (isset($_GET['updated'])) {
     $success = "Pending payment updated.";
+} elseif (isset($_GET['deleted'])) {
+    $success = "Pending payment deleted.";
 }
 $error = isset($_GET['error']) ? $_GET['error'] : "";
 ?>
@@ -92,16 +108,25 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
 
                 <div class="card">
                     <div class="card-header"
-                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px;">
+                        style="display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap;">
                         <h3><i class="fas fa-list"></i> Pending & To Review</h3>
-                        <form method="GET" action="list.php" style="display: flex; gap: 8px;">
-                            <input type="text" name="search" placeholder="Search resident or purpose..."
-                                value="<?= htmlspecialchars($searchQuery) ?>"
-                                style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 240px;">
-                            <button type="submit" class="btn btn-secondary">
-                                <i class="fas fa-search"></i> Search
-                            </button>
-                        </form>
+                        <div style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                            <div style="display: flex; gap: 8px;">
+                                <a class="btn btn-secondary" href="list.php">All</a>
+                                <a class="btn btn-secondary" href="list.php?status=pending">Pending</a>
+                                <a class="btn btn-secondary" href="list.php?status=rejected">Rejected</a>
+                            </div>
+                            <form method="GET" action="list.php" style="display: flex; gap: 8px;">
+                                <input type="hidden" name="status"
+                                    value="<?= htmlspecialchars($statusFilter) ?>">
+                                <input type="text" name="search" placeholder="Search resident or purpose..."
+                                    value="<?= htmlspecialchars($searchQuery) ?>"
+                                    style="padding: 8px 10px; border: 1px solid #ddd; border-radius: 6px; min-width: 220px;">
+                                <button type="submit" class="btn btn-secondary">
+                                    <i class="fas fa-search"></i> Search
+                                </button>
+                            </form>
+                        </div>
                     </div>
 
                     <div class="table-responsive">
@@ -176,6 +201,10 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                                 onclick="confirmReject(<?= $row['id'] ?>, this)">
                                                 <i class="fas fa-times"></i>
                                             </button>
+                                            <button class="btn btn-sm btn-danger"
+                                                onclick="confirmDelete(<?= $row['id'] ?>, this)">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
                                         </div>
                                     </td>
                                 </tr>
@@ -244,6 +273,28 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
         </div>
     </div>
 
+    <!-- Delete Confirmation Modal -->
+    <div id="deleteModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-trash" style="color: #dc3545; font-size: 48px;"></i>
+                <h2>Delete Payment</h2>
+            </div>
+            <div class="modal-body">
+                <p><strong>Are you sure?</strong> This will permanently delete the record.</p>
+                <p id="deleteDetails"></p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeDeleteModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" id="confirmDeleteBtn">
+                    <i class="fas fa-trash"></i> Yes, Delete
+                </button>
+            </div>
+        </div>
+    </div>
+
     <form id="markPaidForm" method="POST" action="save.php" style="display: none;">
         <input type="hidden" name="action" value="mark_paid">
         <input type="hidden" name="id" id="markPaidId">
@@ -253,6 +304,11 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
         <input type="hidden" name="action" value="reject">
         <input type="hidden" name="id" id="rejectId">
         <input type="hidden" name="rejection_remarks" id="rejectRemarksInput">
+    </form>
+
+    <form id="deleteForm" method="POST" action="save.php" style="display: none;">
+        <input type="hidden" name="action" value="delete">
+        <input type="hidden" name="id" id="deleteId">
     </form>
 
     <style>
@@ -334,6 +390,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
     <script>
         let markPaidId = null;
         let rejectId = null;
+        let deleteId = null;
 
         function confirmPaid(id, button) {
             markPaidId = id;
@@ -375,6 +432,26 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
             rejectId = null;
         }
 
+        function confirmDelete(id, button) {
+            deleteId = id;
+            const row = button.closest('tr');
+            const resident = row.cells[1].textContent.trim();
+            const certificateType = row.cells[2].textContent.trim();
+            const amount = row.cells[4].textContent.trim();
+
+            document.getElementById('deleteDetails').innerHTML =
+                `<strong>Resident:</strong> ${resident}<br>` +
+                `<strong>Certificate:</strong> ${certificateType}<br>` +
+                `<strong>Amount:</strong> ${amount}`;
+
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function closeDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteId = null;
+        }
+
         document.getElementById('confirmPaidBtn').addEventListener('click', function() {
             if (markPaidId) {
                 document.getElementById('markPaidId').value = markPaidId;
@@ -396,10 +473,24 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
             document.getElementById('rejectForm').submit();
         });
 
+        document.getElementById('confirmDeleteBtn').addEventListener('click', function() {
+            if (!deleteId) {
+                return;
+            }
+            document.getElementById('deleteId').value = deleteId;
+            document.getElementById('deleteForm').submit();
+        });
+
         window.addEventListener('click', function(event) {
-            const modal = document.getElementById('paidModal');
-            if (event.target === modal) {
+            const paidModal = document.getElementById('paidModal');
+            const rejectModal = document.getElementById('rejectModal');
+            const deleteModal = document.getElementById('deleteModal');
+            if (event.target === paidModal) {
                 closePaidModal();
+            } else if (event.target === rejectModal) {
+                closeRejectModal();
+            } else if (event.target === deleteModal) {
+                closeDeleteModal();
             }
         });
     </script>
