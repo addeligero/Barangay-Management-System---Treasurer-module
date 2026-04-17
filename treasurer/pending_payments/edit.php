@@ -124,8 +124,16 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                     </option>
                                     <option value="paid" <?= $pending['payment_status'] === 'paid' ? 'selected' : '' ?>>Paid
                                     </option>
+                                    <option value="rejected" <?= $pending['payment_status'] === 'rejected' ? 'selected' : '' ?>>Rejected
+                                    </option>
                                 </select>
                             </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="rejection_remarks"><i class="fas fa-comment-slash"></i> Rejection Remarks</label>
+                            <textarea id="rejection_remarks" name="rejection_remarks" rows="3"
+                                placeholder="Reason for rejection (required if rejected)"><?= htmlspecialchars($pending['rejection_remarks'] ?? '') ?></textarea>
                         </div>
 
                         <div class="form-group">

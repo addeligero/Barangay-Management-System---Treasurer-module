@@ -124,8 +124,13 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                 <?php if ($result && $result->num_rows > 0): ?>
                                 <?php while ($row = $result->fetch_assoc()): ?>
                                 <?php
-                                    $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
-                                    $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
+                                    if ($row['payment_status'] === 'rejected') {
+                                        $statusText = 'Rejected';
+                                        $statusClass = 'badge-danger';
+                                    } else {
+                                        $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
+                                        $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
+                                    }
                                     ?>
                                 <tr>
                                     <td><?= date('M d, Y', strtotime($row['created_at'])) ?>
@@ -166,6 +171,10 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
                                             <button class="btn btn-sm btn-success"
                                                 onclick="confirmPaid(<?= $row['id'] ?>, this)">
                                                 <i class="fas fa-check"></i>
+                                            </button>
+                                            <button class="btn btn-sm btn-danger"
+                                                onclick="confirmReject(<?= $row['id'] ?>, this)">
+                                                <i class="fas fa-times"></i>
                                             </button>
                                         </div>
                                     </td>
@@ -209,9 +218,41 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
         </div>
     </div>
 
+    <!-- Reject Confirmation Modal -->
+    <div id="rejectModal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <i class="fas fa-times-circle" style="color: #dc3545; font-size: 48px;"></i>
+                <h2>Reject Payment</h2>
+            </div>
+            <div class="modal-body">
+                <p><strong>Please provide a reason for rejection.</strong></p>
+                <p id="rejectDetails"></p>
+                <div class="form-group">
+                    <label for="rejectRemarks"><i class="fas fa-comment-slash"></i> Remarks</label>
+                    <textarea id="rejectRemarks" rows="3" placeholder="Reason for rejection"></textarea>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-secondary" onclick="closeRejectModal()">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+                <button class="btn btn-danger" id="confirmRejectBtn">
+                    <i class="fas fa-times"></i> Reject
+                </button>
+            </div>
+        </div>
+    </div>
+
     <form id="markPaidForm" method="POST" action="save.php" style="display: none;">
         <input type="hidden" name="action" value="mark_paid">
         <input type="hidden" name="id" id="markPaidId">
+    </form>
+
+    <form id="rejectForm" method="POST" action="save.php" style="display: none;">
+        <input type="hidden" name="action" value="reject">
+        <input type="hidden" name="id" id="rejectId">
+        <input type="hidden" name="rejection_remarks" id="rejectRemarksInput">
     </form>
 
     <style>
@@ -292,6 +333,7 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
 
     <script>
         let markPaidId = null;
+        let rejectId = null;
 
         function confirmPaid(id, button) {
             markPaidId = id;
@@ -313,11 +355,45 @@ $error = isset($_GET['error']) ? $_GET['error'] : "";
             markPaidId = null;
         }
 
+        function confirmReject(id, button) {
+            rejectId = id;
+            const row = button.closest('tr');
+            const resident = row.cells[1].textContent.trim();
+            const certificateType = row.cells[2].textContent.trim();
+            const amount = row.cells[4].textContent.trim();
+
+            document.getElementById('rejectDetails').innerHTML =
+                `<strong>Resident:</strong> ${resident}<br>` +
+                `<strong>Certificate:</strong> ${certificateType}<br>` +
+                `<strong>Amount:</strong> ${amount}`;
+            document.getElementById('rejectRemarks').value = '';
+            document.getElementById('rejectModal').style.display = 'flex';
+        }
+
+        function closeRejectModal() {
+            document.getElementById('rejectModal').style.display = 'none';
+            rejectId = null;
+        }
+
         document.getElementById('confirmPaidBtn').addEventListener('click', function() {
             if (markPaidId) {
                 document.getElementById('markPaidId').value = markPaidId;
                 document.getElementById('markPaidForm').submit();
             }
+        });
+
+        document.getElementById('confirmRejectBtn').addEventListener('click', function() {
+            const remarks = document.getElementById('rejectRemarks').value.trim();
+            if (!rejectId) {
+                return;
+            }
+            if (!remarks) {
+                alert('Please provide a rejection remark.');
+                return;
+            }
+            document.getElementById('rejectId').value = rejectId;
+            document.getElementById('rejectRemarksInput').value = remarks;
+            document.getElementById('rejectForm').submit();
         });
 
         window.addEventListener('click', function(event) {

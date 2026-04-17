@@ -106,6 +106,54 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'mark_
     exit;
 }
 
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'reject') {
+    $pendingId = intval($_POST['id'] ?? 0);
+    $rejectionRemarks = trim($_POST['rejection_remarks'] ?? '');
+
+    if ($pendingId <= 0) {
+        header("Location: list.php?error=Invalid pending payment ID.");
+        exit;
+    }
+
+    if ($rejectionRemarks === '') {
+        header("Location: list.php?error=Please provide a rejection remark.");
+        exit;
+    }
+
+    $checkStmt = $conn->prepare("SELECT payment_status FROM payment_status WHERE id = ?");
+    $checkStmt->bind_param("i", $pendingId);
+    $checkStmt->execute();
+    $checkResult = $checkStmt->get_result();
+    if ($checkResult->num_rows === 0) {
+        $checkStmt->close();
+        header("Location: list.php?error=Pending payment not found.");
+        exit;
+    }
+    $currentStatus = $checkResult->fetch_assoc()['payment_status'];
+    $checkStmt->close();
+
+    if ($currentStatus === 'paid') {
+        header("Location: list.php?error=Payment is already marked as paid.");
+        exit;
+    }
+
+    $updateStmt = $conn->prepare("
+        UPDATE payment_status
+        SET payment_status = 'rejected', rejection_remarks = ?, rejected_at = NOW()
+        WHERE id = ?
+    ");
+    $updateStmt->bind_param("si", $rejectionRemarks, $pendingId);
+    $updateOk = $updateStmt->execute();
+    $updateStmt->close();
+
+    if ($updateOk) {
+        header("Location: list.php?updated=1");
+    } else {
+        header("Location: list.php?error=Failed to reject payment.");
+    }
+    exit;
+}
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'update') {
     $pendingId = intval($_POST['id'] ?? 0);
     $residentName = trim($_POST['resident_fname'] ?? '');
@@ -116,6 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $amount = floatval($_POST['amount'] ?? 0);
     $birTax = floatval($_POST['bir_tax'] ?? 0);
     $status = strtolower(trim($_POST['payment_status'] ?? 'pending'));
+    $rejectionRemarks = trim($_POST['rejection_remarks'] ?? '');
 
     if ($pendingId <= 0) {
         header("Location: list.php?error=Invalid pending payment ID.");
@@ -132,8 +181,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
         exit;
     }
 
-    if (!in_array($status, ['pending', 'to_review', 'paid'], true)) {
+    if (!in_array($status, ['pending', 'to_review', 'paid', 'rejected'], true)) {
         header("Location: edit.php?id=$pendingId&error=Invalid payment status.");
+        exit;
+    }
+
+    if ($status === 'rejected' && $rejectionRemarks === '') {
+        header("Location: edit.php?id=$pendingId&error=Please provide a rejection remark.");
         exit;
     }
 
@@ -150,12 +204,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'updat
     $checkStmt->close();
 
     if ($status !== 'paid') {
-        $updateStmt = $conn->prepare("
-            UPDATE payment_status
-            SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = ?, amount = ?, bir_tax = ?
-            WHERE id = ?
-        ");
-        $updateStmt->bind_param("sssisddi", $certificateType, $purpose, $residentName, $residentId, $status, $amount, $birTax, $pendingId);
+        if ($status === 'rejected') {
+            $updateStmt = $conn->prepare("
+                UPDATE payment_status
+                SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = ?, rejection_remarks = ?, rejected_at = NOW(), amount = ?, bir_tax = ?
+                WHERE id = ?
+            ");
+            $updateStmt->bind_param("ssssssddi", $certificateType, $purpose, $residentName, $residentId, $status, $rejectionRemarks, $amount, $birTax, $pendingId);
+        } else {
+            $updateStmt = $conn->prepare("
+                UPDATE payment_status
+                SET certificate_type = ?, purpose = ?, resident_fname = ?, resident_id = ?, payment_status = ?, rejection_remarks = NULL, rejected_at = NULL, amount = ?, bir_tax = ?
+                WHERE id = ?
+            ");
+            $updateStmt->bind_param("sssisddi", $certificateType, $purpose, $residentName, $residentId, $status, $amount, $birTax, $pendingId);
+        }
         $updateOk = $updateStmt->execute();
         $updateStmt->close();
 

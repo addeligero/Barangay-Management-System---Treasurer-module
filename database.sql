@@ -75,6 +75,8 @@ CREATE TABLE IF NOT EXISTS payment_status (
     purpose VARCHAR(255) NOT NULL,
     resident_fname VARCHAR(150) NOT NULL,
     payment_status VARCHAR(20) NOT NULL DEFAULT 'pending',
+    rejection_remarks TEXT DEFAULT NULL,
+    rejected_at DATETIME DEFAULT NULL,
     amount DECIMAL(10, 2) NOT NULL,
     bir_tax DECIMAL(10, 2) DEFAULT 0,
     proof_path VARCHAR(255) DEFAULT NULL,

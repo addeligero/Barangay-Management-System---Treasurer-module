@@ -126,7 +126,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submi
 $searchQuery = trim($_GET['search'] ?? '');
 $searchParam = "%{$searchQuery}%";
 
-$sql = "SELECT * FROM payment_status WHERE payment_status IN ('pending', 'to_review') AND resident_id = ?";
+$sql = "SELECT * FROM payment_status WHERE payment_status IN ('pending', 'to_review', 'rejected') AND resident_id = ?";
 $params = [$residentId];
 $types = "i";
 
@@ -150,8 +150,10 @@ $birTotal = 0;
 
 while ($row = $result->fetch_assoc()) {
     $rows[] = $row;
-    $amountTotal += floatval($row['amount'] ?? 0);
-    $birTotal += floatval($row['bir_tax'] ?? 0);
+    if (($row['payment_status'] ?? '') !== 'rejected') {
+        $amountTotal += floatval($row['amount'] ?? 0);
+        $birTotal += floatval($row['bir_tax'] ?? 0);
+    }
 }
 
 $stmt->close();
@@ -258,6 +260,7 @@ $grandTotal = $amountTotal + $birTotal;
                                     <th>BIR Tax</th>
                                     <th>Total</th>
                                     <th>Status</th>
+                                    <th>Remarks</th>
                                     <th>Action</th>
                                 </tr>
                             </thead>
@@ -265,8 +268,13 @@ $grandTotal = $amountTotal + $birTotal;
                                 <?php if ($totalCount > 0): ?>
                                 <?php foreach ($rows as $row): ?>
                                 <?php
-                                                    $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
-                                    $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
+                                    if ($row['payment_status'] === 'rejected') {
+                                        $statusText = 'Rejected';
+                                        $statusClass = 'badge-danger';
+                                    } else {
+                                        $statusText = $row['payment_status'] === 'to_review' ? 'To Review' : 'Pending';
+                                        $statusClass = $row['payment_status'] === 'to_review' ? 'badge-review' : 'badge-warning';
+                                    }
                                     ?>
                                 <tr>
                                     <td><?= date('M d, Y', strtotime($row['created_at'])) ?>
@@ -287,6 +295,13 @@ $grandTotal = $amountTotal + $birTotal;
                                     </td>
                                     <td><span
                                             class="badge <?= $statusClass ?>"><?= $statusText ?></span>
+                                    </td>
+                                    <td>
+                                        <?php if ($row['payment_status'] === 'rejected' && !empty($row['rejection_remarks'])): ?>
+                                        <?= htmlspecialchars($row['rejection_remarks']) ?>
+                                        <?php else: ?>
+                                        <span class="text-muted">-</span>
+                                        <?php endif; ?>
                                     </td>
                                     <td>
                                         <?php
@@ -320,6 +335,16 @@ $grandTotal = $amountTotal + $birTotal;
                                             <i class="fas fa-eye"></i> View Proof
                                         </a>
                                         <?php endif; ?>
+                                        <?php elseif ($row['payment_status'] === 'rejected'): ?>
+                                        <?php if ($hasProof): ?>
+                                        <a class="btn btn-sm btn-secondary"
+                                            href="<?= htmlspecialchars($proofUrl) ?>"
+                                            target="_blank" rel="noopener">
+                                            <i class="fas fa-eye"></i> View Proof
+                                        </a>
+                                        <?php else: ?>
+                                        <span class="text-muted">Rejected</span>
+                                        <?php endif; ?>
                                         <?php else: ?>
                                         <span class="text-muted">Submitted</span>
                                         <?php endif; ?>
@@ -328,7 +353,7 @@ $grandTotal = $amountTotal + $birTotal;
                                 <?php endforeach; ?>
                                 <?php else: ?>
                                 <tr>
-                                    <td colspan="8" style="text-align: center; padding: 40px;">
+                                    <td colspan="9" style="text-align: center; padding: 40px;">
                                         <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
                                         <p style="margin-top: 15px; color: #999;">No pending payments found</p>
                                     </td>
