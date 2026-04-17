@@ -316,7 +316,6 @@ $grandTotal = $amountTotal + $birTotal;
                                     <th>Certificate Type</th>
                                     <th>Purpose</th>
                                     <th>Amount</th>
-                                    <th>BIR Tax</th>
                                     <th>Total</th>
                                     <th>Status</th>
                                     <th>Remarks</th>
@@ -345,9 +344,6 @@ $grandTotal = $amountTotal + $birTotal;
                                     </td>
                                     <td>PHP
                                         <?= number_format($row['amount'], 2) ?>
-                                    </td>
-                                    <td>PHP
-                                        <?= number_format($row['bir_tax'], 2) ?>
                                     </td>
                                     <td><strong>PHP
                                             <?= number_format($row['amount'] + $row['bir_tax'], 2) ?></strong>
@@ -452,7 +448,7 @@ $grandTotal = $amountTotal + $birTotal;
                                 <?php endforeach; ?>
                                 <?php else: ?>
                                 <tr>
-                                    <td colspan="9" style="text-align: center; padding: 40px;">
+                                    <td colspan="8" style="text-align: center; padding: 40px;">
                                         <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
                                         <p style="margin-top: 15px; color: #999;">No pending payments found</p>
                                     </td>

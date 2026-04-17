@@ -336,6 +336,14 @@ INSERT INTO payment_status (certificate_type, purpose, resident_fname, payment_s
 ('Barangay Clearance', 'Loan application', 'Rogelio M. Perez', 'pending', 150.00, 0),
 ('Barangay Clearance', 'Travel requirement', 'Liza T. Ramos', 'paid', 150.00, 0);
 
+-- SAMPLE PENDING PAYMENT STATUS DATA FOR RESIDENT1
+INSERT INTO payment_status (resident_id, certificate_type, purpose, resident_fname, payment_status, amount, bir_tax, created_at) VALUES
+((SELECT id FROM residents WHERE username = 'resident1' LIMIT 1), 'Cedula', 'Cedula Request', 'Luis P. Garcia', 'pending', 5.00, 0, '2026-04-10 09:15:00'),
+((SELECT id FROM residents WHERE username = 'resident1' LIMIT 1), 'Cedula', 'Cedula Request', 'Luis P. Garcia', 'pending', 5.00, 0, '2026-04-12 14:40:00'),
+((SELECT id FROM residents WHERE username = 'resident1' LIMIT 1), 'Barangay Clearance', 'Employment requirement', 'Luis P. Garcia', 'pending', 150.00, 0, '2026-04-13 08:20:00'),
+((SELECT id FROM residents WHERE username = 'resident1' LIMIT 1), 'Barangay ID', 'New ID request', 'Luis P. Garcia', 'pending', 50.00, 0, '2026-04-14 10:05:00'),
+((SELECT id FROM residents WHERE username = 'resident1' LIMIT 1), 'Business Permit', 'Small business registration', 'Luis P. Garcia', 'pending', 500.00, 0, '2026-04-15 16:30:00');
+
 -- ============================================================================
 -- SAMPLE RESIDENTS DATA
 -- ============================================================================

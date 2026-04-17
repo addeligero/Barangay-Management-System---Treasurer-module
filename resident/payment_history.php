@@ -81,17 +81,14 @@ $result = $stmt->get_result();
 
 $rows = [];
 $amountTotal = 0;
-$birTotal = 0;
 
 while ($row = $result->fetch_assoc()) {
     $rows[] = $row;
     $amountTotal += floatval($row['amount'] ?? 0);
-    $birTotal += floatval($row['bir_tax'] ?? 0);
 }
 
 $stmt->close();
 $totalCount = count($rows);
-$grandTotal = $amountTotal + $birTotal;
 ?>
 <!DOCTYPE html>
 <html lang="en">
@@ -158,7 +155,6 @@ $grandTotal = $amountTotal + $birTotal;
                                     <th>Service</th>
                                     <th>Purpose</th>
                                     <th>Amount</th>
-                                    <th>BIR Tax</th>
                                     <th>Total</th>
                                 </tr>
                             </thead>
@@ -178,9 +174,6 @@ $grandTotal = $amountTotal + $birTotal;
                                     <td>PHP
                                         <?= number_format($row['amount'], 2) ?>
                                     </td>
-                                    <td>PHP
-                                        <?= number_format($row['bir_tax'], 2) ?>
-                                    </td>
                                     <td><strong>PHP
                                             <?= number_format($row['amount'] + $row['bir_tax'], 2) ?></strong>
                                     </td>
@@ -188,7 +181,7 @@ $grandTotal = $amountTotal + $birTotal;
                                 <?php endforeach; ?>
                                 <?php else: ?>
                                 <tr>
-                                    <td colspan="7" style="text-align: center; padding: 40px;">
+                                    <td colspan="6" style="text-align: center; padding: 40px;">
                                         <i class="fas fa-inbox" style="font-size: 48px; color: #ccc;"></i>
                                         <p style="margin-top: 15px; color: #999;">No payment history found</p>
                                     </td>
