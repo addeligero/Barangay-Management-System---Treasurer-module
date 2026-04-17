@@ -403,7 +403,7 @@ if ($_SERVER["REQUEST_METHOD"] === "POST") {
 
     <div class="footer">
         <p>&copy; 2025 Barangay Sto. Rosario, Magallanes, Agusan del Norte</p>
-        <p>Treasurer Management System | All Rights Reserved</p>
+        <p>Treasurer Financial Record Management System | All Rights Reserved</p>
     </div>
 
     <script src="../assets/js/password-toggle.js"></script>

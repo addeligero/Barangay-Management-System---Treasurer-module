@@ -145,6 +145,127 @@ $annualIncomeDefault = isset($resident['annual_income']) && floatval($resident['
 
 $success = '';
 $error = '';
+$isEdit = isset($_GET['edit']);
+$cedulaToEdit = null;
+$pendingCedulaPaymentId = null;
+$rejectionRemarks = '';
+
+if ($isEdit) {
+    $pendingStmt = $conn->prepare("SELECT id, rejection_remarks FROM payment_status WHERE resident_id = ? AND certificate_type = 'Cedula' AND payment_status = 'rejected' ORDER BY created_at DESC, id DESC LIMIT 1");
+    $pendingStmt->bind_param("i", $residentId);
+    $pendingStmt->execute();
+    $pendingResult = $pendingStmt->get_result();
+    if ($pendingResult->num_rows === 0) {
+        $pendingStmt->close();
+        header('Location: pending_payments.php?error=No rejected cedula request found.');
+        exit;
+    }
+    $pendingRow = $pendingResult->fetch_assoc();
+    $pendingStmt->close();
+
+    $pendingCedulaPaymentId = intval($pendingRow['id']);
+    $rejectionRemarks = trim((string) ($pendingRow['rejection_remarks'] ?? ''));
+
+    $cedulaStmt = $conn->prepare("SELECT * FROM cedula WHERE resident_id = ? AND issued_by IS NULL ORDER BY created_at DESC, id DESC LIMIT 1");
+    $cedulaStmt->bind_param("i", $residentId);
+    $cedulaStmt->execute();
+    $cedulaResult = $cedulaStmt->get_result();
+    if ($cedulaResult->num_rows === 0) {
+        $cedulaStmt->close();
+        header('Location: pending_payments.php?error=Cedula request not found.');
+        exit;
+    }
+    $cedulaToEdit = $cedulaResult->fetch_assoc();
+    $cedulaStmt->close();
+}
+
+$cedulaNoValue = $nextCedula;
+$orNumberValue = '';
+$issuedDateValue = date('Y-m-d');
+$yearIssuedValue = date('Y');
+$placeOfIssueValue = $placeOfIssueDefault;
+$fullNameValue = $fullNameDefault;
+$surnameValue = $resident['surname'] ?? '';
+$firstNameValue = $resident['first_name'] ?? '';
+$middleNameValue = $resident['middle_name'] ?? '';
+$addressValue = $addressDefault;
+$birthDateValue = $birthDateDefault;
+$ageValue = $ageDefault;
+$sexValue = $resident['sex'] ?? '';
+$birthPlaceValue = $resident['birthplace'] ?? '';
+$civilStatusValue = $civilStatusDefault;
+$citizenshipValue = $citizenshipDefault;
+$icrNoValue = '';
+$occupationValue = $occupationDefault;
+$tinValue = '';
+$heightValue = '';
+$weightValue = '';
+$annualIncomeValue = $annualIncomeDefault;
+$basicTaxValue = '5.00';
+$additionalBusinessValue = '0.00';
+$additionalProfessionValue = '0.00';
+$additionalPropertyValue = '0.00';
+$communityTaxDueValue = '5.00';
+$interestValue = '0.00';
+$amountValue = '5.00';
+$natureOfCollectionValue = 'Community Tax';
+$amountInWordsValue = '';
+$remarksValue = '';
+
+if ($cedulaToEdit) {
+    $cedulaNoValue = $cedulaToEdit['cedula_no'] ?? $cedulaNoValue;
+    $orNumberValue = $cedulaToEdit['or_number'] ?? $orNumberValue;
+    $issuedDateValue = !empty($cedulaToEdit['issued_date']) ? date('Y-m-d', strtotime($cedulaToEdit['issued_date'])) : $issuedDateValue;
+    $yearIssuedValue = !empty($cedulaToEdit['year_issued']) ? intval($cedulaToEdit['year_issued']) : $yearIssuedValue;
+    $placeOfIssueValue = $cedulaToEdit['place_of_issue'] ?? $placeOfIssueValue;
+    $fullNameValue = $cedulaToEdit['full_name'] ?? $fullNameValue;
+    $surnameValue = $cedulaToEdit['surname'] ?? $surnameValue;
+    $firstNameValue = $cedulaToEdit['first_name'] ?? $firstNameValue;
+    $middleNameValue = $cedulaToEdit['middle_name'] ?? $middleNameValue;
+    $addressValue = $cedulaToEdit['address'] ?? $addressValue;
+    $birthDateValue = !empty($cedulaToEdit['birth_date']) ? date('Y-m-d', strtotime($cedulaToEdit['birth_date'])) : $birthDateValue;
+    $ageValue = isset($cedulaToEdit['age']) ? intval($cedulaToEdit['age']) : $ageValue;
+    $sexValue = $cedulaToEdit['sex'] ?? $sexValue;
+    $birthPlaceValue = $cedulaToEdit['birth_place'] ?? $birthPlaceValue;
+    $civilStatusValue = $cedulaToEdit['civil_status'] ?? $civilStatusValue;
+    $citizenshipValue = $cedulaToEdit['citizenship'] ?? $citizenshipValue;
+    $icrNoValue = $cedulaToEdit['icr_no'] ?? $icrNoValue;
+    $occupationValue = $cedulaToEdit['occupation'] ?? $occupationValue;
+    $tinValue = $cedulaToEdit['tin'] ?? $tinValue;
+    $heightValue = isset($cedulaToEdit['height']) && floatval($cedulaToEdit['height']) > 0
+        ? number_format((float) $cedulaToEdit['height'], 2, '.', '')
+        : $heightValue;
+    $weightValue = isset($cedulaToEdit['weight']) && floatval($cedulaToEdit['weight']) > 0
+        ? number_format((float) $cedulaToEdit['weight'], 2, '.', '')
+        : $weightValue;
+    $annualIncomeValue = isset($cedulaToEdit['annual_income']) && floatval($cedulaToEdit['annual_income']) > 0
+        ? number_format((float) $cedulaToEdit['annual_income'], 2, '.', '')
+        : $annualIncomeValue;
+    $basicTaxValue = isset($cedulaToEdit['basic_tax'])
+        ? number_format((float) $cedulaToEdit['basic_tax'], 2, '.', '')
+        : $basicTaxValue;
+    $additionalBusinessValue = isset($cedulaToEdit['additional_tax_business'])
+        ? number_format((float) $cedulaToEdit['additional_tax_business'], 2, '.', '')
+        : $additionalBusinessValue;
+    $additionalProfessionValue = isset($cedulaToEdit['additional_tax_profession'])
+        ? number_format((float) $cedulaToEdit['additional_tax_profession'], 2, '.', '')
+        : $additionalProfessionValue;
+    $additionalPropertyValue = isset($cedulaToEdit['additional_tax_property'])
+        ? number_format((float) $cedulaToEdit['additional_tax_property'], 2, '.', '')
+        : $additionalPropertyValue;
+    $communityTaxDueValue = isset($cedulaToEdit['community_tax_due'])
+        ? number_format((float) $cedulaToEdit['community_tax_due'], 2, '.', '')
+        : $communityTaxDueValue;
+    $interestValue = isset($cedulaToEdit['interest'])
+        ? number_format((float) $cedulaToEdit['interest'], 2, '.', '')
+        : $interestValue;
+    $amountValue = isset($cedulaToEdit['amount'])
+        ? number_format((float) $cedulaToEdit['amount'], 2, '.', '')
+        : $amountValue;
+    $natureOfCollectionValue = $cedulaToEdit['nature_of_collection'] ?? $natureOfCollectionValue;
+    $amountInWordsValue = $cedulaToEdit['amount_in_words'] ?? $amountInWordsValue;
+    $remarksValue = $cedulaToEdit['remarks'] ?? $remarksValue;
+}
 
 if (isset($_GET['submitted'])) {
     $success = 'Cedula request submitted. Please wait for treasurer approval.';
@@ -153,6 +274,7 @@ if (isset($_GET['submitted'])) {
 }
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $action = trim($_POST['action'] ?? 'create');
     $cedulaNo = trim($_POST['cedula_no'] ?? '');
     $orNumber = trim($_POST['or_number'] ?? '');
     $issuedDate = trim($_POST['issued_date'] ?? '');
@@ -190,18 +312,125 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($cedulaNo === '' || $issuedDate === '' || $placeOfIssue === '' || $fullName === '' || $surname === '' || $firstName === '' || $address === '' || $birthDate === '' || $sex === '' || $birthPlace === '' || $civilStatus === '' || $citizenship === '' || $occupation === '' || $natureOfCollection === '') {
         $error = 'Please fill in all required fields.';
+    } elseif ($action === 'update') {
+        $cedulaId = intval($_POST['cedula_id'] ?? 0);
+        $pendingPaymentId = intval($_POST['payment_id'] ?? 0);
+
+        if ($cedulaId <= 0 || $pendingPaymentId <= 0) {
+            $error = 'Invalid edit request.';
+        } else {
+            $conn->begin_transaction();
+
+            $updateStmt = $conn->prepare("
+                UPDATE cedula SET
+                    cedula_no = ?,
+                    or_number = ?,
+                    issued_date = ?,
+                    year_issued = ?,
+                    place_of_issue = ?,
+                    full_name = ?,
+                    surname = ?,
+                    first_name = ?,
+                    middle_name = ?,
+                    address = ?,
+                    birth_date = ?,
+                    age = ?,
+                    sex = ?,
+                    birth_place = ?,
+                    civil_status = ?,
+                    citizenship = ?,
+                    icr_no = ?,
+                    occupation = ?,
+                    tin = ?,
+                    height = ?,
+                    weight = ?,
+                    annual_income = ?,
+                    basic_tax = ?,
+                    additional_tax_business = ?,
+                    additional_tax_profession = ?,
+                    additional_tax_property = ?,
+                    community_tax_due = ?,
+                    interest = ?,
+                    amount = ?,
+                    nature_of_collection = ?,
+                    amount_in_words = ?,
+                    remarks = ?
+                WHERE id = ? AND resident_id = ? AND issued_by IS NULL
+            ");
+            $updateStmt->bind_param(
+                "sssisssssssisssssssddddddddddsssii",
+                $cedulaNo,
+                $orNumber,
+                $issuedDate,
+                $yearIssued,
+                $placeOfIssue,
+                $fullName,
+                $surname,
+                $firstName,
+                $middleName,
+                $address,
+                $birthDate,
+                $age,
+                $sex,
+                $birthPlace,
+                $civilStatus,
+                $citizenship,
+                $icrNo,
+                $occupation,
+                $tin,
+                $height,
+                $weight,
+                $annualIncome,
+                $basicTax,
+                $additionalBusiness,
+                $additionalProfession,
+                $additionalProperty,
+                $communityTaxDue,
+                $interest,
+                $amount,
+                $natureOfCollection,
+                $amountInWords,
+                $remarks,
+                $cedulaId,
+                $residentId
+            );
+            $cedulaOk = $updateStmt->execute();
+            $updateStmt->close();
+
+            $statusOk = false;
+            if ($cedulaOk) {
+                $statusStmt = $conn->prepare("
+                    UPDATE payment_status
+                    SET payment_status = 'pending', rejection_remarks = NULL, rejected_at = NULL, created_at = NOW(),
+                        amount = ?, bir_tax = 0, resident_fname = ?, purpose = 'Cedula Request', certificate_type = 'Cedula'
+                    WHERE id = ? AND resident_id = ?
+                ");
+                $statusStmt->bind_param("dsii", $amount, $fullName, $pendingPaymentId, $residentId);
+                $statusOk = $statusStmt->execute();
+                $statusStmt->close();
+            }
+
+            if ($cedulaOk && $statusOk) {
+                $conn->commit();
+                header('Location: pending_payments.php?cedula_updated=1');
+                exit;
+            }
+
+            $conn->rollback();
+            $error = 'Failed to update cedula request. Please try again.';
+        }
     } else {
         $conn->begin_transaction();
 
         $stmt = $conn->prepare("
             INSERT INTO cedula
-            (cedula_no, or_number, issued_date, year_issued, place_of_issue, full_name, surname, first_name, middle_name, address, birth_date, age, sex, birth_place, civil_status, citizenship, icr_no, occupation, tin, height, weight, annual_income, basic_tax, additional_tax_business, additional_tax_profession, additional_tax_property, community_tax_due, interest, amount, nature_of_collection, amount_in_words, remarks, issued_by)
-            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
+            (cedula_no, or_number, issued_date, year_issued, place_of_issue, full_name, surname, first_name, middle_name, address, birth_date, age, sex, birth_place, civil_status, citizenship, icr_no, occupation, tin, height, weight, annual_income, basic_tax, additional_tax_business, additional_tax_profession, additional_tax_property, community_tax_due, interest, amount, nature_of_collection, amount_in_words, remarks, resident_id, issued_by)
+            VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)
         ");
 
         $issuedBy = null;
         $stmt->bind_param(
-            "sssisssssssisssssssddddddddddsssi",
+            "sssisssssssisssssssddddddddddsssii",
             $cedulaNo,
             $orNumber,
             $issuedDate,
@@ -234,6 +463,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $natureOfCollection,
             $amountInWords,
             $remarks,
+            $residentId,
             $issuedBy
         );
 
@@ -273,7 +503,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Request Cedula - Resident Portal</title>
+    <title>
+        <?= $isEdit ? 'Edit Cedula Request' : 'Request Cedula' ?>
+        - Resident Portal</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -303,7 +535,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <main class="main-content">
             <div class="content-header">
-                <h1><i class="fas fa-id-card"></i> Request Cedula</h1>
+                <h1><i class="fas fa-id-card"></i>
+                    <?= $isEdit ? 'Edit Cedula Request' : 'Request Cedula' ?>
+                </h1>
                 <p>Welcome, <?= htmlspecialchars($fullNameDefault) ?>
                 </p>
             </div>
@@ -322,6 +556,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?= htmlspecialchars($error) ?>
                 </div>
                 <?php endif; ?>
+                <?php if ($isEdit && $rejectionRemarks !== ''): ?>
+                <div class="error-message">
+                    <i class="fas fa-comment-slash"></i>
+                    Treasurer remarks:
+                    <?= htmlspecialchars($rejectionRemarks) ?>
+                </div>
+                <?php endif; ?>
 
                 <div class="card">
                     <div class="card-header">
@@ -330,25 +571,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             any missing information.</p>
                     </div>
 
-                    <form method="POST" action="request_cedula.php">
+                    <form method="POST"
+                        action="request_cedula.php<?= $isEdit ? '?edit=1' : '' ?>">
+                        <input type="hidden" name="action"
+                            value="<?= $isEdit ? 'update' : 'create' ?>">
+                        <?php if ($isEdit && $cedulaToEdit): ?>
+                        <input type="hidden" name="cedula_id"
+                            value="<?= intval($cedulaToEdit['id']) ?>">
+                        <input type="hidden" name="payment_id"
+                            value="<?= intval($pendingCedulaPaymentId) ?>">
+                        <?php endif; ?>
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="cedula_no"><i class="fas fa-hashtag"></i> Cedula Number *</label>
                                 <input type="text" id="cedula_no" name="cedula_no"
-                                    value="<?= htmlspecialchars((string) $nextCedula) ?>"
+                                    value="<?= htmlspecialchars((string) $cedulaNoValue) ?>"
                                     readonly required>
                             </div>
 
                             <div class="form-group">
                                 <label for="or_number"><i class="fas fa-receipt"></i> OR Number</label>
                                 <input type="text" id="or_number" name="or_number"
+                                    value="<?= htmlspecialchars((string) $orNumberValue) ?>"
                                     placeholder="To be assigned by treasurer">
                             </div>
 
                             <div class="form-group">
                                 <label for="issued_date"><i class="fas fa-calendar"></i> Date Issued *</label>
                                 <input type="date" id="issued_date" name="issued_date"
-                                    value="<?= date('Y-m-d') ?>"
+                                    value="<?= htmlspecialchars((string) $issuedDateValue) ?>"
                                     required>
                             </div>
                         </div>
@@ -357,7 +608,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="form-group">
                                 <label for="year_issued"><i class="fas fa-calendar-check"></i> Year *</label>
                                 <input type="number" id="year_issued" name="year_issued"
-                                    value="<?= date('Y') ?>"
+                                    value="<?= htmlspecialchars((string) $yearIssuedValue) ?>"
                                     required>
                             </div>
 
@@ -365,7 +616,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="place_of_issue"><i class="fas fa-map"></i> Place of Issue (City/Mun/Prov)
                                     *</label>
                                 <input type="text" id="place_of_issue" name="place_of_issue"
-                                    value="<?= htmlspecialchars($placeOfIssueDefault) ?>"
+                                    value="<?= htmlspecialchars($placeOfIssueValue) ?>"
                                     required>
                             </div>
                         </div>
@@ -373,7 +624,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="form-group">
                             <label for="full_name"><i class="fas fa-user"></i> Full Name *</label>
                             <input type="text" id="full_name" name="full_name"
-                                value="<?= htmlspecialchars($fullNameDefault) ?>"
+                                value="<?= htmlspecialchars($fullNameValue) ?>"
                                 required autocomplete="off">
                         </div>
 
@@ -381,42 +632,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="form-group">
                                 <label for="surname"><i class="fas fa-user"></i> Surname *</label>
                                 <input type="text" id="surname" name="surname"
-                                    value="<?= htmlspecialchars($resident['surname'] ?? '') ?>"
+                                    value="<?= htmlspecialchars($surnameValue) ?>"
                                     required>
                             </div>
 
                             <div class="form-group">
                                 <label for="first_name"><i class="fas fa-user"></i> First Name *</label>
                                 <input type="text" id="first_name" name="first_name"
-                                    value="<?= htmlspecialchars($resident['first_name'] ?? '') ?>"
+                                    value="<?= htmlspecialchars($firstNameValue) ?>"
                                     required>
                             </div>
 
                             <div class="form-group">
                                 <label for="middle_name"><i class="fas fa-user"></i> Middle Name</label>
                                 <input type="text" id="middle_name" name="middle_name"
-                                    value="<?= htmlspecialchars($resident['middle_name'] ?? '') ?>">
+                                    value="<?= htmlspecialchars($middleNameValue) ?>">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="address"><i class="fas fa-map-marker-alt"></i> Complete Address *</label>
                             <textarea id="address" name="address" rows="2"
-                                required><?= htmlspecialchars($addressDefault) ?></textarea>
+                                required><?= htmlspecialchars($addressValue) ?></textarea>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="birth_date"><i class="fas fa-birthday-cake"></i> Birth Date *</label>
                                 <input type="date" id="birth_date" name="birth_date"
-                                    value="<?= htmlspecialchars($birthDateDefault) ?>"
+                                    value="<?= htmlspecialchars($birthDateValue) ?>"
                                     required onchange="calculateAge()">
                             </div>
 
                             <div class="form-group">
                                 <label for="age"><i class="fas fa-sort-numeric-up"></i> Age *</label>
                                 <input type="number" id="age" name="age"
-                                    value="<?= htmlspecialchars((string) $ageDefault) ?>"
+                                    value="<?= htmlspecialchars((string) $ageValue) ?>"
                                     readonly required>
                             </div>
 
@@ -424,9 +675,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="sex"><i class="fas fa-venus-mars"></i> Sex *</label>
                                 <select id="sex" name="sex" required>
                                     <option value="">Select</option>
-                                    <option value="Male" <?= ($resident['sex'] ?? '') === 'Male' ? 'selected' : '' ?>>Male
+                                    <option value="Male" <?= $sexValue === 'Male' ? 'selected' : '' ?>>Male
                                     </option>
-                                    <option value="Female" <?= ($resident['sex'] ?? '') === 'Female' ? 'selected' : '' ?>>Female
+                                    <option value="Female" <?= $sexValue === 'Female' ? 'selected' : '' ?>>Female
                                     </option>
                                 </select>
                             </div>
@@ -436,7 +687,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="form-group">
                                 <label for="birth_place"><i class="fas fa-hospital"></i> Place of Birth *</label>
                                 <input type="text" id="birth_place" name="birth_place"
-                                    value="<?= htmlspecialchars($resident['birthplace'] ?? '') ?>"
+                                    value="<?= htmlspecialchars($birthPlaceValue) ?>"
                                     required>
                             </div>
 
@@ -444,13 +695,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="civil_status"><i class="fas fa-ring"></i> Civil Status *</label>
                                 <select id="civil_status" name="civil_status" required>
                                     <option value="">Select</option>
-                                    <option value="Single" <?= $civilStatusDefault === 'Single' ? 'selected' : '' ?>>Single
+                                    <option value="Single" <?= $civilStatusValue === 'Single' ? 'selected' : '' ?>>Single
                                     </option>
-                                    <option value="Married" <?= $civilStatusDefault === 'Married' ? 'selected' : '' ?>>Married
+                                    <option value="Married" <?= $civilStatusValue === 'Married' ? 'selected' : '' ?>>Married
                                     </option>
-                                    <option value="Widowed" <?= $civilStatusDefault === 'Widowed' ? 'selected' : '' ?>>Widowed
+                                    <option value="Widowed" <?= $civilStatusValue === 'Widowed' ? 'selected' : '' ?>>Widowed
                                     </option>
-                                    <option value="Separated" <?= $civilStatusDefault === 'Separated' ? 'selected' : '' ?>>Separated
+                                    <option value="Separated" <?= $civilStatusValue === 'Separated' ? 'selected' : '' ?>>Separated
                                     </option>
                                 </select>
                             </div>
@@ -458,11 +709,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="form-group">
                                 <label for="citizenship"><i class="fas fa-flag"></i> Citizenship *</label>
                                 <select id="citizenship" name="citizenship" required>
-                                    <option value="Filipino" <?= $citizenshipDefault === 'Filipino' ? 'selected' : '' ?>>Filipino
+                                    <option value="Filipino" <?= $citizenshipValue === 'Filipino' ? 'selected' : '' ?>>Filipino
                                     </option>
-                                    <option value="Dual Citizen" <?= $citizenshipDefault === 'Dual Citizen' ? 'selected' : '' ?>>Dual
+                                    <option value="Dual Citizen" <?= $citizenshipValue === 'Dual Citizen' ? 'selected' : '' ?>>Dual
                                         Citizen</option>
-                                    <option value="Foreign National" <?= $citizenshipDefault === 'Foreign National' ? 'selected' : '' ?>>Foreign
+                                    <option value="Foreign National" <?= $citizenshipValue === 'Foreign National' ? 'selected' : '' ?>>Foreign
                                         National</option>
                                 </select>
                             </div>
@@ -471,31 +722,35 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="icr_no"><i class="fas fa-id-badge"></i> ICR No. (If Alien)</label>
-                                <input type="text" id="icr_no" name="icr_no" placeholder="ICR no.">
+                                <input type="text" id="icr_no" name="icr_no" placeholder="ICR no."
+                                    value="<?= htmlspecialchars($icrNoValue) ?>">
                             </div>
 
                             <div class="form-group">
                                 <label for="occupation"><i class="fas fa-briefcase"></i> Occupation *</label>
                                 <input type="text" id="occupation" name="occupation"
-                                    value="<?= htmlspecialchars($occupationDefault) ?>"
+                                    value="<?= htmlspecialchars($occupationValue) ?>"
                                     required>
                             </div>
 
                             <div class="form-group">
                                 <label for="tin"><i class="fas fa-id-card-alt"></i> TIN (Optional)</label>
-                                <input type="text" id="tin" name="tin" placeholder="000-000-000-000">
+                                <input type="text" id="tin" name="tin" placeholder="000-000-000-000"
+                                    value="<?= htmlspecialchars($tinValue) ?>">
                             </div>
                         </div>
 
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="height"><i class="fas fa-arrows-alt-v"></i> Height (cm)</label>
-                                <input type="number" id="height" name="height" step="0.01" placeholder="e.g., 165">
+                                <input type="number" id="height" name="height" step="0.01" placeholder="e.g., 165"
+                                    value="<?= htmlspecialchars($heightValue) ?>">
                             </div>
 
                             <div class="form-group">
                                 <label for="weight"><i class="fas fa-weight"></i> Weight (kg)</label>
-                                <input type="number" id="weight" name="weight" step="0.01" placeholder="e.g., 65">
+                                <input type="number" id="weight" name="weight" step="0.01" placeholder="e.g., 65"
+                                    value="<?= htmlspecialchars($weightValue) ?>">
                             </div>
                         </div>
 
@@ -504,20 +759,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="nature_of_collection"><i class="fas fa-list"></i> Nature of Collection
                                     *</label>
                                 <input type="text" id="nature_of_collection" name="nature_of_collection"
-                                    value="Community Tax" required>
+                                    value="<?= htmlspecialchars($natureOfCollectionValue) ?>"
+                                    required>
                             </div>
 
                             <div class="form-group">
                                 <label for="annual_income"><i class="fas fa-coins"></i> Taxable Amount (PHP)</label>
                                 <input type="number" id="annual_income" name="annual_income" step="0.01" min="0"
-                                    value="<?= htmlspecialchars($annualIncomeDefault) ?>"
+                                    value="<?= htmlspecialchars($annualIncomeValue) ?>"
                                     oninput="calculateAdditionalFromIncome()">
                                 <small style="color:#666;">Auto-calculated for profession: Income &divide; 1,000</small>
                             </div>
 
                             <div class="form-group">
                                 <label for="basic_tax"><i class="fas fa-receipt"></i> Basic Community Tax (PHP)</label>
-                                <input type="number" id="basic_tax" name="basic_tax" step="0.01" min="0" value="5.00"
+                                <input type="number" id="basic_tax" name="basic_tax" step="0.01" min="0"
+                                    value="<?= htmlspecialchars($basicTaxValue) ?>"
                                     oninput="computeTotals()">
                                 <small style="color:#666;">Regular: 5.00, Voluntary/Exempted: 1.00</small>
                             </div>
@@ -528,21 +785,27 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="additional_tax_business"><i class="fas fa-store"></i> Additional Tax -
                                     Business (PHP)</label>
                                 <input type="number" id="additional_tax_business" name="additional_tax_business"
-                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                                    step="0.01" min="0"
+                                    value="<?= htmlspecialchars($additionalBusinessValue) ?>"
+                                    oninput="computeTotals()">
                             </div>
 
                             <div class="form-group">
                                 <label for="additional_tax_profession"><i class="fas fa-briefcase"></i> Additional Tax -
                                     Profession (PHP)</label>
                                 <input type="number" id="additional_tax_profession" name="additional_tax_profession"
-                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                                    step="0.01" min="0"
+                                    value="<?= htmlspecialchars($additionalProfessionValue) ?>"
+                                    oninput="computeTotals()">
                             </div>
 
                             <div class="form-group">
                                 <label for="additional_tax_property"><i class="fas fa-home"></i> Additional Tax -
                                     Property (PHP)</label>
                                 <input type="number" id="additional_tax_property" name="additional_tax_property"
-                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                                    step="0.01" min="0"
+                                    value="<?= htmlspecialchars($additionalPropertyValue) ?>"
+                                    oninput="computeTotals()">
                             </div>
                         </div>
 
@@ -551,20 +814,22 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <label for="community_tax_due"><i class="fas fa-calculator"></i> Community Tax Due
                                     (PHP)</label>
                                 <input type="number" id="community_tax_due" name="community_tax_due" step="0.01"
-                                    value="5.00" readonly required
-                                    style="background:#e8f0ff; font-weight:bold; font-size:16px;">
+                                    value="<?= htmlspecialchars($communityTaxDueValue) ?>"
+                                    readonly required style="background:#e8f0ff; font-weight:bold; font-size:16px;">
                             </div>
 
                             <div class="form-group">
                                 <label for="interest"><i class="fas fa-percentage"></i> Interest (PHP)</label>
-                                <input type="number" id="interest" name="interest" step="0.01" min="0" value="0.00"
+                                <input type="number" id="interest" name="interest" step="0.01" min="0"
+                                    value="<?= htmlspecialchars($interestValue) ?>"
                                     oninput="computeTotals()">
                             </div>
 
                             <div class="form-group">
                                 <label for="amount"><i class="fas fa-peso-sign"></i> Total Amount Paid *</label>
-                                <input type="number" id="amount" name="amount" step="0.01" value="5.00" required
-                                    readonly style="background:#e8f0ff; font-weight:bold; font-size:16px;">
+                                <input type="number" id="amount" name="amount" step="0.01"
+                                    value="<?= htmlspecialchars($amountValue) ?>"
+                                    required readonly style="background:#e8f0ff; font-weight:bold; font-size:16px;">
                             </div>
                         </div>
 
@@ -572,18 +837,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             <div class="form-group" style="flex: 2;">
                                 <label for="amount_in_words"><i class="fas fa-spell-check"></i> Amount in Words</label>
                                 <input type="text" id="amount_in_words" name="amount_in_words"
-                                    placeholder="e.g., Seventy nine pesos">
+                                    placeholder="e.g., Seventy nine pesos"
+                                    value="<?= htmlspecialchars($amountInWordsValue) ?>">
                             </div>
                         </div>
 
                         <div class="form-group">
                             <label for="remarks"><i class="fas fa-comment"></i> Remarks</label>
-                            <textarea id="remarks" name="remarks" rows="2" placeholder="Additional notes..."></textarea>
+                            <textarea id="remarks" name="remarks" rows="2"
+                                placeholder="Additional notes..."><?= htmlspecialchars($remarksValue) ?></textarea>
                         </div>
 
                         <div style="display: flex; gap: 10px; margin-top: 25px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                <i class="fas fa-paper-plane"></i> Submit Cedula Request
+                                <i class="fas fa-paper-plane"></i>
+                                <?= $isEdit ? 'Update Cedula Request' : 'Submit Cedula Request' ?>
                             </button>
                             <a href="pending_payments.php" class="btn btn-secondary"
                                 style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">

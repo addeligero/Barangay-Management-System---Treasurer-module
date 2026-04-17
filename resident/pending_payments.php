@@ -63,6 +63,10 @@ $error = '';
 
 if (isset($_GET['submitted'])) {
     $success = 'Payment proof submitted. Please wait for treasurer review.';
+} elseif (isset($_GET['cedula_updated'])) {
+    $success = 'Cedula request updated. Please wait for treasurer review.';
+} elseif (isset($_GET['deleted'])) {
+    $success = 'Request cancelled.';
 } elseif (isset($_GET['error'])) {
     $error = $_GET['error'];
 }
@@ -86,7 +90,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submi
         } elseif ($fileSize > 5 * 1024 * 1024) {
             $error = 'Proof must be 5MB or smaller.';
         } else {
-            $checkStmt = $conn->prepare("SELECT id FROM payment_status WHERE id = ? AND resident_id = ? AND payment_status IN ('pending', 'to_review')");
+            $checkStmt = $conn->prepare("SELECT id FROM payment_status WHERE id = ? AND resident_id = ? AND payment_status IN ('pending', 'to_review', 'rejected')");
             $checkStmt->bind_param("ii", $paymentId, $residentId);
             $checkStmt->execute();
             $checkResult = $checkStmt->get_result();
@@ -119,6 +123,61 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'submi
 
                 $error = 'Failed to upload proof. Please try again.';
             }
+        }
+    }
+}
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['action'] ?? '') === 'delete_request') {
+    $paymentId = intval($_POST['payment_id'] ?? 0);
+
+    if ($paymentId <= 0) {
+        $error = 'Invalid payment reference.';
+    } else {
+        $checkStmt = $conn->prepare("SELECT certificate_type, proof_path FROM payment_status WHERE id = ? AND resident_id = ? AND payment_status IN ('pending', 'to_review', 'rejected')");
+        $checkStmt->bind_param("ii", $paymentId, $residentId);
+        $checkStmt->execute();
+        $checkResult = $checkStmt->get_result();
+
+        if ($checkResult->num_rows === 0) {
+            $checkStmt->close();
+            $error = 'Request not found or cannot be cancelled.';
+        } else {
+            $row = $checkResult->fetch_assoc();
+            $checkStmt->close();
+
+            $conn->begin_transaction();
+
+            $deleteCedulaOk = true;
+            if (strcasecmp(trim((string) $row['certificate_type']), 'Cedula') === 0) {
+                $cedulaStmt = $conn->prepare("DELETE FROM cedula WHERE resident_id = ? AND issued_by IS NULL ORDER BY id DESC LIMIT 1");
+                $cedulaStmt->bind_param("i", $residentId);
+                $deleteCedulaOk = $cedulaStmt->execute();
+                $cedulaStmt->close();
+            }
+
+            $deleteStmt = $conn->prepare("DELETE FROM payment_status WHERE id = ? AND resident_id = ?");
+            $deleteStmt->bind_param("ii", $paymentId, $residentId);
+            $deleteOk = $deleteStmt->execute();
+            $deleteStmt->close();
+
+            if ($deleteOk && $deleteCedulaOk) {
+                $conn->commit();
+
+                $proofPath = trim((string) ($row['proof_path'] ?? ''));
+                if ($proofPath !== '') {
+                    $baseDir = realpath(__DIR__ . '/..');
+                    $fullPath = $baseDir ? realpath($baseDir . '/' . $proofPath) : false;
+                    if ($fullPath && $baseDir && strpos($fullPath, $baseDir) === 0 && is_file($fullPath)) {
+                        @unlink($fullPath);
+                    }
+                }
+
+                header('Location: pending_payments.php?deleted=1');
+                exit;
+            }
+
+            $conn->rollback();
+            $error = 'Failed to cancel request. Please try again.';
         }
     }
 }
@@ -261,7 +320,7 @@ $grandTotal = $amountTotal + $birTotal;
                                     <th>Total</th>
                                     <th>Status</th>
                                     <th>Remarks</th>
-                                    <th>Action</th>
+                                    <th class="action-cell">Action</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -296,58 +355,98 @@ $grandTotal = $amountTotal + $birTotal;
                                     <td><span
                                             class="badge <?= $statusClass ?>"><?= $statusText ?></span>
                                     </td>
-                                    <td>
+                                    <td class="remarks-cell">
                                         <?php if ($row['payment_status'] === 'rejected' && !empty($row['rejection_remarks'])): ?>
                                         <?= htmlspecialchars($row['rejection_remarks']) ?>
                                         <?php else: ?>
                                         <span class="text-muted">-</span>
                                         <?php endif; ?>
                                     </td>
-                                    <td>
-                                        <?php
+                                    <td class="action-cell">
+                                        <div class="resident-action-buttons">
+                                            <?php
                                             $proofPath = trim((string) ($row['proof_path'] ?? ''));
                                     $hasProof = $proofPath !== '';
                                     $proofUrl = $hasProof ? '../' . $proofPath : '';
                                     ?>
-                                        <?php if ($row['payment_status'] === 'pending'): ?>
-                                        <button type="button" class="btn btn-sm btn-primary pay-btn"
-                                            data-id="<?= $row['id'] ?>"
-                                            data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
-                                            data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
-                                            data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
-                                            data-mode="pay">
-                                            <i class="fas fa-qrcode"></i> Pay
-                                        </button>
-                                        <?php elseif ($row['payment_status'] === 'to_review'): ?>
-                                        <button type="button" class="btn btn-sm btn-secondary pay-btn"
-                                            data-id="<?= $row['id'] ?>"
-                                            data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
-                                            data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
-                                            data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
-                                            data-mode="update"
-                                            data-proof="<?= htmlspecialchars($proofUrl) ?>">
-                                            <i class="fas fa-pen"></i> Update Proof
-                                        </button>
-                                        <?php if ($hasProof): ?>
-                                        <a class="btn btn-sm btn-secondary"
-                                            href="<?= htmlspecialchars($proofUrl) ?>"
-                                            target="_blank" rel="noopener">
-                                            <i class="fas fa-eye"></i> View Proof
-                                        </a>
-                                        <?php endif; ?>
-                                        <?php elseif ($row['payment_status'] === 'rejected'): ?>
-                                        <?php if ($hasProof): ?>
-                                        <a class="btn btn-sm btn-secondary"
-                                            href="<?= htmlspecialchars($proofUrl) ?>"
-                                            target="_blank" rel="noopener">
-                                            <i class="fas fa-eye"></i> View Proof
-                                        </a>
-                                        <?php else: ?>
-                                        <span class="text-muted">Rejected</span>
-                                        <?php endif; ?>
-                                        <?php else: ?>
-                                        <span class="text-muted">Submitted</span>
-                                        <?php endif; ?>
+                                            <?php if ($row['payment_status'] === 'pending'): ?>
+                                            <button type="button" class="btn btn-sm btn-primary pay-btn"
+                                                data-id="<?= $row['id'] ?>"
+                                                data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                                data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
+                                                data-mode="pay" title="Pay" aria-label="Pay">
+                                                <i class="fas fa-qrcode"></i>
+                                            </button>
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                data-id="<?= $row['id'] ?>"
+                                                data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                                title="Cancel" aria-label="Cancel">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            <?php elseif ($row['payment_status'] === 'to_review'): ?>
+                                            <button type="button" class="btn btn-sm btn-secondary pay-btn"
+                                                data-id="<?= $row['id'] ?>"
+                                                data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                                data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
+                                                data-mode="update"
+                                                data-proof="<?= htmlspecialchars($proofUrl) ?>"
+                                                title="Update Proof" aria-label="Update Proof">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                            <?php if ($hasProof): ?>
+                                            <a class="btn btn-sm btn-secondary"
+                                                href="<?= htmlspecialchars($proofUrl) ?>"
+                                                target="_blank" rel="noopener" title="View Proof"
+                                                aria-label="View Proof">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <?php endif; ?>
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                data-id="<?= $row['id'] ?>"
+                                                data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                                title="Cancel" aria-label="Cancel">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            <?php elseif ($row['payment_status'] === 'rejected'): ?>
+                                            <button type="button" class="btn btn-sm btn-secondary pay-btn"
+                                                data-id="<?= $row['id'] ?>"
+                                                data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                                data-total="PHP <?= number_format($row['amount'] + $row['bir_tax'], 2) ?>"
+                                                data-mode="update"
+                                                data-proof="<?= htmlspecialchars($proofUrl) ?>"
+                                                title="Update Proof" aria-label="Update Proof">
+                                                <i class="fas fa-pen"></i>
+                                            </button>
+                                            <?php if ($hasProof): ?>
+                                            <a class="btn btn-sm btn-secondary"
+                                                href="<?= htmlspecialchars($proofUrl) ?>"
+                                                target="_blank" rel="noopener" title="View Proof"
+                                                aria-label="View Proof">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                            <?php endif; ?>
+                                            <?php if (strcasecmp(trim((string) $row['certificate_type']), 'Cedula') === 0): ?>
+                                            <a class="btn btn-sm btn-primary" href="request_cedula.php?edit=1"
+                                                title="Edit Cedula" aria-label="Edit Cedula">
+                                                <i class="fas fa-edit"></i>
+                                            </a>
+                                            <?php endif; ?>
+                                            <button type="button" class="btn btn-sm btn-danger delete-btn"
+                                                data-id="<?= $row['id'] ?>"
+                                                data-certificate="<?= htmlspecialchars($row['certificate_type']) ?>"
+                                                data-purpose="<?= htmlspecialchars($row['purpose']) ?>"
+                                                title="Cancel" aria-label="Cancel">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                            <?php else: ?>
+                                            <span class="text-muted">Submitted</span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
                                 </tr>
                                 <?php endforeach; ?>
@@ -424,11 +523,17 @@ $grandTotal = $amountTotal + $birTotal;
         </div>
     </div>
 
+    <form id="deleteForm" method="POST" action="pending_payments.php" style="display: none;">
+        <input type="hidden" name="action" value="delete_request">
+        <input type="hidden" name="payment_id" id="deletePaymentId">
+    </form>
+
     <script>
         const mobileMenuBtn = document.getElementById('mobileMenuBtn');
         const sidebar = document.querySelector('.sidebar');
         const payModal = document.getElementById('payModal');
         const payButtons = document.querySelectorAll('.pay-btn');
+        const deleteButtons = document.querySelectorAll('.delete-btn');
         const paymentSummary = document.getElementById('paymentSummary');
         const payPaymentId = document.getElementById('payPaymentId');
         const closePayModal = document.getElementById('closePayModal');
@@ -436,6 +541,8 @@ $grandTotal = $amountTotal + $birTotal;
         const payModalNote = document.getElementById('payModalNote');
         const proofPreview = document.getElementById('proofPreview');
         const proofPreviewImg = document.getElementById('proofPreviewImg');
+        const deleteForm = document.getElementById('deleteForm');
+        const deletePaymentId = document.getElementById('deletePaymentId');
 
         if (mobileMenuBtn && sidebar) {
             mobileMenuBtn.addEventListener('click', () => {
@@ -469,6 +576,23 @@ $grandTotal = $amountTotal + $birTotal;
                     proofPreviewImg.removeAttribute('src');
                 }
                 payModal.style.display = 'flex';
+            });
+        });
+
+        deleteButtons.forEach((button) => {
+            button.addEventListener('click', () => {
+                if (!deleteForm || !deletePaymentId) {
+                    return;
+                }
+                const certificate = button.dataset.certificate || 'this request';
+                const purpose = button.dataset.purpose || '';
+                const label = purpose ? `${certificate} - ${purpose}` : certificate;
+                const confirmed = confirm(`Cancel ${label}? This will delete the request.`);
+                if (!confirmed) {
+                    return;
+                }
+                deletePaymentId.value = button.dataset.id;
+                deleteForm.submit();
             });
         });
 

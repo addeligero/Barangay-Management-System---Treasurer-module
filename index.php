@@ -17,7 +17,7 @@
 			<header class="landing-top">
 				<div class="landing-brand">
 					<span class="landing-eyebrow">Barangay Treasurer Portal</span>
-					<h1 class="landing-title">Treasurer Management System</h1>
+					<h1 class="landing-title">Treasurer Financial Record Management System</h1>
 				</div>
 				
 			</header>

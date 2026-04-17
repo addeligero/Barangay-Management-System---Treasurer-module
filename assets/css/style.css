@@ -446,6 +446,41 @@ body {
   line-height: 1.6;
 }
 
+.resident-portal .action-cell {
+  min-width: 170px;
+}
+
+.resident-portal .remarks-cell {
+  min-width: 140px;
+}
+
+.resident-portal .resident-action-buttons {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  justify-content: flex-start;
+  margin: 0;
+}
+
+.resident-portal .resident-action-buttons .btn,
+.resident-portal .resident-action-buttons a.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 6px 8px;
+  min-width: 34px;
+  height: 34px;
+  font-size: 12px;
+  text-transform: none;
+  letter-spacing: 0;
+  line-height: 1.1;
+  white-space: nowrap;
+  margin: 0;
+  width: auto;
+}
+
 .resident-portal .qr-wrapper {
   display: flex;
   flex-direction: column;

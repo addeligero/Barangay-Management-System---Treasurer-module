@@ -201,10 +201,13 @@ CREATE TABLE IF NOT EXISTS cedula (
     nature_of_collection VARCHAR(100) DEFAULT 'Community Tax',  
     amount_in_words VARCHAR(255),
     remarks TEXT,
+    resident_id INT DEFAULT NULL,
     issued_by INT,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (issued_by) REFERENCES users(id) ON DELETE SET NULL
 );
+
+CREATE INDEX idx_cedula_resident_id ON cedula (resident_id);
 
 -- ============================================================================
 -- 4. BIR RECORDS TABLE
