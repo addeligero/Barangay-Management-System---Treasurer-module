@@ -77,6 +77,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                 <li><a href="list.php" class="active"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../collections/analytics.php"><i class="fas fa-landmark"></i> IRA/DV Analytics</a></li>
                 <li><a href="../collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
                 <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -640,5 +641,8 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
 </body>
 
 </html>
+
+
+
 
 

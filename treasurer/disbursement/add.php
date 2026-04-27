@@ -1,3 +1,17 @@
+<?php
+include "../../config/database.php";
+include "../../config/session.php";
+
+$iraAllocation = $conn->query("
+    SELECT COALESCE(SUM(amount + bir_tax), 0) AS total
+    FROM payments
+")->fetch_assoc()['total'] ?? 0;
+$iraDisbursements = $conn->query("
+    SELECT COALESCE(SUM(COALESCE(bir_gross, amount, 0)), 0) AS total
+    FROM disbursements
+")->fetch_assoc()['total'] ?? 0;
+$iraRemaining = $iraAllocation - $iraDisbursements;
+?>
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -22,6 +36,7 @@
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="list.php" class="active"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../collections/analytics.php"><i class="fas fa-landmark"></i> IRA/DV Analytics</a></li>
                 <li><a href="../collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
                 <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -84,7 +99,43 @@
 
                             <div class="form-group">
                                 <label for="fund"><i class="fas fa-piggy-bank"></i> Fund *</label>
-                                <input type="text" id="fund" name="fund" placeholder="e.g., SK 10%, General Fund" required>
+                                <input type="text" id="fund" name="fund" value="IRA - Internal Revenue Allotment" readonly required
+                                    style="background:#e8f0ff; font-weight:600;">
+                                <small style="color:#666;">All collected money is deposited into the IRA account. Disbursements deduct from this fund.</small>
+                            </div>
+                        </div>
+
+                        <div class="card"
+                            style="border:1px solid #dbe4ff; padding:18px; border-radius:8px; margin-bottom:20px; background:#f7f9ff;">
+                            <div style="display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;">
+                                <div>
+                                    <h4 style="margin:0 0 6px 0; color:#1e3a5f;">
+                                        <i class="fas fa-landmark"></i> IRA Account - Internal Revenue Allotment
+                                    </h4>
+                                    <small style="color:#666;">All collections are deposited here. This disbursement will be deducted from IRA.</small>
+                                </div>
+                                <div style="text-align:right;">
+                                    <div style="font-size:13px; color:#666;">Current IRA Balance</div>
+                                    <strong style="font-size:20px; color:#1F3A93;">PHP <?= number_format($iraRemaining, 2) ?></strong>
+                                </div>
+                            </div>
+                            <div style="display:grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap:12px; margin-top:14px;">
+                                <div>
+                                    <div style="font-size:13px; color:#666;">Total Money Collected</div>
+                                    <strong>PHP <?= number_format($iraAllocation, 2) ?></strong>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px; color:#666;">Already Disbursed</div>
+                                    <strong>PHP <?= number_format($iraDisbursements, 2) ?></strong>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px; color:#666;">This Deduction</div>
+                                    <strong id="iraDeductionPreview">PHP 0.00</strong>
+                                </div>
+                                <div>
+                                    <div style="font-size:13px; color:#666;">Balance After Save</div>
+                                    <strong id="iraAfterPreview">PHP <?= number_format($iraRemaining, 2) ?></strong>
+                                </div>
                             </div>
                         </div>
 
@@ -283,6 +334,25 @@
 </html>
 
 <script>
+    const iraRemainingBalance = <?= json_encode((float) $iraRemaining) ?>;
+
+    function formatPhp(amount) {
+        return 'PHP ' + amount.toLocaleString('en-US', {
+            minimumFractionDigits: 2,
+            maximumFractionDigits: 2
+        });
+    }
+
+    function updateIraPreview() {
+        const amount = parseFloat(document.getElementById('amount').value) || 0;
+        const payroll = parseFloat(document.getElementById('payroll').value) || 0;
+        const deduction = amount + payroll;
+        const after = iraRemainingBalance - deduction;
+        document.getElementById('iraDeductionPreview').textContent = formatPhp(deduction);
+        document.getElementById('iraAfterPreview').textContent = formatPhp(after);
+        document.getElementById('iraAfterPreview').style.color = after < 0 ? '#e53e3e' : '#1F3A93';
+    }
+
     function computeBIR() {
         const gross = parseFloat(document.getElementById('bir_gross').value) || 0;
         const vatType = document.getElementById('bir_vat_type').value;
@@ -331,12 +401,14 @@
         const payroll = parseFloat(document.getElementById('payroll').value) || 0;
         const totalGross = amount + payroll;
         document.getElementById('bir_gross').value = totalGross.toFixed(2);
+        updateIraPreview();
         computeBIR();
     }
 
     // Pre-fill BIR gross from disbursement amount + payroll on input
     document.getElementById('amount').addEventListener('input', updateBirGrossFromInputs);
     document.getElementById('payroll').addEventListener('input', updateBirGrossFromInputs);
+    updateIraPreview();
 
     function addAccountingRow() {
         const tbody = document.getElementById('accounting-rows');
@@ -424,5 +496,8 @@
         });
     })();
 </script>
+
+
+
 
 

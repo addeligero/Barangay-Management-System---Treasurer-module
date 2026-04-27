@@ -71,6 +71,7 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="list.php" class="active"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
                 <li><a href="../collections/monthly.php"><i class="fas fa-chart-line"></i> Monthly Collections</a></li>
+                <li><a href="../collections/analytics.php"><i class="fas fa-landmark"></i> IRA/DV Analytics</a></li>
                 <li><a href="../collections/annual.php"><i class="fas fa-calendar-alt"></i> Annual Report</a></li>
                 <li><a href="../change_password.php"><i class="fas fa-key"></i> Change Password</a></li>
                 <li><a href="../../logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
@@ -150,8 +151,9 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
                             <div class="form-group">
                                 <label for="fund"><i class="fas fa-piggy-bank"></i> Fund *</label>
                                 <input type="text" id="fund" name="fund"
-                                    value="<?= htmlspecialchars($disbursement['fund'] ?? '') ?>"
-                                    required>
+                                    value="IRA - Internal Revenue Allotment"
+                                    readonly required style="background:#e8f0ff; font-weight:600;">
+                                <small style="color:#666;">All collected money is deposited into the IRA account. Disbursements deduct from this fund.</small>
                             </div>
                         </div>
 
@@ -575,5 +577,8 @@ $birGrossValue = number_format(((float) $disbursement['amount']) + ((float) $pay
         });
     })();
 </script>
+
+
+
 
 
