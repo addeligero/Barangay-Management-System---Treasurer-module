@@ -53,3 +53,4 @@ foreach ($people as $person) {
 }
 
 echo json_encode($uniquePeople);
+
