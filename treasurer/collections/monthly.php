@@ -3,15 +3,18 @@ include "../../config/database.php";
 include "../../config/session.php";
 
 // Get current month and year or from filter
-$month = $_GET['month'] ?? date('m');
-$year = $_GET['year'] ?? date('Y');
+$month = intval($_GET['month'] ?? date('m'));
+$year = intval($_GET['year'] ?? date('Y'));
+$otherCollectionTypes = "'Donation', 'Garbage', 'Rental'";
+$serviceTypeExpression = "CASE WHEN TRIM(service_type) = 'Community Tax Certificate' THEN 'Rental' ELSE COALESCE(NULLIF(TRIM(service_type), ''), 'Unspecified') END";
 
-// Other Collections (from payments)
-$otherCollectionsPayments = $conn->query("
+// Certificates (from payments, excluding non-certificate collections)
+$certificateCollections = $conn->query("
     SELECT COALESCE(SUM(amount), 0) as total 
     FROM payments 
     WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month 
     AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
+    AND {$serviceTypeExpression} NOT IN ($otherCollectionTypes)
 ")->fetch_assoc()['total'] ?? 0;
 
 $documentaryStampFees = $conn->query("
@@ -21,24 +24,47 @@ $documentaryStampFees = $conn->query("
     AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
 ")->fetch_assoc()['total'] ?? 0;
 
-$otherCollections = $otherCollectionsPayments;
-
-// Other Collections breakdown by service type
-$otherCollectionsBreakdown = [];
-$otherBreakdownResult = $conn->query("
-    SELECT COALESCE(NULLIF(TRIM(service_type), ''), 'Unspecified') AS service_type,
+// Certificates breakdown by service type
+$certificateBreakdown = [];
+$certificateBreakdownResult = $conn->query("
+    SELECT {$serviceTypeExpression} AS service_type,
            COALESCE(SUM(amount), 0) as total
     FROM payments
     WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month
     AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
-    GROUP BY COALESCE(NULLIF(TRIM(service_type), ''), 'Unspecified')
+    AND {$serviceTypeExpression} NOT IN ($otherCollectionTypes)
+    GROUP BY {$serviceTypeExpression}
     ORDER BY service_type
+");
+while ($row = $certificateBreakdownResult->fetch_assoc()) {
+    $certificateBreakdown[] = $row;
+}
+
+// Other Collections: Donation, Garbage, and Rental are not certificates.
+$otherCollections = $conn->query("
+    SELECT COALESCE(SUM(amount), 0) as total
+    FROM payments
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
+    AND {$serviceTypeExpression} IN ($otherCollectionTypes)
+")->fetch_assoc()['total'] ?? 0;
+
+$otherCollectionsBreakdown = [];
+$otherBreakdownResult = $conn->query("
+    SELECT {$serviceTypeExpression} AS service_type,
+           COALESCE(SUM(amount), 0) as total
+    FROM payments
+    WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month
+    AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
+    AND {$serviceTypeExpression} IN ($otherCollectionTypes)
+    GROUP BY {$serviceTypeExpression}
+    ORDER BY FIELD({$serviceTypeExpression}, 'Donation', 'Garbage', 'Rental')
 ");
 while ($row = $otherBreakdownResult->fetch_assoc()) {
     $otherCollectionsBreakdown[] = $row;
 }
 
-$totalCollections = $otherCollections + $documentaryStampFees;
+$totalCollections = $certificateCollections + $otherCollections + $documentaryStampFees;
 
 $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 ?>
@@ -190,11 +216,54 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                         </h3>
                     </div>
 
-                    <!-- Other Collections -->
+                    <!-- Certificates -->
                     <div class="report-section">
                         <h4
                             style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
                             <i class="fas fa-receipt"></i> CERTIFICATES
+                        </h4>
+                        <table class="report-table">
+                            <tbody>
+                                <?php if (!empty($certificateBreakdown)): ?>
+                                <?php foreach ($certificateBreakdown as $bd): ?>
+                                <tr>
+                                    <td style="padding-left: 30px; color: #555;">
+                                        <i class="fas fa-chevron-right" style="font-size:11px; margin-right:6px;"></i>
+                                        <?= htmlspecialchars($bd['service_type'] ?: 'Unspecified') ?>
+                                    </td>
+                                    <td>₱<?= number_format($bd['total'], 2) ?>
+                                    </td>
+                                </tr>
+                                <?php endforeach; ?>
+                                <tr>
+                                    <td style="font-weight: 600;">
+                                        <em>Subtotal - Certificates</em>
+                                    </td>
+                                    <td>₱<?= number_format($certificateCollections, 2) ?>
+                                    </td>
+                                </tr>
+                                <?php else: ?>
+                                <tr>
+                                    <td>Certificates</td>
+                                    <td>₱<?= number_format($certificateCollections, 2) ?>
+                                    </td>
+                                </tr>
+                                <?php endif; ?>
+                                <tr class="total-row">
+                                    <td>TOTAL CERTIFICATES</td>
+                                    <td>₱<?= number_format($certificateCollections, 2) ?>
+                                    </td>
+                                </tr>
+
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Other Collections -->
+                    <div class="report-section">
+                        <h4
+                            style="color: #1e3a5f; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 2px solid #1F3A93;">
+                            <i class="fas fa-cash-register"></i> OTHER COLLECTIONS
                         </h4>
                         <table class="report-table">
                             <tbody>
@@ -211,28 +280,26 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
                                 <?php endforeach; ?>
                                 <tr>
                                     <td style="font-weight: 600;">
-                                        <em>Subtotal – Other Collections from Payments</em>
+                                        <em>Subtotal - Other Collections</em>
                                     </td>
-                                    <td>₱<?= number_format($otherCollectionsPayments, 2) ?>
+                                    <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
                                 <?php else: ?>
                                 <tr>
-                                    <td>Other Collections from Payments</td>
-                                    <td>₱<?= number_format($otherCollectionsPayments, 2) ?>
+                                    <td>Donation, Garbage, and Rental</td>
+                                    <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
                                 <?php endif; ?>
                                 <tr class="total-row">
-                                    <td>TOTAL COLLECTIONS</td>
+                                    <td>TOTAL OTHER COLLECTIONS</td>
                                     <td>₱<?= number_format($otherCollections, 2) ?>
                                     </td>
                                 </tr>
-
                             </tbody>
                         </table>
                     </div>
-
                     <!--total docu stamp fees-->
                     <div class="report-section">
                         <h4
@@ -295,4 +362,5 @@ $monthName = date('F Y', mktime(0, 0, 0, $month, 1, $year));
 </body>
 
 </html>
+
 
