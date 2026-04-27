@@ -4,25 +4,40 @@ include "../../config/session.php";
 
 // Get year from filter
 $year = $_GET['year'] ?? date('Y');
+$otherCollectionTypes = "'Donation', 'Garbage', 'Rental'";
+$serviceTypeExpression = "CASE WHEN TRIM(service_type) = 'Community Tax Certificate' THEN 'Rental' ELSE COALESCE(NULLIF(TRIM(service_type), ''), 'Unspecified') END";
 
 // Initialize arrays for monthly data
 $monthlyData = [
     'certificates' => [],
+    'otherCollections' => [],
     'documentaryFees' => [],
     'totals' => []
 ];
 
 // Get data for each month
 for ($month = 1; $month <= 12; $month++) {
-    // Certificates (payments)
+    // Certificates (excluding other collections)
     $certificates = $conn->query("
         SELECT COALESCE(SUM(amount), 0) as total 
         FROM payments 
         WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month 
         AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
+        AND {$serviceTypeExpression} NOT IN ($otherCollectionTypes)
     ")->fetch_assoc()['total'] ?? 0;
 
     $monthlyData['certificates'][$month] = $certificates;
+
+    // Other Collections: Donation, Garbage, Rental
+    $otherCollections = $conn->query("
+        SELECT COALESCE(SUM(amount), 0) as total
+        FROM payments
+        WHERE MONTH(COALESCE(payment_date, DATE(created_at))) = $month
+        AND YEAR(COALESCE(payment_date, DATE(created_at))) = $year
+        AND {$serviceTypeExpression} IN ($otherCollectionTypes)
+    ")->fetch_assoc()['total'] ?? 0;
+
+    $monthlyData['otherCollections'][$month] = $otherCollections;
 
     // Documentary Stamp Fees (BIR tax)
     $documentaryFees = $conn->query("
@@ -37,11 +52,13 @@ for ($month = 1; $month <= 12; $month++) {
     // Monthly total
     $monthlyData['totals'][$month] =
         $monthlyData['certificates'][$month] +
+        $monthlyData['otherCollections'][$month] +
         $monthlyData['documentaryFees'][$month];
 }
 
 // Calculate yearly totals
 $yearlyCertificates = array_sum($monthlyData['certificates']);
+    $yearlyOtherCollections = array_sum($monthlyData['otherCollections']);
 $yearlyDocumentaryFees = array_sum($monthlyData['documentaryFees']);
 $yearlyGrandTotal = array_sum($monthlyData['totals']);
 
@@ -210,6 +227,7 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                             <tr>
                                 <th>Month</th>
                                 <th>Certificates</th>
+                                <th>Other Collections</th>
                                 <th>Documentary Stamp Fees</th>
                                 <th>Monthly Total</th>
                             </tr>
@@ -220,6 +238,8 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                                 <td><?= $monthNames[$month] ?></td>
                                 <td>₱<?= number_format($monthlyData['certificates'][$month], 2) ?>
                                 </td>
+                                <td>₱<?= number_format($monthlyData['otherCollections'][$month], 2) ?>
+                                </td>
                                 <td>₱<?= number_format($monthlyData['documentaryFees'][$month], 2) ?>
                                 </td>
                                 <td><strong>₱<?= number_format($monthlyData['totals'][$month], 2) ?></strong>
@@ -229,6 +249,8 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                             <tr class="total-row">
                                 <td>ANNUAL TOTAL</td>
                                 <td>₱<?= number_format($yearlyCertificates, 2) ?>
+                                </td>
+                                <td>₱<?= number_format($yearlyOtherCollections, 2) ?>
                                 </td>
                                 <td>₱<?= number_format($yearlyDocumentaryFees, 2) ?>
                                 </td>
@@ -249,6 +271,17 @@ $monthNames = ['', 'January', 'February', 'March', 'April', 'May', 'June', 'July
                             </h4>
                             <p style="font-size: 28px; font-weight: 700; margin: 0;">
                                 ₱<?= number_format($yearlyCertificates, 2) ?>
+                            </p>
+                        </div>
+                    </div>
+
+                    <div class="card"
+                        style="background: linear-gradient(135deg, #f7971e 0%, #ffd200 100%); color: #1e3a5f;">
+                        <div style="padding: 20px;">
+                            <h4 style="margin: 0 0 10px 0; opacity: 0.9;"><i class="fas fa-cash-register"></i> Other
+                                Collections</h4>
+                            <p style="font-size: 28px; font-weight: 700; margin: 0;">
+                                ₱<?= number_format($yearlyOtherCollections, 2) ?>
                             </p>
                         </div>
                     </div>
