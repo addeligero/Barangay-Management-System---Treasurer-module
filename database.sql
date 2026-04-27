@@ -169,9 +169,9 @@ CREATE TABLE IF NOT EXISTS residents (
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS cedula (
     id INT AUTO_INCREMENT PRIMARY KEY,
-    cedula_no VARCHAR(50) NOT NULL,
+    cedula_no VARCHAR(50) DEFAULT NULL,
     or_number VARCHAR(50),  
-    issued_date DATE NOT NULL,
+    issued_date DATE DEFAULT NULL,
     year_issued INT DEFAULT NULL,
     place_of_issue VARCHAR(150),
     full_name VARCHAR(150) NOT NULL,

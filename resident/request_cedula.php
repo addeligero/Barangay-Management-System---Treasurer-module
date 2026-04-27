@@ -145,10 +145,23 @@ $annualIncomeDefault = isset($resident['annual_income']) && floatval($resident['
 
 $success = '';
 $error = '';
+$warning = '';
+$hasPendingRequest = false;
 $isEdit = isset($_GET['edit']);
 $cedulaToEdit = null;
 $pendingCedulaPaymentId = null;
 $rejectionRemarks = '';
+
+// Check for pending cedula requests - resident cannot request another one
+$pendingCheckStmt = $conn->prepare("SELECT id FROM payment_status WHERE resident_id = ? AND certificate_type = 'Cedula' AND payment_status = 'pending' LIMIT 1");
+$pendingCheckStmt->bind_param("i", $residentId);
+$pendingCheckStmt->execute();
+$pendingCheckResult = $pendingCheckStmt->get_result();
+if ($pendingCheckResult->num_rows > 0) {
+    $hasPendingRequest = true;
+    $warning = 'You already have a pending cedula request. Please wait for the treasurer to process it or pay the required amount.';
+}
+$pendingCheckStmt->close();
 
 if ($isEdit) {
     $pendingStmt = $conn->prepare("SELECT id, rejection_remarks FROM payment_status WHERE resident_id = ? AND certificate_type = 'Cedula' AND payment_status = 'rejected' ORDER BY created_at DESC, id DESC LIMIT 1");
@@ -310,19 +323,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $amountInWords = trim($_POST['amount_in_words'] ?? '');
     $remarks = trim($_POST['remarks'] ?? '');
 
-    if ($cedulaNo === '' || $issuedDate === '' || $placeOfIssue === '' || $fullName === '' || $surname === '' || $firstName === '' || $address === '' || $birthDate === '' || $sex === '' || $birthPlace === '' || $civilStatus === '' || $citizenship === '' || $occupation === '' || $natureOfCollection === '') {
-        $error = 'Please fill in all required fields.';
-    } elseif ($action === 'update') {
-        $cedulaId = intval($_POST['cedula_id'] ?? 0);
-        $pendingPaymentId = intval($_POST['payment_id'] ?? 0);
-
-        if ($cedulaId <= 0 || $pendingPaymentId <= 0) {
-            $error = 'Invalid edit request.';
+    if ($action === 'update') {
+        // Validation only for edit/update action where fields are editable
+        if ($cedulaNo === '' || $issuedDate === '' || $placeOfIssue === '' || $fullName === '' || $surname === '' || $firstName === '' || $address === '' || $birthDate === '' || $sex === '' || $birthPlace === '' || $civilStatus === '' || $citizenship === '' || $occupation === '' || $natureOfCollection === '') {
+            $error = 'Please fill in all required fields.';
         } else {
-            $conn->begin_transaction();
+            $cedulaId = intval($_POST['cedula_id'] ?? 0);
+            $pendingPaymentId = intval($_POST['payment_id'] ?? 0);
 
-            $updateStmt = $conn->prepare("
-                UPDATE cedula SET
+            if ($cedulaId <= 0 || $pendingPaymentId <= 0) {
+                $error = 'Invalid edit request.';
+            } else {
+                $conn->begin_transaction();
+
+                $updateStmt = $conn->prepare("
+                    UPDATE cedula SET
                     cedula_no = ?,
                     or_number = ?,
                     issued_date = ?,
@@ -357,67 +372,68 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     remarks = ?
                 WHERE id = ? AND resident_id = ? AND issued_by IS NULL
             ");
-            $updateStmt->bind_param(
-                "sssisssssssisssssssddddddddddsssii",
-                $cedulaNo,
-                $orNumber,
-                $issuedDate,
-                $yearIssued,
-                $placeOfIssue,
-                $fullName,
-                $surname,
-                $firstName,
-                $middleName,
-                $address,
-                $birthDate,
-                $age,
-                $sex,
-                $birthPlace,
-                $civilStatus,
-                $citizenship,
-                $icrNo,
-                $occupation,
-                $tin,
-                $height,
-                $weight,
-                $annualIncome,
-                $basicTax,
-                $additionalBusiness,
-                $additionalProfession,
-                $additionalProperty,
-                $communityTaxDue,
-                $interest,
-                $amount,
-                $natureOfCollection,
-                $amountInWords,
-                $remarks,
-                $cedulaId,
-                $residentId
-            );
-            $cedulaOk = $updateStmt->execute();
-            $updateStmt->close();
+                $updateStmt->bind_param(
+                    "sssisssssssisssssssddddddddddsssii",
+                    $cedulaNo,
+                    $orNumber,
+                    $issuedDate,
+                    $yearIssued,
+                    $placeOfIssue,
+                    $fullName,
+                    $surname,
+                    $firstName,
+                    $middleName,
+                    $address,
+                    $birthDate,
+                    $age,
+                    $sex,
+                    $birthPlace,
+                    $civilStatus,
+                    $citizenship,
+                    $icrNo,
+                    $occupation,
+                    $tin,
+                    $height,
+                    $weight,
+                    $annualIncome,
+                    $basicTax,
+                    $additionalBusiness,
+                    $additionalProfession,
+                    $additionalProperty,
+                    $communityTaxDue,
+                    $interest,
+                    $amount,
+                    $natureOfCollection,
+                    $amountInWords,
+                    $remarks,
+                    $cedulaId,
+                    $residentId
+                );
+                $cedulaOk = $updateStmt->execute();
+                $updateStmt->close();
 
-            $statusOk = false;
-            if ($cedulaOk) {
-                $statusStmt = $conn->prepare("
+                $statusOk = false;
+                if ($cedulaOk) {
+                    $statusStmt = $conn->prepare("
                     UPDATE payment_status
                     SET payment_status = 'pending', rejection_remarks = NULL, rejected_at = NULL, created_at = NOW(),
                         amount = ?, bir_tax = 0, resident_fname = ?, purpose = 'Cedula Request', certificate_type = 'Cedula'
                     WHERE id = ? AND resident_id = ?
                 ");
-                $statusStmt->bind_param("dsii", $amount, $fullName, $pendingPaymentId, $residentId);
-                $statusOk = $statusStmt->execute();
-                $statusStmt->close();
-            }
+                    $statusStmt->bind_param("dsii", $amount, $fullName, $pendingPaymentId, $residentId);
+                    $statusOk = $statusStmt->execute();
+                    $statusStmt->close();
+                }
 
-            if ($cedulaOk && $statusOk) {
-                $conn->commit();
-                header('Location: pending_payments.php?cedula_updated=1');
-                exit;
-            }
+                if ($cedulaOk && $statusOk) {
+                    $conn->commit();
+                    header('Location: pending_payments.php?cedula_updated=1');
+                    exit;
+                }
 
-            $conn->rollback();
-            $error = 'Failed to update cedula request. Please try again.';
+                $conn->rollback();
+                $error = 'Failed to update cedula request. Please try again.';
+            }
         }
     } else {
         $conn->begin_transaction();
@@ -505,7 +521,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>
         <?= $isEdit ? 'Edit Cedula Request' : 'Request Cedula' ?>
-        - Resident Portal</title>
+        - Resident Portal
+    </title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
 </head>
@@ -556,6 +573,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     <?= htmlspecialchars($error) ?>
                 </div>
                 <?php endif; ?>
+
+                <?php if ($warning): ?>
+                <div class="warning-message"
+                    style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 4px; padding: 12px; margin-bottom: 20px; color: #856404;">
+                    <i class="fas fa-exclamation-triangle"></i>
+                    <?= htmlspecialchars($warning) ?>
+                </div>
+                <?php endif; ?>
+
                 <?php if ($isEdit && $rejectionRemarks !== ''): ?>
                 <div class="error-message">
                     <i class="fas fa-comment-slash"></i>
@@ -564,23 +590,256 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 </div>
                 <?php endif; ?>
 
+                <?php if (!$hasPendingRequest || $isEdit): ?>
                 <div class="card">
                     <div class="card-header">
-                        <h3><i class="fas fa-file-pen"></i> Cedula Request Form</h3>
-                        <p style="color: #666; font-size: 14px; margin-top: 5px;">Please review your details and fill
-                            any missing information.</p>
+                        <h3><i class="fas fa-id-card"></i>
+                            <?= $isEdit ? 'Edit Cedula Request' : 'Cedula Request' ?>
+                        </h3>
+                        <p style="color: #666; font-size: 14px; margin-top: 5px;">
+                            <?= $isEdit ? 'Update your cedula information and resubmit.' : 'Review your information and request your cedula below.' ?>
+                        </p>
                     </div>
 
-                    <form method="POST"
-                        action="request_cedula.php<?= $isEdit ? '?edit=1' : '' ?>">
-                        <input type="hidden" name="action"
-                            value="<?= $isEdit ? 'update' : 'create' ?>">
-                        <?php if ($isEdit && $cedulaToEdit): ?>
+                    <?php if (!$isEdit): ?>
+                    <!-- Simplified View: Read-only Summary -->
+                    <div class="cedula-summary"
+                        style="padding: 20px; background: #f9f9f9; border: 1px solid #e0e0e0; border-radius: 4px; margin-bottom: 20px;">
+
+                        <!-- Section 1: Cedula Details -->
+                        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ddd;">
+                            <h4 style="margin: 0 0 15px 0; color: #2c3e50;">📋 Cedula Details</h4>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                                <div>
+                                    <strong style="color: #333;">Cedula Number</strong>
+                                    <p style="margin: 5px 0; color: #666;">To be assigned</p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">OR Number</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars((string) $orNumberValue) ?: 'To be assigned' ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Date Issued</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars((string) $issuedDateValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Year Issued</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars((string) $yearIssuedValue) ?>
+                                    </p>
+                                </div>
+                                <div style="grid-column: span 1;">
+                                    <strong style="color: #333;">Place of Issue</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($placeOfIssueValue) ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 2: Personal Information -->
+                        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ddd;">
+                            <h4 style="margin: 0 0 15px 0; color: #2c3e50;">👤 Personal Information</h4>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                                <div>
+                                    <strong style="color: #333;">Full Name</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($fullNameValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Surname</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($surnameValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">First Name</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($firstNameValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Middle Name</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($middleNameValue) ?: 'N/A' ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Date of Birth</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($birthDateValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Age</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars((string) $ageValue) ?>
+                                        years old</p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Sex</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($sexValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Place of Birth</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($birthPlaceValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Civil Status</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($civilStatusValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Citizenship</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($citizenshipValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">ICR No. (If Alien)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($icrNoValue) ?: 'N/A' ?>
+                                    </p>
+                                </div>
+                                <div style="grid-column: span 1;">
+                                    <strong style="color: #333;">Complete Address</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($addressValue) ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 3: Employment & Tax Information -->
+                        <div style="margin-bottom: 20px; padding-bottom: 15px; border-bottom: 2px solid #ddd;">
+                            <h4 style="margin: 0 0 15px 0; color: #2c3e50;">💼 Employment & Tax Information</h4>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px;">
+                                <div>
+                                    <strong style="color: #333;">Occupation</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($occupationValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">TIN</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($tinValue) ?: 'N/A' ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Height (cm)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($heightValue) ?: 'N/A' ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Weight (kg)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($weightValue) ?: 'N/A' ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Annual Income (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($annualIncomeValue) ?: '0.00' ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Nature of Collection</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($natureOfCollectionValue) ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Section 4: Tax Computation & Amount -->
+                        <div
+                            style="margin-bottom: 0; padding: 15px; background: #e8f4f8; border-radius: 4px; border-left: 4px solid #3498db;">
+                            <h4 style="margin: 0 0 15px 0; color: #2c3e50;">💰 Tax Computation & Amount Due</h4>
+                            <div
+                                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px;">
+                                <div>
+                                    <strong style="color: #333;">Basic Community Tax (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #2c3e50; font-weight: bold;">₱
+                                        <?= htmlspecialchars($basicTaxValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Additional Tax - Business (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($additionalBusinessValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Additional Tax - Profession (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($additionalProfessionValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Additional Tax - Property (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($additionalPropertyValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Community Tax Due (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #2c3e50; font-weight: bold;">₱
+                                        <?= htmlspecialchars($communityTaxDueValue) ?>
+                                    </p>
+                                </div>
+                                <div>
+                                    <strong style="color: #333;">Interest (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #666;">
+                                        <?= htmlspecialchars($interestValue) ?>
+                                    </p>
+                                </div>
+                                <div
+                                    style="grid-column: span 1; background: white; padding: 10px; border-radius: 4px; border: 2px solid #3498db;">
+                                    <strong style="color: #2c3e50; font-size: 16px;">Total Amount Due (PHP)</strong>
+                                    <p style="margin: 5px 0; color: #27ae60; font-weight: bold; font-size: 20px;">₱
+                                        <?= htmlspecialchars($amountValue) ?>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div style="display: flex; gap: 10px; margin-top: 20px;">
+                        <button type="button" class="btn btn-primary" onclick="openConfirmationModal()"
+                            style="flex: 1;">
+                            <i class="fas fa-paper-plane"></i> Request Cedula
+                        </button>
+                        <a href="pending_payments.php" class="btn btn-secondary"
+                            style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
+                            <i class="fas fa-times"></i> Cancel
+                        </a>
+                    </div>
+                    <?php else: ?>
+                    <!-- Edit Mode: Show editable form -->
+                    <form method="POST" action="request_cedula.php?edit=1">
+                        <input type="hidden" name="action" value="update">
+                        <?php if ($cedulaToEdit): ?>
                         <input type="hidden" name="cedula_id"
                             value="<?= intval($cedulaToEdit['id']) ?>">
                         <input type="hidden" name="payment_id"
                             value="<?= intval($pendingCedulaPaymentId) ?>">
                         <?php endif; ?>
+
                         <div class="form-row">
                             <div class="form-group">
                                 <label for="cedula_no"><i class="fas fa-hashtag"></i> Cedula Number *</label>
@@ -850,8 +1109,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         <div style="display: flex; gap: 10px; margin-top: 25px;">
                             <button type="submit" class="btn btn-primary" style="flex: 1;">
-                                <i class="fas fa-paper-plane"></i>
-                                <?= $isEdit ? 'Update Cedula Request' : 'Submit Cedula Request' ?>
+                                <i class="fas fa-paper-plane"></i> Update Cedula Request
                             </button>
                             <a href="pending_payments.php" class="btn btn-secondary"
                                 style="flex: 1; text-align: center; text-decoration: none; display: flex; align-items: center; justify-content: center;">
@@ -859,12 +1117,304 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                             </a>
                         </div>
                     </form>
+                    <?php endif; ?>
                 </div>
+                <?php endif; ?>
             </div>
         </main>
     </div>
 
+    <!-- Confirmation Modal -->
+    <div id="confirmationModal" class="modal"
+        style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0, 0, 0, 0.5); z-index: 1000; align-items: center; justify-content: center;">
+        <div class="modal-content"
+            style="background: white; padding: 30px; border-radius: 8px; max-width: 500px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+            <h3 style="margin-top: 0; color: #333;">
+                <i class="fas fa-check-circle" style="color: #4CAF50; margin-right: 10px;"></i>
+                Confirm Cedula Request
+            </h3>
+            <p style="color: #666; line-height: 1.6; margin: 15px 0;">
+                You are about to request a cedula with the following details:
+            </p>
+            <div style="background: #f5f5f5; padding: 15px; border-radius: 4px; margin: 15px 0;">
+                <p><strong>Name:</strong> <span
+                        id="confirmName"><?= htmlspecialchars($fullNameDefault) ?></span>
+                </p>
+                <p><strong>Address:</strong> <span
+                        id="confirmAddress"><?= htmlspecialchars($addressDefault) ?></span>
+                </p>
+                <p><strong>Amount Due:</strong> <span id="confirmAmount"
+                        style="color: #4CAF50; font-weight: bold; font-size: 18px;">₱ 5.00</span></p>
+            </div>
+            <p style="color: #666; font-size: 14px;">
+                Once submitted, please proceed to make the payment or wait for the treasurer's approval.
+            </p>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button type="button" class="btn btn-primary" onclick="submitCedulaRequest()" style="flex: 1;">
+                    <i class="fas fa-check"></i> Confirm Request
+                </button>
+                <button type="button" class="btn btn-secondary" onclick="closeConfirmationModal()" style="flex: 1;">
+                    <i class="fas fa-times"></i> Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <style>
+        .modal {
+            display: none;
+        }
+
+        .modal.open {
+            display: flex !important;
+        }
+
+        .modal-content {
+            animation: slideIn 0.3s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateY(-50px);
+                opacity: 0;
+            }
+
+            to {
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+    </style>
+
     <script>
+        // Create a hidden form for AJAX submission
+        const hiddenForm = document.createElement('form');
+        hiddenForm.method = 'POST';
+        hiddenForm.action = 'request_cedula.php';
+        hiddenForm.style.display = 'none';
+
+        // Create hidden input fields
+        const actionInput = document.createElement('input');
+        actionInput.type = 'hidden';
+        actionInput.name = 'action';
+        actionInput.value = 'create';
+        hiddenForm.appendChild(actionInput);
+
+        const cedulaNoInput = document.createElement('input');
+        cedulaNoInput.type = 'hidden';
+        cedulaNoInput.name = 'cedula_no';
+        cedulaNoInput.value =
+            '<?= htmlspecialchars((string) $cedulaNoValue) ?>';
+        hiddenForm.appendChild(cedulaNoInput);
+
+        const issuedDateInput = document.createElement('input');
+        issuedDateInput.type = 'hidden';
+        issuedDateInput.name = 'issued_date';
+        issuedDateInput.value =
+            '<?= htmlspecialchars((string) $issuedDateValue) ?>';
+        hiddenForm.appendChild(issuedDateInput);
+
+        const yearIssuedInput = document.createElement('input');
+        yearIssuedInput.type = 'hidden';
+        yearIssuedInput.name = 'year_issued';
+        yearIssuedInput.value =
+            '<?= htmlspecialchars((string) $yearIssuedValue) ?>';
+        hiddenForm.appendChild(yearIssuedInput);
+
+        const placeOfIssueInput = document.createElement('input');
+        placeOfIssueInput.type = 'hidden';
+        placeOfIssueInput.name = 'place_of_issue';
+        placeOfIssueInput.value = '<?= htmlspecialchars($placeOfIssueValue) ?>';
+        hiddenForm.appendChild(placeOfIssueInput);
+
+        const fullNameInput = document.createElement('input');
+        fullNameInput.type = 'hidden';
+        fullNameInput.name = 'full_name';
+        fullNameInput.value = '<?= htmlspecialchars($fullNameValue) ?>';
+        hiddenForm.appendChild(fullNameInput);
+
+        const surnameInput = document.createElement('input');
+        surnameInput.type = 'hidden';
+        surnameInput.name = 'surname';
+        surnameInput.value = '<?= htmlspecialchars($surnameValue) ?>';
+        hiddenForm.appendChild(surnameInput);
+
+        const firstNameInput = document.createElement('input');
+        firstNameInput.type = 'hidden';
+        firstNameInput.name = 'first_name';
+        firstNameInput.value = '<?= htmlspecialchars($firstNameValue) ?>';
+        hiddenForm.appendChild(firstNameInput);
+
+        const middleNameInput = document.createElement('input');
+        middleNameInput.type = 'hidden';
+        middleNameInput.name = 'middle_name';
+        middleNameInput.value = '<?= htmlspecialchars($middleNameValue) ?>';
+        hiddenForm.appendChild(middleNameInput);
+
+        const addressInput = document.createElement('input');
+        addressInput.type = 'hidden';
+        addressInput.name = 'address';
+        addressInput.value = '<?= htmlspecialchars($addressValue) ?>';
+        hiddenForm.appendChild(addressInput);
+
+        const birthDateInput = document.createElement('input');
+        birthDateInput.type = 'hidden';
+        birthDateInput.name = 'birth_date';
+        birthDateInput.value = '<?= htmlspecialchars($birthDateValue) ?>';
+        hiddenForm.appendChild(birthDateInput);
+
+        const ageInput = document.createElement('input');
+        ageInput.type = 'hidden';
+        ageInput.name = 'age';
+        ageInput.value = '<?= htmlspecialchars((string) $ageValue) ?>';
+        hiddenForm.appendChild(ageInput);
+
+        const sexInput = document.createElement('input');
+        sexInput.type = 'hidden';
+        sexInput.name = 'sex';
+        sexInput.value = '<?= htmlspecialchars($sexValue) ?>';
+        hiddenForm.appendChild(sexInput);
+
+        const birthPlaceInput = document.createElement('input');
+        birthPlaceInput.type = 'hidden';
+        birthPlaceInput.name = 'birth_place';
+        birthPlaceInput.value = '<?= htmlspecialchars($birthPlaceValue) ?>';
+        hiddenForm.appendChild(birthPlaceInput);
+
+        const civilStatusInput = document.createElement('input');
+        civilStatusInput.type = 'hidden';
+        civilStatusInput.name = 'civil_status';
+        civilStatusInput.value = '<?= htmlspecialchars($civilStatusValue) ?>';
+        hiddenForm.appendChild(civilStatusInput);
+
+        const citizenshipInput = document.createElement('input');
+        citizenshipInput.type = 'hidden';
+        citizenshipInput.name = 'citizenship';
+        citizenshipInput.value = '<?= htmlspecialchars($citizenshipValue) ?>';
+        hiddenForm.appendChild(citizenshipInput);
+
+        const icrNoInput = document.createElement('input');
+        icrNoInput.type = 'hidden';
+        icrNoInput.name = 'icr_no';
+        icrNoInput.value = '<?= htmlspecialchars($icrNoValue) ?>';
+        hiddenForm.appendChild(icrNoInput);
+
+        const occupationInput = document.createElement('input');
+        occupationInput.type = 'hidden';
+        occupationInput.name = 'occupation';
+        occupationInput.value = '<?= htmlspecialchars($occupationValue) ?>';
+        hiddenForm.appendChild(occupationInput);
+
+        const tinInput = document.createElement('input');
+        tinInput.type = 'hidden';
+        tinInput.name = 'tin';
+        tinInput.value = '<?= htmlspecialchars($tinValue) ?>';
+        hiddenForm.appendChild(tinInput);
+
+        const heightInput = document.createElement('input');
+        heightInput.type = 'hidden';
+        heightInput.name = 'height';
+        heightInput.value = '<?= htmlspecialchars($heightValue) ?>';
+        hiddenForm.appendChild(heightInput);
+
+        const weightInput = document.createElement('input');
+        weightInput.type = 'hidden';
+        weightInput.name = 'weight';
+        weightInput.value = '<?= htmlspecialchars($weightValue) ?>';
+        hiddenForm.appendChild(weightInput);
+
+        const annualIncomeInput = document.createElement('input');
+        annualIncomeInput.type = 'hidden';
+        annualIncomeInput.name = 'annual_income';
+        annualIncomeInput.value = '<?= htmlspecialchars($annualIncomeValue) ?>';
+        hiddenForm.appendChild(annualIncomeInput);
+
+        const basicTaxInput = document.createElement('input');
+        basicTaxInput.type = 'hidden';
+        basicTaxInput.name = 'basic_tax';
+        basicTaxInput.value = '<?= htmlspecialchars($basicTaxValue) ?>';
+        hiddenForm.appendChild(basicTaxInput);
+
+        const additionalBusinessInput = document.createElement('input');
+        additionalBusinessInput.type = 'hidden';
+        additionalBusinessInput.name = 'additional_tax_business';
+        additionalBusinessInput.value =
+            '<?= htmlspecialchars($additionalBusinessValue) ?>';
+        hiddenForm.appendChild(additionalBusinessInput);
+
+        const additionalProfessionInput = document.createElement('input');
+        additionalProfessionInput.type = 'hidden';
+        additionalProfessionInput.name = 'additional_tax_profession';
+        additionalProfessionInput.value =
+            '<?= htmlspecialchars($additionalProfessionValue) ?>';
+        hiddenForm.appendChild(additionalProfessionInput);
+
+        const additionalPropertyInput = document.createElement('input');
+        additionalPropertyInput.type = 'hidden';
+        additionalPropertyInput.name = 'additional_tax_property';
+        additionalPropertyInput.value =
+            '<?= htmlspecialchars($additionalPropertyValue) ?>';
+        hiddenForm.appendChild(additionalPropertyInput);
+
+        const interestInput = document.createElement('input');
+        interestInput.type = 'hidden';
+        interestInput.name = 'interest';
+        interestInput.value = '<?= htmlspecialchars($interestValue) ?>';
+        hiddenForm.appendChild(interestInput);
+
+        const amountInput = document.createElement('input');
+        amountInput.type = 'hidden';
+        amountInput.name = 'amount';
+        amountInput.value = '<?= htmlspecialchars($amountValue) ?>';
+        hiddenForm.appendChild(amountInput);
+
+        const natureOfCollectionInput = document.createElement('input');
+        natureOfCollectionInput.type = 'hidden';
+        natureOfCollectionInput.name = 'nature_of_collection';
+        natureOfCollectionInput.value =
+            '<?= htmlspecialchars($natureOfCollectionValue) ?>';
+        hiddenForm.appendChild(natureOfCollectionInput);
+
+        const communityTaxDueInput = document.createElement('input');
+        communityTaxDueInput.type = 'hidden';
+        communityTaxDueInput.name = 'community_tax_due';
+        communityTaxDueInput.value =
+            '<?= htmlspecialchars($communityTaxDueValue) ?>';
+        hiddenForm.appendChild(communityTaxDueInput);
+
+        document.body.appendChild(hiddenForm);
+
+        function openConfirmationModal() {
+            // Check if there's a pending request - prevent opening modal
+            const
+                hasPending = <?= $hasPendingRequest ? 'true' : 'false' ?> ;
+            if (hasPending) {
+                alert('You already have a pending cedula request. Please wait for the treasurer to process it.');
+                return;
+            }
+            document.getElementById('confirmAmount').textContent = '₱ ' + (parseFloat(
+                '<?= $amountValue ?>') || 5.00).toFixed(2);
+            document.getElementById('confirmationModal').classList.add('open');
+        }
+
+        function closeConfirmationModal() {
+            document.getElementById('confirmationModal').classList.remove('open');
+        }
+
+        function submitCedulaRequest() {
+            hiddenForm.submit();
+        }
+
+        // Close modal when clicking outside
+        const modal = document.getElementById('confirmationModal');
+        if (modal) {
+            modal.addEventListener('click', function(event) {
+                if (event.target === this) {
+                    closeConfirmationModal();
+                }
+            });
+        }
+
         function computeTotals() {
             const basicTax = parseFloat(document.getElementById('basic_tax').value) || 0;
             const additionalBusiness = parseFloat(document.getElementById('additional_tax_business').value) || 0;
