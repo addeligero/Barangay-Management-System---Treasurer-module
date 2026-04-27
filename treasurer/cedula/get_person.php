@@ -33,3 +33,4 @@ if ($person = $result->fetch_assoc()) {
 echo json_encode(['error' => 'Person not found']);
 
 
+

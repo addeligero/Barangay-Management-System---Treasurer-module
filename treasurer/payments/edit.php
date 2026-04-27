@@ -50,7 +50,7 @@ $totalValue = number_format(((float) $payment['amount']) + ((float) $payment['bi
             </div>
             <ul class="sidebar-menu">
                 <li><a href="../dashboard.php"><i class="fas fa-home"></i> Dashboard</a></li>
-                <li><details class="sidebar-dropdown active"><summary><i class="fas fa-money-bill-wave"></i> Payments <i class="fas fa-chevron-right dropdown-caret"></i></summary><ul class="submenu"><li><a href="list.php" class="active"><i class="fas fa-list"></i> All Payments</a></li><li><a href="add.php"><i class="fas fa-plus"></i> General Payment</a></li><li><a href="manual.php?type=donation"><i class="fas fa-heart"></i> Donation</a></li><li><a href="manual.php?type=garbage"><i class="fas fa-trash"></i> Garbage</a></li><li><a href="manual.php?type=rental"><i class="fas fa-building"></i> Rental</a></li></ul></details></li>
+                <li><details class="sidebar-dropdown active"><summary><i class="fas fa-money-bill-wave"></i> Payments <i class="fas fa-chevron-right dropdown-caret"></i></summary><ul class="submenu"><li><a href="list.php" class="active"><i class="fas fa-list"></i> All Payments</a></li><li><a href="add.php"><i class="fas fa-plus"></i> Certificate</a></li><li><a href="manual.php?type=donation"><i class="fas fa-heart"></i> Donation</a></li><li><a href="manual.php?type=garbage"><i class="fas fa-trash"></i> Garbage</a></li><li><a href="manual.php?type=rental"><i class="fas fa-building"></i> Rental</a></li></ul></details></li>
                 <li><a href="../pending_payments/list.php"><i class="fas fa-hourglass-half"></i> Pending Status</a></li>
                 <li><a href="../cedula/list.php"><i class="fas fa-id-card"></i> Cedula</a></li>
                 <li><a href="../disbursement/list.php"><i class="fas fa-hand-holding-usd"></i> Disbursements</a></li>
@@ -76,7 +76,7 @@ $totalValue = number_format(((float) $payment['amount']) + ((float) $payment['bi
 
                 <div class="card">
                     <div class="card-header">
-                        <h3><i class="fas fa-pen-to-square"></i> Payment Information</h3>
+                        <h3><i class="fas fa-pen-to-square"></i> Certificate Payment Information</h3>
                     </div>
 
                     <form method="POST" action="save.php">
@@ -297,4 +297,5 @@ $totalValue = number_format(((float) $payment['amount']) + ((float) $payment['bi
 </body>
 
 </html>
+
 

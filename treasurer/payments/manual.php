@@ -216,7 +216,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <summary><i class="fas fa-money-bill-wave"></i> Payments <i class="fas fa-chevron-right dropdown-caret"></i></summary>
                         <ul class="submenu">
                             <li><a href="list.php"><i class="fas fa-list"></i> All Payments</a></li>
-                            <li><a href="add.php"><i class="fas fa-plus"></i> General Payment</a></li>
+                            <li><a href="add.php"><i class="fas fa-plus"></i> Certificate</a></li>
                             <li><a href="manual.php?type=donation" class="<?= $type === 'donation' ? 'active' : '' ?>"><i class="fas fa-heart"></i> Donation</a></li>
                             <li><a href="manual.php?type=garbage" class="<?= $type === 'garbage' ? 'active' : '' ?>"><i class="fas fa-trash"></i> Garbage</a></li>
                             <li><a href="manual.php?type=rental" class="<?= $type === 'rental' ? 'active' : '' ?>"><i class="fas fa-building"></i> Rental</a></li>
@@ -399,4 +399,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 </body>
 
 </html>
+
 

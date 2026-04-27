@@ -209,3 +209,4 @@ $yearIssued = !empty($cedula['year_issued']) ? $cedula['year_issued'] : '';
 
 </html>
 
+
