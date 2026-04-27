@@ -80,13 +80,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Generate rental reference
             $rentalRef = 'RENT-' . date('YmdHis') . '-' . $residentId;
+            $rentalDate = date('Y-m-d');
 
             // Insert into rental table
             $rentalStmt = $conn->prepare("
                 INSERT INTO rental (rental_ref, resident_id, resident_name, rental_date, purpose, total_amount)
                 VALUES (?, ?, ?, ?, ?, ?)
             ");
-            $rentalStmt->bind_param("ssissd", $rentalRef, $residentId, $residentName, date('Y-m-d'), $purpose, $totalAmount);
+            $rentalStmt->bind_param("sisssd", $rentalRef, $residentId, $residentName, $rentalDate, $purpose, $totalAmount);
             $rentalOk = $rentalStmt->execute();
             $rentalId = $conn->insert_id;
             $rentalStmt->close();

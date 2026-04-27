@@ -57,13 +57,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
             // Generate donation reference
             $donationRef = 'DON-' . date('YmdHis') . '-' . $residentId;
+            $donationDate = date('Y-m-d');
 
             // Insert into donation table
             $donationStmt = $conn->prepare("
                 INSERT INTO donation (donation_ref, resident_id, resident_name, donation_date, purpose, recipient_activities, amount)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            $donationStmt->bind_param("ssisssd", $donationRef, $residentId, $residentName, date('Y-m-d'), $purpose, $recipient, $amount);
+            $donationStmt->bind_param("sissssd", $donationRef, $residentId, $residentName, $donationDate, $purpose, $recipient, $amount);
             $donationOk = $donationStmt->execute();
             $donationStmt->close();
 
@@ -72,12 +73,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             if ($donationOk) {
                 $certificateType = 'Donation';
                 $paymentPurpose = $purpose;
+                $birTax = 0.00;
 
                 $payStmt = $conn->prepare("
                     INSERT INTO payment_status (resident_id, certificate_type, purpose, resident_fname, payment_status, amount, bir_tax, created_at)
                     VALUES (?, ?, ?, ?, 'pending', ?, ?, NOW())
                 ");
-                $payStmt->bind_param("isssdd", $residentId, $certificateType, $paymentPurpose, $residentName, $amount, $birTax = 0);
+                $payStmt->bind_param("isssdd", $residentId, $certificateType, $paymentPurpose, $residentName, $amount, $birTax);
                 $paymentOk = $payStmt->execute();
                 $payStmt->close();
             }
