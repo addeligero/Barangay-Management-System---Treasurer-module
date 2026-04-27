@@ -26,25 +26,25 @@ if (!$resident) {
 $residentName = trim(($resident['first_name'] ?? '') . ' ' . ($resident['middle_name'] ?? '') . ' ' . ($resident['surname'] ?? ''));
 $residentName = preg_replace('/\s+/', ' ', $residentName);
 
-// Check for pending donation
-$hasPendingDonation = false;
+// Check for pending garbage
+$hasPendingGarbage = false;
 $pendingStmt = $conn->prepare("
     SELECT id FROM payment_status 
-    WHERE resident_id = ? AND certificate_type = 'Donation' AND payment_status = 'pending'
+    WHERE resident_id = ? AND certificate_type = 'Garbage' AND payment_status = 'pending'
     LIMIT 1
 ");
 $pendingStmt->bind_param("i", $residentId);
 $pendingStmt->execute();
 $pendingResult = $pendingStmt->get_result();
 if ($pendingResult->num_rows > 0) {
-    $hasPendingDonation = true;
+    $hasPendingGarbage = true;
 }
 $pendingStmt->close();
 
-// Handle donation submission
+// Handle garbage submission
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    if ($hasPendingDonation) {
-        $error = 'You already have a pending donation request. Please wait for the treasurer to process it.';
+    if ($hasPendingGarbage) {
+        $error = 'You already have a pending garbage request. Please wait for the treasurer to process it.';
     } else {
         $purpose = htmlspecialchars($_POST['purpose'] ?? '');
         $recipient = htmlspecialchars($_POST['recipient'] ?? '');
@@ -55,23 +55,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         } else {
             $conn->begin_transaction();
 
-            // Generate donation reference
-            $donationRef = 'DON-' . date('YmdHis') . '-' . $residentId;
-            $donationDate = date('Y-m-d');
+            // Generate garbage reference
+            $garbageRef = 'GAR-' . date('YmdHis') . '-' . $residentId;
+            $garbageDate = date('Y-m-d');
 
-            // Insert into donation table
-            $donationStmt = $conn->prepare("
-                INSERT INTO donation (donation_ref, resident_id, resident_name, donation_date, purpose, recipient_activities, amount)
+            // Insert into garbage table
+            $garbageStmt = $conn->prepare("
+                INSERT INTO garbage (garbage_ref, resident_id, resident_name, garbage_date, purpose, recipient_activities, amount)
                 VALUES (?, ?, ?, ?, ?, ?, ?)
             ");
-            $donationStmt->bind_param("sissssd", $donationRef, $residentId, $residentName, $donationDate, $purpose, $recipient, $amount);
-            $donationOk = $donationStmt->execute();
-            $donationStmt->close();
+            $garbageStmt->bind_param("sissssd", $garbageRef, $residentId, $residentName, $garbageDate, $purpose, $recipient, $amount);
+            $garbageOk = $garbageStmt->execute();
+            $garbageStmt->close();
 
             // Insert into payment_status
             $paymentOk = false;
-            if ($donationOk) {
-                $certificateType = 'Donation';
+            if ($garbageOk) {
+                $certificateType = 'Garbage';
                 $paymentPurpose = $purpose;
                 $birTax = 0.00;
 
@@ -84,14 +84,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $payStmt->close();
             }
 
-            if ($donationOk && $paymentOk) {
+            if ($garbageOk && $paymentOk) {
                 $conn->commit();
                 header('Location: pending_payments.php?submitted=1');
                 exit;
             }
 
             $conn->rollback();
-            $error = 'Failed to submit donation. Please try again.';
+            $error = 'Failed to submit garbage. Please try again.';
         }
     }
 }
@@ -102,11 +102,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Donation - Resident Portal</title>
+    <title>Garbage - Resident Portal</title>
     <link rel="stylesheet" href="../assets/css/style.css">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        .donation-container {
+        .garbage-container {
             max-width: 800px;
             margin: 0 auto;
             padding: 20px;
@@ -341,8 +341,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="pending_payments.php"><i class="fas fa-hourglass-half"></i> Pending Payments</a></li>
                 <li><a href="payment_history.php"><i class="fas fa-receipt"></i> Payment History</a></li>
                 <li><a href="request_cedula.php"><i class="fas fa-id-card"></i> Request Cedula</a></li>
-                <li><a href="donation.php" class="active"><i class="fas fa-heart"></i> Make Donation</a></li>
-                <li><a href="garbage.php"><i class="fas fa-trash"></i> Garbage Payment</a></li>
+                <li><a href="donation.php"><i class="fas fa-heart"></i> Make Donation</a></li>
+                <li><a href="garbage.php" class="active"><i class="fas fa-trash"></i> Garbage Payment</a></li>
                 <li><a href="rental.php"><i class="fas fa-building"></i> Rent Facilities</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
@@ -350,13 +350,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
         <main class="main-content">
             <div class="content-header">
-                <h1><i class="fas fa-heart"></i> Make a Donation</h1>
+                <h1><i class="fas fa-trash"></i> Garbage Payment</h1>
                 <p>Welcome, <?= htmlspecialchars($residentName) ?>
                 </p>
             </div>
 
             <div class="content-body">
-                <div class="donation-container">
+                <div class="garbage-container">
 
                     <?php if (!empty($error)): ?>
                     <div class="alert alert-error">
@@ -370,64 +370,63 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     </div>
                     <?php endif; ?>
 
-                    <?php if ($hasPendingDonation): ?>
+                    <?php if ($hasPendingGarbage): ?>
                     <div class="alert alert-warning">
-                        ⏳ You already have a pending donation request. Please wait for the treasurer to process it
+                        ⏳ You already have a pending garbage request. Please wait for the treasurer to process it
                         before making
-                        another donation.
+                        another garbage payment.
                     </div>
                     <?php endif; ?>
 
-                    <form method="POST" id="donationForm">
-                        <!-- Donor Information Section -->
+                    <form method="POST" id="garbageForm">
+                        <!-- Resident Information Section -->
                         <div class="form-section">
-                            <div class="section-header">👤 Donor Information</div>
+                            <div class="section-header">👤 Resident Information</div>
 
                             <div class="form-group">
-                                <label for="donorName">Full Name *</label>
-                                <input type="text" id="donorName" name="donor_name"
+                                <label for="residentName">Full Name *</label>
+                                <input type="text" id="residentName" name="resident_name"
                                     value="<?php echo htmlspecialchars($residentName); ?>"
                                     disabled>
                             </div>
 
                             <div class="form-group">
-                                <label for="donationDate">Donation Date *</label>
-                                <input type="date" id="donationDate" name="donation_date"
+                                <label for="garbageDate">Garbage Date *</label>
+                                <input type="date" id="garbageDate" name="garbage_date"
                                     value="<?php echo date('Y-m-d'); ?>"
                                     disabled>
                             </div>
                         </div>
 
-                        <!-- Donation Details Section -->
+                        <!-- Garbage Details Section -->
                         <div class="form-section">
-                            <div class="section-header">💰 Donation Details</div>
+                            <div class="section-header">Garbage Payment Details</div>
 
                             <div class="form-group">
-                                <label for="purpose">Purpose of Donation *</label>
-                                <input type="text" id="purpose" name="purpose"
-                                    placeholder="e.g., Barangay Event, School Supplies, Emergency Relief"
+                                <label for="purpose">Purpose of Garbage Payment *</label>
+                                <input type="text" id="purpose" name="purpose" placeholder="e.g., Barangay Event"
                                     value="<?php echo htmlspecialchars($_POST['purpose'] ?? ''); ?>"
-                                    <?php echo $hasPendingDonation ? 'disabled' : ''; ?>
+                                    <?php echo $hasPendingGarbage ? 'disabled' : ''; ?>
                                 required>
                             </div>
 
                             <div class="form-group">
-                                <label for="recipient">To Whom / What Activities *</label>
+                                <label for="recipient">Garbage Collection Details *</label>
                                 <textarea id="recipient" name="recipient"
-                                    placeholder="Specify the recipient or activities benefiting from this donation"
-                                    <?php echo $hasPendingDonation ? 'disabled' : ''; ?> required><?php echo htmlspecialchars($_POST['recipient'] ?? ''); ?></textarea>
+                                    placeholder="Specify the billing period or garbage collection details"
+                                    <?php echo $hasPendingGarbage ? 'disabled' : ''; ?> required><?php echo htmlspecialchars($_POST['recipient'] ?? ''); ?></textarea>
                             </div>
 
                             <div class="form-group">
-                                <label for="amount">Donation Amount (₱) *</label>
+                                <label for="amount">Garbage Payment Amount (₱) *</label>
                                 <input type="number" id="amount" name="amount" step="0.01" min="0"
                                     placeholder="Enter amount"
                                     value="<?php echo htmlspecialchars($_POST['amount'] ?? ''); ?>"
-                                    <?php echo $hasPendingDonation ? 'disabled' : ''; ?>
+                                    <?php echo $hasPendingGarbage ? 'disabled' : ''; ?>
                                 required>
                             </div>
 
-                            <?php if (!$hasPendingDonation): ?>
+                            <?php if (!$hasPendingGarbage): ?>
                             <div class="highlight-box">
                                 <div class="highlight-amount" id="amountDisplay">₱0.00</div>
                             </div>
@@ -435,10 +434,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         </div>
 
                         <!-- Action Buttons -->
-                        <?php if (!$hasPendingDonation): ?>
+                        <?php if (!$hasPendingGarbage): ?>
                         <div class="form-actions">
                             <button type="button" class="btn btn-primary" onclick="openConfirmationModal()">Submit
-                                Donation</button>
+                                Garbage Payment</button>
                             <a href="pending_payments.php" class="btn btn-secondary"
                                 style="text-decoration: none; display: inline-block;">Cancel</a>
                         </div>
@@ -455,16 +454,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <!-- Confirmation Modal -->
                 <div id="confirmationModal" class="modal">
                     <div class="modal-content">
-                        <div class="modal-header">✓ Confirm Donation Submission</div>
+                        <div class="modal-header">✓ Confirm Garbage Payment</div>
 
                         <div class="modal-body">
                             <div class="confirmation-item">
-                                <span class="confirmation-label">Donor Name:</span>
+                                <span class="confirmation-label">Resident Name:</span>
                                 <span
                                     class="confirmation-value"><?php echo htmlspecialchars($residentName); ?></span>
                             </div>
                             <div class="confirmation-item">
-                                <span class="confirmation-label">Donation Date:</span>
+                                <span class="confirmation-label">Garbage Date:</span>
                                 <span class="confirmation-value"
                                     id="modalDate"><?php echo date('M d, Y'); ?></span>
                             </div>
@@ -473,12 +472,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <span class="confirmation-value" id="modalPurpose">-</span>
                             </div>
                             <div class="confirmation-item">
-                                <span class="confirmation-label">Recipient/Activities:</span>
+                                <span class="confirmation-label">Garbage Collection Details:</span>
                                 <span class="confirmation-value" id="modalRecipient">-</span>
                             </div>
                             <div class="confirmation-item"
                                 style="border-top: 2px solid #0066cc; padding-top: 15px; font-weight: bold; font-size: 16px;">
-                                <span class="confirmation-label">Donation Amount:</span>
+                                <span class="confirmation-label">Garbage Payment Amount:</span>
                                 <span class="confirmation-value" id="modalAmount"
                                     style="color: #0066cc; font-size: 18px;">₱0.00</span>
                             </div>
@@ -487,7 +486,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         <div class="modal-footer">
                             <button type="button" class="btn btn-cancel"
                                 onclick="closeConfirmationModal()">Cancel</button>
-                            <button type="button" class="btn btn-confirm" onclick="submitDonation()">Confirm &
+                            <button type="button" class="btn btn-confirm" onclick="submitGarbage()">Confirm &
                                 Submit</button>
                         </div>
                     </div>
@@ -532,8 +531,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         document.getElementById('confirmationModal').classList.remove('open');
                     }
 
-                    function submitDonation() {
-                        document.getElementById('donationForm').submit();
+                    function submitGarbage() {
+                        document.getElementById('garbageForm').submit();
                     }
 
                     // Close modal when clicking outside

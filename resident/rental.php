@@ -433,6 +433,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 <li><a href="payment_history.php"><i class="fas fa-receipt"></i> Payment History</a></li>
                 <li><a href="request_cedula.php"><i class="fas fa-id-card"></i> Request Cedula</a></li>
                 <li><a href="donation.php"><i class="fas fa-heart"></i> Make Donation</a></li>
+                <li><a href="garbage.php"><i class="fas fa-trash"></i> Garbage Payment</a></li>
                 <li><a href="rental.php" class="active"><i class="fas fa-building"></i> Rent Facilities</a></li>
                 <li><a href="logout.php"><i class="fas fa-sign-out-alt"></i> Logout</a></li>
             </ul>
