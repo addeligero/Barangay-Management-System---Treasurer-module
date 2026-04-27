@@ -210,6 +210,61 @@ CREATE TABLE IF NOT EXISTS cedula (
 CREATE INDEX idx_cedula_resident_id ON cedula (resident_id);
 
 -- ============================================================================
+-- 3.1 DONATION TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS donation (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    donation_ref VARCHAR(50) UNIQUE,
+    resident_id INT DEFAULT NULL,
+    resident_name VARCHAR(150) NOT NULL,
+    donation_date DATE NOT NULL,
+    purpose VARCHAR(255) NOT NULL,
+    recipient_activities TEXT NOT NULL,
+    amount DECIMAL(10, 2) NOT NULL,
+    remarks TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_donation_resident_id ON donation (resident_id);
+
+-- ============================================================================
+-- 3.2 RENTAL TABLE
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS rental (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rental_ref VARCHAR(50) UNIQUE,
+    resident_id INT DEFAULT NULL,
+    resident_name VARCHAR(150) NOT NULL,
+    rental_date DATE NOT NULL,
+    purpose VARCHAR(255) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    remarks TEXT,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (resident_id) REFERENCES residents(id) ON DELETE SET NULL
+);
+
+CREATE INDEX idx_rental_resident_id ON rental (resident_id);
+
+-- ============================================================================
+-- 3.3 RENTAL ITEMS TABLE
+-- Stores individual items rented (chairs, covered court)
+-- ============================================================================
+CREATE TABLE IF NOT EXISTS rental_items (
+    id INT AUTO_INCREMENT PRIMARY KEY,
+    rental_id INT NOT NULL,
+    item_type VARCHAR(50) NOT NULL COMMENT 'chair or covered_court',
+    quantity INT DEFAULT 1 COMMENT 'Number of chairs (1 for covered court)',
+    unit_price DECIMAL(10, 2) NOT NULL COMMENT 'Price per item',
+    subtotal DECIMAL(10, 2) NOT NULL,
+    usage_date DATE NOT NULL COMMENT 'Date the item will be used',
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    FOREIGN KEY (rental_id) REFERENCES rental(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_rental_items_rental_id ON rental_items (rental_id);
+
+-- ============================================================================
 -- 4. BIR RECORDS TABLE
 -- ============================================================================
 CREATE TABLE IF NOT EXISTS bir_records (
