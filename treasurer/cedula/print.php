@@ -32,11 +32,23 @@ $yearIssued = !empty($cedula['year_issued']) ? $cedula['year_issued'] : '';
 
 <head>
     <meta charset="UTF-8">
-    <title>Print Cedula Overlay</title>
+    <title></title>
     <style>
+        :root {
+            --paper-width: 8.5in;
+            --paper-height: 11in;
+            --cedula-width: 5.2in;
+            --cedula-height: 4.55in;
+            --cedula-offset-x: 0.55in;
+            --cedula-offset-y: 0in;
+            --design-width: 1344px;
+            --design-height: 1056px;
+            --fit-x: 0.371429;
+            --fit-y: 0.413636;
+        }
+
         @page {
-            size: 14in 8.5in;
-            /* adjust to your real paper */
+            size: 8.9in 11in;
             margin: 0;
         }
 
@@ -46,21 +58,42 @@ $yearIssued = !empty($cedula['year_issued']) ? $cedula['year_issued'] : '';
             padding: 0;
             background: white;
             font-family: Arial, sans-serif;
+            width: var(--paper-width);
+            min-height: var(--paper-height);
+            -webkit-print-color-adjust: exact;
+            print-color-adjust: exact;
+        }
+
+        .sheet {
+            position: relative;
+            width: var(--paper-width);
+            height: var(--paper-height);
+            margin: 0 auto;
+            background: white;
+            overflow: hidden;
         }
 
         .page {
-            position: relative;
-            width: 14in;
-            /* adjust */
-            height: 8.5in;
-            /* adjust */
-            margin: 0 auto;
-            background: white;
+            position: absolute;
+            top: var(--cedula-offset-y);
+            left: var(--cedula-offset-x);
+            width: var(--cedula-width);
+            height: var(--cedula-height);
+            overflow: hidden;
+        }
+
+        .cedula-map {
+            position: absolute;
+            inset: 0 auto auto 0;
+            width: var(--design-width);
+            height: var(--design-height);
+            transform: scale(var(--fit-x), var(--fit-y));
+            transform-origin: top left;
         }
 
         .field {
             position: absolute;
-            font-size: 14px;
+            font-size: 26px;
             line-height: 1;
             white-space: nowrap;
         }
@@ -86,6 +119,17 @@ $yearIssued = !empty($cedula['year_issued']) ? $cedula['year_issued'] : '';
         }
 
         @media print {
+
+            html,
+            body {
+                width: var(--paper-width);
+                height: var(--paper-height);
+            }
+
+            body {
+                overflow: hidden;
+            }
+
             .print-btn {
                 display: none;
             }
@@ -97,119 +141,110 @@ $yearIssued = !empty($cedula['year_issued']) ? $cedula['year_issued'] : '';
 
     <button class="print-btn" onclick="window.print()">Print</button>
 
-    <div class="page">
+    <div class="sheet">
+        <div class="page">
+            <div class="cedula-map">
 
-        <!-- YEAR -->
-        <div class="field bold" style="top: 78px; left: 52px;">
-            <?= e($yearIssued) ?>
-        </div>
+                <!-- YEAR -->
+                <div class="field bold" style="top: 158px; left: 0px;">
+                    <?= e($yearIssued) ?>
+                </div>
 
-        <!-- PLACE OF ISSUE -->
-        <div class="field" style="top: 78px; left: 170px;">
-            <?= e($cedula['place_of_issue'] ?? '') ?>
-        </div>
+                <!-- PLACE OF ISSUE -->
+                <div class="field" style="top: 158px; left: 170px;">
+                    <?= e($cedula['place_of_issue'] ?? '') ?>
+                </div>
 
-        <!-- DATE ISSUED -->
-        <div class="field" style="top: 78px; left: 690px;">
-            <?= e($issuedDate) ?>
-        </div>
+                <!-- DATE ISSUED -->
+                <div class="field" style="top: 138px; left: 690px;">
+                    <?= e($issuedDate) ?>
+                </div>
 
-        <!-- SURNAME -->
-        <div class="field" style="top: 128px; left: 150px;">
-            <?= e($cedula['surname'] ?? '') ?>
-        </div>
+                <!-- SURNAME -->
+                <div class="field" style="top: 200px; left: 150px;">
+                    <?= e($cedula['surname'] ?? '') ?>
+                </div>
 
-        <!-- FIRST NAME -->
-        <div class="field" style="top: 128px; left: 405px;">
-            <?= e($cedula['first_name'] ?? '') ?>
-        </div>
+                <!-- FIRST NAME -->
+                <div class="field" style="top: 200px; left: 405px;">
+                    <?= e($cedula['first_name'] ?? '') ?>
+                </div>
 
-        <!-- MIDDLE NAME -->
-        <div class="field" style="top: 128px; left: 620px;">
-            <?= e($cedula['middle_name'] ?? '') ?>
-        </div>
+                <!-- MIDDLE NAME -->
+                <div class="field" style="top: 200px; left: 620px;">
+                    <?= e($cedula['middle_name'] ?? '') ?>
+                </div>
 
-        <!-- ADDRESS -->
-        <div class="field" style="top: 171px; left: 140px;">
-            <?= e($cedula['address'] ?? '') ?>
-        </div>
+                <!-- ADDRESS -->
+                <div class="field" style="top: 251px; left: 140px;">
+                    <?= e($cedula['address'] ?? '') ?>
+                </div>
 
-        <!-- CITIZENSHIP -->
-        <div class="field" style="top: 220px; left: 52px;">
-            <?= e($cedula['citizenship'] ?? '') ?>
-        </div>
+                <!-- CITIZENSHIP -->
+                <div class="field" style="top: 310px; left: 52px;">
+                    <?= e($cedula['citizenship'] ?? '') ?>
+                </div>
 
-        <!-- PLACE OF BIRTH -->
-        <div class="field" style="top: 220px; left: 640px;">
-            <?= e($cedula['birth_place'] ?? '') ?>
-        </div>
+                <!-- PLACE OF BIRTH -->
+                <div class="field" style="top: 320px; left: 640px;">
+                    <?= e($cedula['birth_place'] ?? '') ?>
+                </div>
 
-        <!-- DATE OF BIRTH -->
-        <div class="field" style="top: 298px; left: 825px;">
-            <?= e($birthDate) ?>
-        </div>
+                <!-- DATE OF BIRTH -->
+                <div class="field" style="top: 370px; left: 885px;">
+                    <?= e($birthDate) ?>
+                </div>
 
-        <!-- HEIGHT -->
-        <div class="field" style="top: 258px; left: 1120px;">
-            <?= e($cedula['height'] ?? '') ?>
-        </div>
+                <!-- HEIGHT -->
+                <div class="field" style="top: 310px; left: 1130px;">
+                    <?= e($cedula['height'] ?? '') ?>
+                </div>
 
-        <!-- WEIGHT -->
-        <div class="field" style="top: 300px; left: 1120px;">
-            <?= e($cedula['weight'] ?? '') ?>
-        </div>
+                <!-- WEIGHT -->
+                <div class="field" style="top: 370px; left: 1130px;">
+                    <?= e($cedula['weight'] ?? '') ?>
+                </div>
 
-        <!-- OCCUPATION -->
-        <div class="field" style="top: 356px; left: 55px;">
-            <?= e($cedula['occupation'] ?? '') ?>
-        </div>
+                <!-- OCCUPATION -->
+                <div class="field" style="top: 410px; left: 55px;">
+                    <?= e($cedula['occupation'] ?? '') ?>
+                </div>
 
-        <!-- BASIC TAX -->
-        <div class="field" style="top: 465px; left: 980px;">
-            <?= e(number_format((float)($cedula['basic_tax'] ?? 0), 2)) ?>
-        </div>
+                <!-- BASIC TAX -->
+                <div class="field" style="top: 465px; left: 1150px;">
+                    <?= e(number_format(5, 2)) ?>
+                </div>
+                <!-- addtional TAX  (1 every 1k-->
+                <div class="field" style="top: 600px; left: 1230px;">
+                    <?= e(number_format((float)($cedula['additional_tax_profession'] ?? 0), 2)) ?>
+                </div>
 
-        <!-- ADDITIONAL BUSINESS -->
-        <div class="field" style="top: 565px; left: 980px;">
-            <?= e(number_format((float)($cedula['additional_tax_business'] ?? 0), 2)) ?>
-        </div>
 
-        <!-- ADDITIONAL PROFESSION -->
-        <div class="field" style="top: 645px; left: 980px;">
-            <?= e(number_format((float)($cedula['additional_tax_profession'] ?? 0), 2)) ?>
-        </div>
 
-        <!-- COMMUNITY TAX DUE -->
-        <div class="field" style="top: 430px; left: 1230px;">
-            <?= e(number_format((float)($cedula['community_tax_due'] ?? 0), 2)) ?>
-        </div>
 
-        <!-- TOTAL -->
-        <div class="field" style="top: 775px; left: 1230px;">
-            <?= e(number_format((float)($cedula['amount'] ?? 0), 2)) ?>
-        </div>
+                <!-- TOTAL -->
+                <div class="field" style="top: 705px; left: 1230px;">
+                    <?= e(number_format((float)($cedula['amount'] ?? 0), 2)) ?>
+                </div>
 
-        <!-- INTEREST -->
-        <div class="field" style="top: 846px; left: 1230px;">
-            <?= e(number_format((float)($cedula['interest'] ?? 0), 2)) ?>
-        </div>
+                <!-- INTEREST -->
+                <div class="field" style="top: 776px; left: 1230px;">
+                    <?= e(number_format((float)($cedula['interest'] ?? 0), 2)) ?>
+                </div>
 
-        <!-- TOTAL AMOUNT PAID -->
-        <div class="field" style="top: 920px; left: 1215px;">
-            <?= e(number_format((float)($cedula['amount'] ?? 0) + (float)($cedula['interest'] ?? 0), 2)) ?>
-        </div>
+                <!-- TOTAL AMOUNT PAID -->
+                <div class="field" style="top: 850px; left: 1215px;">
+                    <?= e(number_format((float)($cedula['amount'] ?? 0) + (float)($cedula['interest'] ?? 0), 2)) ?>
+                </div>
 
-        <!-- AMOUNT IN WORDS -->
-        <div class="field" style="top: 1000px; left: 950px;">
-            <?= e($cedula['amount_in_words'] ?? '') ?>
+                <!-- AMOUNT IN WORDS -->
+                <div class="field" style="top: 1000px; left: 950px;">
+                    <?= e($cedula['amount_in_words'] ?? '') ?>
+                </div>
+            </div>
         </div>
     </div>
 
 </body>
 
 </html>
-
-
-
-
-

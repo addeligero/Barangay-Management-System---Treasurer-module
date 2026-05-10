@@ -66,11 +66,19 @@ if ($descLine2 === '') {
 
 <head>
     <meta charset="UTF-8">
-    <title>Print Official Receipt</title>
+    <title></title>
     <style>
+        :root {
+            --paper-width: 8.5in;
+            --paper-height: 11in;
+            --or-width: 95mm;
+            --or-height: 165mm;
+            --or-offset-x: 0in;
+            --or-offset-y: 0in;
+        }
+
         @page {
-            size: 95mm 165mm;
-            /* adjust to your actual OR paper */
+            size: 8.5in 11in;
             margin: 0;
         }
 
@@ -86,10 +94,12 @@ if ($descLine2 === '') {
             padding: 0;
             background: #fff;
             font-family: Arial, Helvetica, sans-serif;
+            width: var(--paper-width);
+            min-height: var(--paper-height);
         }
 
         body {
-            background: #f3f3f3;
+            background: #fff;
         }
 
         .toolbar {
@@ -117,11 +127,11 @@ if ($descLine2 === '') {
 
         .sheet {
             position: relative;
-            width: 95mm;
-            /* adjust */
-            height: 165mm;
-            /* adjust */
-            margin: 10px auto;
+            width: var(--or-width);
+            height: var(--or-height);
+            margin: 0;
+            top: var(--or-offset-y);
+            left: var(--or-offset-x);
             background: #fff;
             overflow: hidden;
         }
@@ -165,6 +175,9 @@ if ($descLine2 === '') {
                 background: #fff;
                 padding: 0;
                 margin: 0;
+                width: var(--paper-width);
+                height: var(--paper-height);
+                overflow: hidden;
             }
 
             .toolbar {
@@ -172,7 +185,7 @@ if ($descLine2 === '') {
             }
 
             .sheet {
-                margin: 0 auto;
+                margin: 0;
             }
         }
     </style>
