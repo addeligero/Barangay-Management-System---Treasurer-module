@@ -2,6 +2,11 @@
 include "../../config/database.php";
 include "../../config/session.php";
 
+function calculateProfessionTax($annualIncome)
+{
+    return max(0, $annualIncome / 1000);
+}
+
 // Handle delete action
 if (isset($_GET['action']) && $_GET['action'] === 'delete' && isset($_GET['id'])) {
     $id = intval($_GET['id']);
@@ -21,7 +26,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $weight = isset($_POST['weight']) && $_POST['weight'] !== '' ? floatval($_POST['weight']) : 0;
         $basic_tax = isset($_POST['basic_tax']) ? floatval($_POST['basic_tax']) : 5.00;
         $additional_tax_business = isset($_POST['additional_tax_business']) ? floatval($_POST['additional_tax_business']) : 0;
-        $additional_tax_profession = isset($_POST['additional_tax_profession']) ? floatval($_POST['additional_tax_profession']) : 0;
+        $additional_tax_profession = calculateProfessionTax($annual_income);
         $additional_tax_property = isset($_POST['additional_tax_property']) ? floatval($_POST['additional_tax_property']) : 0;
         $community_tax_due = $basic_tax + $additional_tax_business + $additional_tax_profession + $additional_tax_property;
         $interest = isset($_POST['interest']) ? floatval($_POST['interest']) : 0;
@@ -131,7 +136,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $weight = isset($_POST['weight']) && $_POST['weight'] !== '' ? floatval($_POST['weight']) : 0;
     $basic_tax = isset($_POST['basic_tax']) ? floatval($_POST['basic_tax']) : 5.00;
     $additional_tax_business = isset($_POST['additional_tax_business']) ? floatval($_POST['additional_tax_business']) : 0;
-    $additional_tax_profession = isset($_POST['additional_tax_profession']) ? floatval($_POST['additional_tax_profession']) : 0;
+    $additional_tax_profession = calculateProfessionTax($annual_income);
     $additional_tax_property = isset($_POST['additional_tax_property']) ? floatval($_POST['additional_tax_property']) : 0;
     $community_tax_due = $basic_tax + $additional_tax_business + $additional_tax_profession + $additional_tax_property;
     $interest = isset($_POST['interest']) ? floatval($_POST['interest']) : 0;

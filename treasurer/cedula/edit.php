@@ -299,7 +299,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                                 <input type="number" id="annual_income" name="annual_income" step="0.01" min="0"
                                     value="<?= htmlspecialchars($annualIncomeValue) ?>"
                                     oninput="calculateAdditionalFromIncome()">
-                                <small style="color:#666;">Auto-calculated for profession: Income &divide; 1,000</small>
+                                <small style="color:#666;">Auto-calculated: 1 peso for every 1,000 taxable amount</small>
                             </div>
 
                             <div class="form-group">
@@ -327,6 +327,7 @@ $weightValue = (isset($cedula['weight']) && floatval($cedula['weight']) > 0)
                                 <input type="number" id="additional_tax_profession" name="additional_tax_profession"
                                     step="0.01" min="0"
                                     value="<?= htmlspecialchars($additionalProfessionValue) ?>"
+                                    readonly style="background:#e8f0ff; font-weight:bold;"
                                     oninput="computeTotals()">
                             </div>
 

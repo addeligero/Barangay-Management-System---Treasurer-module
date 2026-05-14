@@ -104,6 +104,11 @@ function compute_age_from_birthdate(?string $birthDate): int
     return (int) $birth->diff($today)->y;
 }
 
+function calculate_profession_tax(float $taxableAmount): float
+{
+    return max(0, $taxableAmount / 1000);
+}
+
 $residentId = intval($_SESSION['resident_id']);
 $stmt = $conn->prepare("SELECT id, first_name, middle_name, surname, suffix, username, barangay, municipality, province, purok, household_no, birthdate, birthplace, age, sex, civil_status, nationality, occupation, occupation_type, annual_income, account_status FROM residents WHERE id = ? LIMIT 1");
 $stmt->bind_param("i", $residentId);
@@ -142,6 +147,7 @@ $placeOfIssueDefault = trim(($resident['municipality'] ?? '') . (empty($resident
 $annualIncomeDefault = isset($resident['annual_income']) && floatval($resident['annual_income']) > 0
     ? number_format((float) $resident['annual_income'], 2, '.', '')
     : '';
+$additionalProfessionDefault = calculate_profession_tax((float) ($resident['annual_income'] ?? 0));
 
 $success = '';
 $error = '';
@@ -216,11 +222,11 @@ $weightValue = '';
 $annualIncomeValue = $annualIncomeDefault;
 $basicTaxValue = '5.00';
 $additionalBusinessValue = '0.00';
-$additionalProfessionValue = '0.00';
+$additionalProfessionValue = number_format($additionalProfessionDefault, 2, '.', '');
 $additionalPropertyValue = '0.00';
-$communityTaxDueValue = '5.00';
+$communityTaxDueValue = number_format(5 + $additionalProfessionDefault, 2, '.', '');
 $interestValue = '0.00';
-$amountValue = '5.00';
+$amountValue = $communityTaxDueValue;
 $natureOfCollectionValue = 'Community Tax';
 $amountInWordsValue = '';
 $remarksValue = '';
@@ -314,7 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $annualIncome = isset($_POST['annual_income']) ? floatval($_POST['annual_income']) : 0;
     $basicTax = isset($_POST['basic_tax']) ? floatval($_POST['basic_tax']) : 5.00;
     $additionalBusiness = isset($_POST['additional_tax_business']) ? floatval($_POST['additional_tax_business']) : 0;
-    $additionalProfession = isset($_POST['additional_tax_profession']) ? floatval($_POST['additional_tax_profession']) : 0;
+    $additionalProfession = calculate_profession_tax($annualIncome);
     $additionalProperty = isset($_POST['additional_tax_property']) ? floatval($_POST['additional_tax_property']) : 0;
     $communityTaxDue = $basicTax + $additionalBusiness + $additionalProfession + $additionalProperty;
     $interest = isset($_POST['interest']) ? floatval($_POST['interest']) : 0;
@@ -1059,7 +1065,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                                 <input type="number" id="additional_tax_profession" name="additional_tax_profession"
                                     step="0.01" min="0"
                                     value="<?= htmlspecialchars($additionalProfessionValue) ?>"
-                                    oninput="computeTotals()">
+                                    readonly style="background:#e8f0ff; font-weight:bold;">
                             </div>
 
                             <div class="form-group">

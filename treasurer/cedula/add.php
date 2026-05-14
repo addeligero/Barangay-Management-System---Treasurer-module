@@ -218,7 +218,7 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                 <label for="annual_income"><i class="fas fa-coins"></i> Taxable Amount (PHP)</label>
                                 <input type="number" id="annual_income" name="annual_income" step="0.01" min="0"
                                     placeholder="e.g., 50000" oninput="calculateAdditionalFromIncome()">
-                                <small style="color:#666;">Auto-calculated for profession: Income &divide; 1,000</small>
+                                <small style="color:#666;">Auto-calculated: 1 peso for every 1,000 taxable amount</small>
                             </div>
 
                             <div class="form-group">
@@ -241,7 +241,8 @@ $nextCedula = $lastCedula && isset($lastCedula['cedula_no']) ? (intval($lastCedu
                                 <label for="additional_tax_profession"><i class="fas fa-briefcase"></i> Additional Tax
                                     - Profession (PHP)</label>
                                 <input type="number" id="additional_tax_profession" name="additional_tax_profession"
-                                    step="0.01" min="0" value="0.00" oninput="computeTotals()">
+                                    step="0.01" min="0" value="0.00" readonly
+                                    style="background:#e8f0ff; font-weight:bold;" oninput="computeTotals()">
                             </div>
 
                             <div class="form-group">
